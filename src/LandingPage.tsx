@@ -14,9 +14,12 @@ import {
   Lock,
   Type,
   Flame,
+  Youtube,
 } from 'lucide-react';
 import type { Project } from './model';
+import { MediaImporterModal } from './importer/MediaImporterModal';
 import './landing-gothic.css';
+import './importer/importer.css';
 
 interface LandingPageProps {
   onStartEditing: () => void;
@@ -24,6 +27,7 @@ interface LandingPageProps {
   onTryDemo: () => void;
   onResumeProject?: (project: Project) => void;
   resumeProject?: Project;
+  onImportFile?: (file: File) => void;
 }
 
 // 🌌 Canvas Engine: Aurora Borealis, Gothic Castle Silhouette, Rolling Mist & Snow
@@ -629,6 +633,7 @@ export default function LandingPage({
   onTryDemo,
   onResumeProject,
   resumeProject,
+  onImportFile,
 }: LandingPageProps) {
   // 3D Monolith Tilt
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
@@ -644,6 +649,16 @@ export default function LandingPage({
 
   // Subtitle Preview Preset
   const [captionPreset, setCaptionPreset] = useState<'clean' | 'glacial' | 'bold'>('glacial');
+
+  // Media & YouTube Importer State
+  const [importerOpen, setImporterOpen] = useState(false);
+  const handleMediaReady = (file: File) => {
+    if (onImportFile) {
+      onImportFile(file);
+    } else {
+      onStartEditing();
+    }
+  };
 
   return (
     <main className="landing gothic-landing">
@@ -669,6 +684,12 @@ export default function LandingPage({
           </a>
 
           <div className="gothic-nav-actions">
+            <button
+              className="text-button gothic-nav-btn-ghost"
+              onClick={() => setImporterOpen(true)}
+            >
+              <Youtube size={15} style={{ marginRight: 6 }} /> Import YouTube
+            </button>
             <button className="text-button gothic-nav-btn-ghost" onClick={onOpenProject}>
               Open project
             </button>
@@ -714,6 +735,16 @@ export default function LandingPage({
                   <Play size={13} fill="currentColor" />
                 </span>
                 Try a sample project
+              </button>
+
+              <button
+                className="demo-button gothic-cta-import"
+                onClick={() => setImporterOpen(true)}
+              >
+                <span className="gothic-demo-icon-ring import-icon-ring">
+                  <Youtube size={13} />
+                </span>
+                Import YouTube / Audio
               </button>
             </div>
 
@@ -997,6 +1028,13 @@ export default function LandingPage({
           </div>
         </footer>
       </div>
+
+      {/* Media & Remote YouTube Importer Modal */}
+      <MediaImporterModal
+        isOpen={importerOpen}
+        onClose={() => setImporterOpen(false)}
+        onMediaReady={handleMediaReady}
+      />
     </main>
   );
 }

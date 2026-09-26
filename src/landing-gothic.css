@@ -1606,9 +1606,51 @@
   }
 
   .landing.gothic-landing .dark-button.large.gothic-cta-primary,
-  .landing.gothic-landing .demo-button.gothic-cta-demo {
+  .landing.gothic-landing .demo-button.gothic-cta-demo,
+  .landing.gothic-landing .demo-button.gothic-cta-import {
     justify-content: center;
     width: 100%;
     box-sizing: border-box;
   }
 }
+
+/* ==========================================================================
+   YOUTUBE & MEDIA IMPORTER CTA BUTTON
+   ========================================================================== */
+.landing.gothic-landing .demo-button.gothic-cta-import {
+  background: rgba(14, 21, 33, 0.72) !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  color: #fef3c7 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 22px;
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14.5px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+.landing.gothic-landing .demo-button.gothic-cta-import:hover {
+  background: rgba(30, 41, 59, 0.9) !important;
+  border-color: #f59e0b !important;
+  color: #fff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(245, 158, 11, 0.3);
+}
+
+.landing.gothic-landing .import-icon-ring {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+}
+
+.landing.gothic-landing .demo-button.gothic-cta-import:hover .import-icon-ring {
+  background: #f59e0b !important;
+  color: #06080d !important;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.85);
+}
+
