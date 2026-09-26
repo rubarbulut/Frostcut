@@ -1,0 +1,603 @@
+export type Preset = 'YouTube Shorts' | 'TikTok' | 'Instagram Reel' | 'YouTube' | 'Custom';
+export type CaptionPreset = 'Clean' | 'Bold' | 'Brainrot';
+export type CaptionAppearance = {
+  size: number;
+  color: string;
+  accent: string;
+  speakerColors: boolean;
+  outlineColor: string;
+  outline: number;
+  bold: boolean;
+  margin: number;
+};
+export type CaptionStyle = {
+  preset: CaptionPreset;
+  intensity: number;
+  wordsPerCaption: number;
+  position: 'bottom' | 'center' | 'top';
+  appearance?: CaptionAppearance;
+};
+export type Word = {
+  id: string;
+  text: string;
+  start: number;
+  end: number;
+  speakerId: string;
+  important?: boolean;
+  confidence?: number;
+  cueId?: string;
+  timingEstimated?: boolean;
+};
+export type Transcript = {
+  mediaId: string;
+  language: string;
+  source: 'local' | 'demo' | 'imported';
+  words: Word[];
+  model?: string;
+};
+export type MediaAsset = {
+  id: string;
+  name: string;
+  duration: number;
+  width: number;
+  height: number;
+  size: number;
+  type: string;
+  demo?: boolean;
+};
+export type ClipProps = {
+  x: number;
+  y: number;
+  scale: number;
+  rotation: number;
+  opacity: number;
+  volume: number;
+  speed: number;
+  fadeIn: number;
+  fadeOut: number;
+  crop: number;
+  animation: string;
+};
+export type Clip = {
+  id: string;
+  mediaId: string;
+  trackId: string;
+  start: number;
+  sourceStart: number;
+  sourceEnd: number;
+  properties: ClipProps;
+  groupId?: string;
+  aiReason?: string;
+  /** Source-time caption overrides belonging only to this timeline instance. */
+  captionWords?: Word[];
+};
+export type Track = {
+  id: string;
+  name: string;
+  kind: 'video' | 'audio';
+  locked: boolean;
+  muted: boolean;
+  hidden: boolean;
+  height: number;
+};
+export type Operation =
+  | { type: 'delete-range'; start: number; end: number; ripple?: boolean }
+  | { type: 'keep-range'; start: number; end: number }
+  | { type: 'assemble'; ranges: { start: number; end: number }[] }
+  | { type: 'speed-range'; start: number; speed: number }
+  | { type: 'split'; clipId: string; time: number }
+  | { type: 'move'; clipId: string; start: number; trackId?: string }
+  | { type: 'trim'; clipId: string; sourceStart: number; sourceEnd: number }
+  | { type: 'caption-style'; preset: CaptionPreset }
+  | { type: 'speed'; clipId: string; speed: number };
+export type Suggestion = {
+  id: string;
+  type: 'highlight' | 'silence' | 'repeat' | 'edit';
+  title: string;
+  reason: string;
+  start: number;
+  end: number;
+  score: number;
+  operations: Operation[];
+  status: 'pending' | 'applied' | 'dismissed';
+};
+export type Project = {
+  id: string;
+  version: 1;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  settings: {
+    preset: Preset;
+    width: number;
+    height: number;
+    fps: number;
+    language: string;
+    transcriptionQuality?: 'fast' | 'balanced' | 'detailed';
+  };
+  media: MediaAsset[];
+  tracks: Track[];
+  clips: Clip[];
+  transcripts: Transcript[];
+  speakers: { id: string; name: string; color: string }[];
+  captions: CaptionStyle & {
+    enabled: boolean;
+    preset: CaptionPreset;
+    intensity: number;
+    wordsPerCaption: number;
+    position: 'bottom' | 'center' | 'top';
+    emoji: 'None' | 'Low' | 'Medium' | 'High';
+    safeArea: boolean;
+    savedStyles?: { id: string; name: string; style: CaptionStyle }[];
+  };
+  suggestions: Suggestion[];
+  exportSettings: { width: number; height: number; fps: number; quality: number };
+};
+export const uid = () => crypto.randomUUID();
+export const presets: Preset[] = [
+  'YouTube Shorts',
+  'TikTok',
+  'Instagram Reel',
+  'YouTube',
+  'Custom',
+];
+export const languages = [
+  'Auto Detect',
+  'English',
+  'Spanish',
+  'Portuguese',
+  'French',
+  'German',
+  'Turkish',
+  'Polish',
+];
+export const defaultProps: ClipProps = {
+  x: 0,
+  y: 0,
+  scale: 1,
+  rotation: 0,
+  opacity: 1,
+  volume: 1,
+  speed: 1,
+  fadeIn: 0.015,
+  fadeOut: 0.015,
+  crop: 0,
+  animation: 'None',
+};
+export function createProject(
+  name = 'Untitled project',
+  preset: Preset = 'YouTube Shorts',
+  width?: number,
+  height?: number,
+): Project {
+  const w = width ?? (preset === 'YouTube' ? 1920 : 1080),
+    h = height ?? (preset === 'YouTube' ? 1080 : 1920);
+  return {
+    id: uid(),
+    version: 1,
+    name,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    settings: {
+      preset,
+      width: w,
+      height: h,
+      fps: 30,
+      language: 'Auto Detect',
+      transcriptionQuality: 'balanced',
+    },
+    media: [],
+    clips: [],
+    transcripts: [],
+    tracks: ['V3', 'V2', 'V1', 'A1', 'A2'].map((name) => ({
+      id: name,
+      name,
+      kind: name[0] === 'V' ? 'video' : 'audio',
+      locked: false,
+      muted: false,
+      hidden: false,
+      height: name[0] === 'V' ? 56 : 40,
+    })),
+    speakers: [
+      { id: 'speaker-1', name: 'Speaker 1', color: '#b9e9ff' },
+      { id: 'speaker-2', name: 'Speaker 2', color: '#ffd39c' },
+    ],
+    captions: {
+      enabled: true,
+      preset: 'Bold',
+      intensity: 50,
+      wordsPerCaption: 4,
+      position: 'bottom',
+      emoji: 'Low',
+      safeArea: false,
+    },
+    suggestions: [],
+    exportSettings: { width: w, height: h, fps: 30, quality: 75 },
+  };
+}
+export const clipDuration = (c: Clip) => (c.sourceEnd - c.sourceStart) / c.properties.speed;
+export const clipEnd = (c: Clip) => c.start + clipDuration(c);
+export const duration = (p: Project) => Math.max(0, ...p.clips.map(clipEnd));
+export const sortedClips = (p: Project) => [...p.clips].sort((a, b) => a.start - b.start);
+export const isLocked = (p: Project, c: Clip) =>
+  p.tracks.some((t) => (t.id === c.trackId || t.id === 'A1') && t.locked);
+export const timecode = (t: number, decimals = false) => {
+  const seconds = Number.isFinite(t) ? Math.max(0, t) : 0;
+  const ticks = decimals ? Math.round(seconds * 100) : Math.floor(seconds) * 100;
+  return `${Math.floor(ticks / 6000)
+    .toString()
+    .padStart(
+      2,
+      '0',
+    )}:${(Math.floor(ticks / 100) % 60).toString().padStart(2, '0')}${decimals ? '.' + (ticks % 100).toString().padStart(2, '0') : ''}`;
+};
+export function addMedia(p: Project, asset: MediaAsset): Project {
+  const next = structuredClone(p);
+  next.media.push(asset);
+  next.clips.push({
+    id: uid(),
+    mediaId: asset.id,
+    trackId: 'V1',
+    start: duration(p),
+    sourceStart: 0,
+    sourceEnd: asset.duration,
+    properties: { ...defaultProps },
+  });
+  return next;
+}
+export function splitClip(p: Project, id: string, time: number): Project {
+  const next = structuredClone(p),
+    c = next.clips.find((c) => c.id === id);
+  if (!c || isLocked(p, c) || time <= c.start + 0.02 || time >= clipEnd(c) - 0.02) return p;
+  const sourceTime = c.sourceStart + (time - c.start) * c.properties.speed;
+  next.clips.push({ ...structuredClone(c), id: uid(), start: time, sourceStart: sourceTime });
+  c.sourceEnd = sourceTime;
+  return next;
+}
+export function deleteRange(p: Project, start: number, end: number, ripple = true): Project {
+  if (end <= start) return p;
+  // Ripple editing a locked track would desynchronise it. Keep all tracks unchanged.
+  if (ripple && p.clips.some((c) => isLocked(p, c) && clipEnd(c) > start)) return p;
+  const next = structuredClone(p);
+  next.clips = [];
+  for (const c of p.clips) {
+    if (isLocked(p, c)) {
+      next.clips.push(structuredClone(c));
+      continue;
+    }
+    const finish = clipEnd(c),
+      speed = c.properties.speed;
+    if (finish <= start || c.start >= end) {
+      next.clips.push({
+        ...structuredClone(c),
+        start: c.start >= end && ripple ? c.start - (end - start) : c.start,
+      });
+      continue;
+    }
+    if (c.start < start)
+      next.clips.push({
+        ...structuredClone(c),
+        sourceEnd: c.sourceStart + (start - c.start) * speed,
+      });
+    if (finish > end)
+      next.clips.push({
+        ...structuredClone(c),
+        id: c.start < start ? uid() : c.id,
+        start: ripple ? Math.max(start, c.start) : end,
+        sourceStart: c.sourceStart + (end - c.start) * speed,
+      });
+  }
+  return next;
+}
+export function applyOperations(project: Project, ops: Operation[], reason?: string): Project {
+  let p = structuredClone(project);
+  for (const op of ops) {
+    if (op.type === 'delete-range') p = deleteRange(p, op.start, op.end, op.ripple ?? true);
+    if (op.type === 'keep-range') {
+      p = deleteRange(p, op.end, duration(p));
+      p = deleteRange(p, 0, op.start);
+    }
+    if (op.type === 'assemble' && !p.clips.some((c) => isLocked(p, c))) {
+      const source = p.clips;
+      p.clips = [];
+      let cursor = 0;
+      for (const range of op.ranges) {
+        if (range.end <= range.start) continue;
+        for (const c of source) {
+          const start = Math.max(range.start, c.start),
+            end = Math.min(range.end, clipEnd(c));
+          if (end <= start) continue;
+          p.clips.push({
+            ...structuredClone(c),
+            id: uid(),
+            start: cursor + start - range.start,
+            sourceStart: c.sourceStart + (start - c.start) * c.properties.speed,
+            sourceEnd: c.sourceStart + (end - c.start) * c.properties.speed,
+          });
+        }
+        cursor += range.end - range.start;
+      }
+    }
+    if (op.type === 'speed-range' && !p.clips.some((c) => isLocked(p, c))) {
+      for (const c of [...p.clips])
+        if (c.start < op.start && clipEnd(c) > op.start) p = splitClip(p, c.id, op.start);
+      const factor = Math.max(0.25, Math.min(4, op.speed));
+      for (const c of p.clips) {
+        if (c.start >= op.start - 0.001) {
+          c.start = op.start + (c.start - op.start) / factor;
+          c.properties.speed = Math.max(0.25, Math.min(4, c.properties.speed * factor));
+        }
+      }
+    }
+    if (op.type === 'split') p = splitClip(p, op.clipId, op.time);
+    if (op.type === 'caption-style')
+      p.captions = { ...p.captions, enabled: true, preset: op.preset };
+    if (op.type === 'move' || op.type === 'trim' || op.type === 'speed') {
+      const c = p.clips.find((c) => c.id === op.clipId);
+      if (!c || isLocked(p, c)) continue;
+      if (op.type === 'move') {
+        if (op.trackId && p.tracks.some((t) => t.id === op.trackId && t.locked)) continue;
+        c.start = Math.max(0, op.start);
+        if (op.trackId) c.trackId = op.trackId;
+      }
+      if (op.type === 'trim') {
+        const m = p.media.find((m) => m.id === c.mediaId)!;
+        c.sourceStart = Math.max(0, Math.min(op.sourceStart, m.duration - 0.05));
+        c.sourceEnd = Math.max(c.sourceStart + 0.05, Math.min(op.sourceEnd, m.duration));
+      }
+      if (op.type === 'speed') c.properties.speed = Math.max(0.25, Math.min(4, op.speed));
+    }
+  }
+  if (reason)
+    p.clips.forEach((c) => {
+      c.aiReason = reason;
+    });
+  return p;
+}
+export type TimelineWord = Word & {
+  timelineStart: number;
+  timelineEnd: number;
+  clipId: string;
+  mediaId: string;
+};
+export function timelineWords(p: Project): TimelineWord[] {
+  return sortedClips(p)
+    .filter((c) => !p.tracks.find((t) => t.id === c.trackId)?.hidden)
+    .flatMap((c) =>
+      (c.captionWords ?? p.transcripts.find((t) => t.mediaId === c.mediaId)?.words ?? [])
+        .filter((w) => w.end > c.sourceStart && w.start < c.sourceEnd)
+        .map((w) => ({
+          ...w,
+          clipId: c.id,
+          mediaId: c.mediaId,
+          timelineStart:
+            c.start + (Math.max(w.start, c.sourceStart) - c.sourceStart) / c.properties.speed,
+          timelineEnd:
+            c.start + (Math.min(w.end, c.sourceEnd) - c.sourceStart) / c.properties.speed,
+        })),
+    )
+    .sort((a, b) => a.timelineStart - b.timelineStart);
+}
+export function captionGroups(p: Project) {
+  const words = timelineWords(p),
+    groups: TimelineWord[][] = [];
+  for (const w of words) {
+    const g = groups.at(-1);
+    if (
+      !g ||
+      g.length >= p.captions.wordsPerCaption ||
+      g.at(-1)!.timelineEnd + 0.7 < w.timelineStart ||
+      g[0].clipId !== w.clipId ||
+      g[0].speakerId !== w.speakerId ||
+      g[0].cueId !== w.cueId ||
+      /[.!?]$/.test(g.at(-1)!.text)
+    )
+      groups.push([w]);
+    else g.push(w);
+  }
+  return groups;
+}
+export function captionAt(p: Project, time: number) {
+  return p.captions.enabled
+    ? captionGroups(p).find((g) => time >= g[0].timelineStart && time < g.at(-1)!.timelineEnd)
+    : undefined;
+}
+export function validateProject(value: unknown): Project {
+  // A file is untrusted input: validate the full nested model before loading it.
+  const p = value as Project;
+  const fail = () => {
+    throw new Error('This is not a valid FrostCut v1 project.');
+  };
+  const finite = (v: unknown, low = 0, high = 86400) =>
+    typeof v === 'number' && Number.isFinite(v) && v >= low && v <= high;
+  const string = (v: unknown) => typeof v === 'string' && v.length < 100000;
+  try {
+    if (
+      !p ||
+      p.version !== 1 ||
+      !string(p.id) ||
+      !string(p.name) ||
+      !string(p.createdAt) ||
+      !string(p.updatedAt)
+    )
+      fail();
+    if (
+      !presets.includes(p.settings.preset) ||
+      !finite(p.settings.width, 16, 7680) ||
+      !finite(p.settings.height, 16, 7680) ||
+      !finite(p.settings.fps, 1, 60) ||
+      !string(p.settings.language)
+    )
+      fail();
+    if (
+      !Array.isArray(p.media) ||
+      !Array.isArray(p.clips) ||
+      !Array.isArray(p.tracks) ||
+      !Array.isArray(p.transcripts) ||
+      !Array.isArray(p.speakers) ||
+      !Array.isArray(p.suggestions)
+    )
+      fail();
+    if (p.media.length > 500 || p.clips.length > 10000) fail();
+    if (
+      p.settings.transcriptionQuality !== undefined &&
+      !['fast', 'balanced', 'detailed'].includes(p.settings.transcriptionQuality)
+    )
+      fail();
+    const validateWords = (words: Word[], maxDuration: number) => {
+      if (!Array.isArray(words) || words.length > 200000) fail();
+      for (const w of words)
+        if (
+          !string(w.id) ||
+          !string(w.text) ||
+          !string(w.speakerId) ||
+          !finite(w.start, 0, maxDuration) ||
+          !finite(w.end, w.start, maxDuration + 0.1) ||
+          (w.cueId !== undefined && !string(w.cueId)) ||
+          (w.timingEstimated !== undefined && typeof w.timingEstimated !== 'boolean')
+        )
+          fail();
+    };
+    for (const m of p.media)
+      if (
+        !string(m.id) ||
+        !string(m.name) ||
+        !finite(m.duration, 0.01) ||
+        !finite(m.width, 1, 16384) ||
+        !finite(m.height, 1, 16384) ||
+        !finite(m.size, 0, 1e12) ||
+        !string(m.type)
+      )
+        fail();
+    for (const t of p.tracks)
+      if (
+        !string(t.id) ||
+        !string(t.name) ||
+        !['video', 'audio'].includes(t.kind) ||
+        !finite(t.height, 28, 200) ||
+        ['locked', 'muted', 'hidden'].some((k) => typeof t[k as keyof Track] !== 'boolean')
+      )
+        fail();
+    for (const c of p.clips) {
+      const m = p.media.find((m) => m.id === c.mediaId);
+      if (
+        !m ||
+        !string(c.id) ||
+        !p.tracks.some((t) => t.id === c.trackId && t.kind === 'video') ||
+        !finite(c.start) ||
+        !finite(c.sourceStart) ||
+        !finite(c.sourceEnd, c.sourceStart + 0.001, m.duration + 0.1)
+      )
+        fail();
+      if (c.captionWords !== undefined) validateWords(c.captionWords, m!.duration);
+      for (const k of [
+        'x',
+        'y',
+        'scale',
+        'rotation',
+        'opacity',
+        'volume',
+        'speed',
+        'fadeIn',
+        'fadeOut',
+        'crop',
+      ] as const)
+        if (
+          !finite(c.properties[k], k === 'x' || k === 'y' || k === 'rotation' ? -10000 : 0, 10000)
+        )
+          fail();
+      if (
+        !finite(c.properties.speed, 0.25, 4) ||
+        !finite(c.properties.scale, 0.1, 5) ||
+        !finite(c.properties.opacity, 0, 1) ||
+        !finite(c.properties.volume, 0, 2) ||
+        !finite(c.properties.crop, 0, 45) ||
+        ![
+          'None',
+          'Punch In',
+          'Punch Out',
+          'Smooth Zoom',
+          'Bounce',
+          'Slide Left',
+          'Slide Right',
+          'Shake',
+        ].includes(c.properties.animation)
+      )
+        fail();
+    }
+    for (const t of p.transcripts) {
+      if (
+        !p.media.some((m) => m.id === t.mediaId) ||
+        !string(t.language) ||
+        !['local', 'demo', 'imported'].includes(t.source) ||
+        !Array.isArray(t.words) ||
+        t.words.length > 200000
+      )
+        fail();
+      validateWords(t.words, 86400);
+      if (t.model !== undefined && !string(t.model)) fail();
+    }
+    for (const s of p.speakers)
+      if (!string(s.id) || !string(s.name) || !/^#[0-9a-f]{6}$/i.test(s.color)) fail();
+    function validateStyle(style: CaptionStyle) {
+      if (
+        !['Clean', 'Bold', 'Brainrot'].includes(style.preset) ||
+        !finite(style.intensity, 0, 100) ||
+        !Number.isInteger(style.wordsPerCaption) ||
+        !finite(style.wordsPerCaption, 1, 8) ||
+        !['bottom', 'center', 'top'].includes(style.position)
+      )
+        fail();
+      const a = style.appearance;
+      if (
+        a !== undefined &&
+        (!finite(a.size, 3, 10) ||
+          !finite(a.outline, 0, 8) ||
+          !finite(a.margin, 5, 35) ||
+          typeof a.bold !== 'boolean' ||
+          typeof a.speakerColors !== 'boolean' ||
+          [a.color, a.accent, a.outlineColor].some((c) => !/^#[0-9a-f]{6}$/i.test(c)))
+      )
+        fail();
+    }
+    validateStyle(p.captions);
+    if (p.captions.savedStyles !== undefined) {
+      if (!Array.isArray(p.captions.savedStyles) || p.captions.savedStyles.length > 20) fail();
+      for (const saved of p.captions.savedStyles) {
+        if (
+          !string(saved.id) ||
+          !string(saved.name) ||
+          !saved.name.trim() ||
+          saved.name.length > 40
+        )
+          fail();
+        validateStyle(saved.style);
+      }
+      if (new Set(p.captions.savedStyles.map((s) => s.id)).size !== p.captions.savedStyles.length)
+        fail();
+    }
+    if (
+      !['None', 'Low', 'Medium', 'High'].includes(p.captions.emoji) ||
+      typeof p.captions.enabled !== 'boolean' ||
+      typeof p.captions.safeArea !== 'boolean'
+    )
+      fail();
+    if (
+      !finite(p.exportSettings.width, 16, 3840) ||
+      !finite(p.exportSettings.height, 16, 3840) ||
+      !finite(p.exportSettings.fps, 1, 60) ||
+      !finite(p.exportSettings.quality, 1, 100)
+    )
+      fail();
+    // Suggestions are regenerated from the validated timeline; never trust imported operations.
+    p.suggestions = [];
+    if (
+      new Set(p.media.map((m) => m.id)).size !== p.media.length ||
+      new Set(p.clips.map((c) => c.id)).size !== p.clips.length
+    )
+      fail();
+    return p;
+  } catch {
+    return fail() as never;
+  }
+}

@@ -1,0 +1,1357 @@
+/* ==========================================================================
+   FROSTCUT — GOTHIC WINTER LANDING (GLACIAL SANCTUARY)
+   Atmosphere: Dark Obsidian, Frosted Glass, Bioluminescent Ice, Sacred Geometry
+   ========================================================================== */
+
+:root {
+  --goth-bg: #05080e;
+  --goth-bg-surface: #090e17;
+  --goth-bg-glass: rgba(9, 14, 23, 0.78);
+  --goth-bg-card: rgba(13, 20, 32, 0.7);
+
+  --ice-100: #f0f9ff;
+  --ice-200: #e0f2fe;
+  --ice-300: #bae6fd;
+  --ice-400: #7dd3fc;
+  --ice-500: #38bdf8;
+  --ice-cyan: #67e8f9;
+
+  --silver-glow: #e2e8f0;
+  --goth-border: rgba(125, 211, 252, 0.16);
+  --goth-border-hover: rgba(125, 211, 252, 0.45);
+  --goth-border-subtle: rgba(255, 255, 255, 0.08);
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-frost: #a5f3fc;
+
+  --font-gothic: 'Cinzel', 'Times New Roman', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', Noto, system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* Hard override of base landing to ensure dark obsidian theme prevails */
+.landing.gothic-landing {
+  min-height: 100dvh !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  background-color: var(--goth-bg) !important;
+  background-image:
+    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(28, 55, 84, 0.45), transparent 70%),
+    radial-gradient(ellipse 70% 40% at 85% 35%, rgba(14, 116, 144, 0.22), transparent 60%),
+    radial-gradient(circle at 10% 60%, rgba(30, 41, 59, 0.35), transparent 50%),
+    linear-gradient(180deg, #05080e 0%, #070c14 40%, #04060a 100%) !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-sans) !important;
+  position: relative !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.landing.gothic-landing::before {
+  display: none !important;
+}
+
+/* Background interactive snow canvas */
+.gothic-snow-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Ambient glow & vignette layer */
+.gothic-ambient-veil {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: radial-gradient(circle at 50% 50%, transparent 60%, rgba(2, 4, 8, 0.8) 100%);
+  box-shadow: inset 0 0 160px rgba(1, 3, 6, 0.95);
+}
+
+/* Main Content Wrapper */
+.gothic-content-wrap {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+/* ==========================================================================
+   HEADER / NAVIGATION
+   ========================================================================== */
+.landing.gothic-landing .landing-nav.gothic-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 100% !important;
+  width: 100%;
+  margin: 0 auto;
+  padding: 18px 48px !important;
+  box-sizing: border-box;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  background: rgba(5, 8, 14, 0.75) !important;
+  border-bottom: 1px solid var(--goth-border-subtle);
+  transition: all 0.3s ease;
+}
+
+.gothic-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.gothic-brand-crest {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(15, 23, 42, 0.9));
+  border: 1px solid var(--goth-border);
+  border-radius: 9px;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
+  transition:
+    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.4s ease;
+}
+
+.gothic-brand:hover .gothic-brand-crest {
+  transform: rotate(45deg) scale(1.08);
+  box-shadow: 0 0 30px rgba(103, 232, 249, 0.5);
+  border-color: var(--ice-400);
+}
+
+.gothic-crest-icon {
+  color: var(--ice-300);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.gothic-brand:hover .gothic-crest-icon {
+  transform: rotate(-45deg);
+  color: #fff;
+}
+
+.gothic-brand-text {
+  font-family: var(--font-gothic);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: #fff;
+  text-transform: uppercase;
+  text-shadow: 0 0 24px rgba(125, 211, 252, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gothic-beta-tag {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: var(--ice-300);
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+}
+
+.gothic-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.landing.gothic-landing .text-button.gothic-nav-btn-ghost {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: var(--text-secondary) !important;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 9px 18px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.landing.gothic-landing .text-button.gothic-nav-btn-ghost:hover {
+  color: #fff !important;
+  border-color: var(--goth-border) !important;
+  background: rgba(125, 211, 252, 0.08) !important;
+}
+
+.landing.gothic-landing .dark-button.gothic-nav-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #101c2e, #0c1420) !important;
+  border: 1px solid var(--goth-border) !important;
+  color: #fff !important;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 9px 20px;
+  border-radius: 7px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.landing.gothic-landing .dark-button.gothic-nav-btn-primary:hover {
+  border-color: var(--ice-400) !important;
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.35) !important;
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   HERO SECTION
+   ========================================================================== */
+.landing.gothic-landing .hero.gothic-hero {
+  max-width: 1440px !important;
+  width: 100%;
+  margin: 36px auto 70px !important;
+  padding: 0 48px !important;
+  display: grid;
+  grid-template-columns: 1.08fr 1fr;
+  align-items: center;
+  gap: 56px;
+  min-height: auto !important;
+  box-sizing: border-box;
+}
+
+.gothic-hero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.landing.gothic-landing .eyebrow.gothic-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--ice-400) !important;
+  background: rgba(14, 116, 144, 0.16);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  padding: 6px 14px;
+  border-radius: 999px;
+  margin-bottom: 24px;
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+}
+
+.gothic-eyebrow-rune {
+  color: var(--ice-cyan);
+  font-size: 13px;
+  animation: pulseRune 2.5s infinite ease-in-out;
+}
+
+@keyframes pulseRune {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 6px var(--ice-cyan));
+  }
+}
+
+.landing.gothic-landing .hero h1 {
+  font-family: var(--font-gothic) !important;
+  font-size: 64px !important;
+  line-height: 1.08 !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.5px !important;
+  color: #fff !important;
+  margin: 0 0 24px !important;
+  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.7);
+}
+
+.gothic-frost-gradient {
+  background: linear-gradient(135deg, #a5f3fc 0%, #38bdf8 50%, #e0f2fe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  filter: drop-shadow(0 0 28px rgba(56, 189, 248, 0.45));
+}
+
+.gothic-hero-lead {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0 0 36px;
+  max-width: 540px;
+}
+
+.gothic-hero-lead span.lead-highlight {
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+/* Hero CTA group */
+.gothic-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+}
+
+.landing.gothic-landing .dark-button.large.gothic-cta-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #0e7490, #0369a1 40%, #0284c7 100%) !important;
+  border: 1px solid rgba(165, 243, 252, 0.35) !important;
+  color: #fff !important;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 14px 32px !important;
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 10px 30px rgba(2, 132, 199, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.landing.gothic-landing .dark-button.large.gothic-cta-primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 16px 40px rgba(14, 165, 233, 0.5),
+    0 0 30px rgba(103, 232, 249, 0.4) !important;
+  border-color: var(--ice-200) !important;
+}
+
+.landing.gothic-landing .demo-button.gothic-cta-demo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.75) !important;
+  border: 1px solid var(--goth-border) !important;
+  color: var(--ice-100) !important;
+  font-family: var(--font-sans);
+  font-size: 14.5px;
+  font-weight: 500;
+  padding: 14px 28px !important;
+  border-radius: 8px;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  transition: all 0.3s ease;
+}
+
+.landing.gothic-landing .demo-button.gothic-cta-demo > span.gothic-demo-icon-ring {
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.15) !important;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+  display: grid;
+  place-items: center;
+  color: var(--ice-cyan) !important;
+  transition: all 0.3s ease;
+}
+
+.landing.gothic-landing .demo-button.gothic-cta-demo:hover {
+  background: rgba(30, 41, 59, 0.85) !important;
+  border-color: var(--ice-400) !important;
+  color: #fff !important;
+  transform: translateY(-2px);
+}
+
+.landing.gothic-landing .demo-button.gothic-cta-demo:hover .gothic-demo-icon-ring {
+  background: var(--ice-500) !important;
+  color: #06080d !important;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.8);
+}
+
+/* Privacy & Resume lines */
+.landing.gothic-landing .privacy-line.gothic-privacy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--text-secondary) !important;
+  margin-top: 4px;
+}
+
+.landing.gothic-landing .privacy-line.gothic-privacy-badge svg {
+  color: var(--ice-400) !important;
+}
+
+.landing.gothic-landing .resume-button.gothic-resume-banner {
+  margin-top: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(14, 116, 144, 0.22), rgba(15, 23, 42, 0.85)) !important;
+  border: 1px solid rgba(56, 189, 248, 0.32) !important;
+  padding: 11px 20px !important;
+  border-radius: 8px;
+  color: var(--ice-200) !important;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.landing.gothic-landing .resume-button.gothic-resume-banner:hover {
+  border-color: var(--ice-400) !important;
+  background: linear-gradient(135deg, rgba(14, 116, 144, 0.4), rgba(30, 41, 59, 0.95)) !important;
+  box-shadow: 0 0 22px rgba(56, 189, 248, 0.3);
+  color: #fff !important;
+}
+
+/* ==========================================================================
+   THE OBSIDIAN MONOLITH — 3D INTERACTIVE EDITOR STAGE
+   ========================================================================== */
+.gothic-monolith-wrapper {
+  position: relative;
+  perspective: 1200px;
+  display: flex;
+  justify-content: center;
+}
+
+.gothic-monolith {
+  width: 100%;
+  max-width: 580px;
+  background: rgba(9, 14, 23, 0.88);
+  border: 1px solid var(--goth-border);
+  border-radius: 18px;
+  padding: 22px;
+  box-sizing: border-box;
+  box-shadow:
+    0 25px 60px -15px rgba(0, 0, 0, 0.9),
+    0 0 55px rgba(14, 116, 144, 0.28),
+    inset 0 1px 1px rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  transition:
+    transform 0.18s cubic-bezier(0.2, 0, 0.2, 1),
+    box-shadow 0.3s ease;
+  position: relative;
+  overflow: visible;
+}
+
+/* Subtle corner filigree/gothic accents */
+.gothic-monolith::before {
+  content: '✦';
+  position: absolute;
+  top: 10px;
+  left: 14px;
+  font-size: 10px;
+  color: var(--ice-400);
+  opacity: 0.6;
+}
+
+.gothic-monolith::after {
+  content: '✦';
+  position: absolute;
+  bottom: 10px;
+  right: 14px;
+  font-size: 10px;
+  color: var(--ice-400);
+  opacity: 0.6;
+}
+
+/* Monolith Top Bar */
+.monolith-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.monolith-brand-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-gothic);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--ice-200);
+}
+
+.monolith-brand-tag svg {
+  color: var(--ice-400);
+}
+
+.monolith-project-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.monolith-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+}
+
+/* Main Showcase Grid */
+.monolith-body {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+/* Left: Script of Shadows (Transcript & Silence Detection) */
+.landing.gothic-landing .mock-transcript.monolith-transcript-card {
+  background: rgba(14, 21, 33, 0.75) !important;
+  border: 1px solid rgba(125, 211, 252, 0.16) !important;
+  border-radius: 12px !important;
+  padding: 18px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  position: relative !important;
+}
+
+.landing.gothic-landing .mock-transcript span.monolith-card-tag {
+  font-family: var(--font-mono) !important;
+  font-size: 10px !important;
+  letter-spacing: 1.5px !important;
+  color: var(--ice-400) !important;
+  font-weight: 600 !important;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.landing.gothic-landing .mock-transcript p.monolith-transcript-text {
+  font-size: 15px !important;
+  line-height: 1.6 !important;
+  margin: 12px 0 20px !important;
+  color: #fff !important;
+}
+
+.landing.gothic-landing .mock-transcript p mark {
+  background: rgba(56, 189, 248, 0.22) !important;
+  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  color: var(--ice-cyan) !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.5) !important;
+}
+
+.landing.gothic-landing .mock-transcript div.monolith-silence-alert {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #34d399 !important;
+  background: rgba(16, 185, 129, 0.14) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  padding: 6px 12px !important;
+  border-radius: 6px !important;
+}
+
+/* Right: 9:16 Glacial Mobile Preview */
+.landing.gothic-landing .story-poster.monolith-screen-mock {
+  background: linear-gradient(180deg, #102135 0%, #09111c 100%) !important;
+  border: 1px solid rgba(125, 211, 252, 0.25) !important;
+  border-radius: 12px !important;
+  padding: 18px 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  min-height: 280px !important;
+  aspect-ratio: 9 / 16 !important;
+  position: relative !important;
+  overflow: hidden !important;
+  box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.7) !important;
+  color: #fff !important;
+}
+
+.screen-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 2px;
+  color: var(--ice-300);
+  opacity: 0.85;
+}
+
+.landing.gothic-landing .story-poster strong.screen-headline {
+  font-family: var(--font-gothic) !important;
+  font-size: 26px !important;
+  line-height: 1.15 !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.5px !important;
+  margin-top: 10px !important;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.8);
+}
+
+.landing.gothic-landing .story-poster strong em {
+  font-style: italic !important;
+  color: var(--ice-400) !important;
+}
+
+.landing.gothic-landing .poster-caption.screen-caption-bubble {
+  position: relative !important;
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
+  margin-top: auto !important;
+  background: rgba(5, 9, 16, 0.92) !important;
+  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  padding: 8px 12px !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  text-align: center !important;
+  color: #fff !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7) !important;
+  animation: captionGlow 3s infinite alternate;
+}
+
+.landing.gothic-landing .poster-caption mark {
+  background: rgba(56, 189, 248, 0.25) !important;
+  color: var(--ice-cyan) !important;
+  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+}
+
+@keyframes captionGlow {
+  0% {
+    border-color: rgba(56, 189, 248, 0.3);
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+  }
+  100% {
+    border-color: var(--ice-cyan);
+    box-shadow: 0 0 24px rgba(103, 232, 249, 0.5);
+  }
+}
+
+/* Toolbar & Waveform */
+.monolith-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(14, 21, 33, 0.55);
+  padding: 8px 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.monolith-timecode {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ice-300);
+}
+
+.monolith-timecode em {
+  color: var(--text-muted);
+  font-style: normal;
+}
+
+/* Icicle Audio Waveform Bars */
+.monolith-icicle-waveform {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 24px;
+  padding: 0 8px;
+}
+
+.icicle-bar {
+  width: 3px;
+  background: linear-gradient(180deg, var(--ice-cyan), var(--ice-500));
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+  animation: audioPulse 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes audioPulse {
+  0% {
+    transform: scaleY(0.3);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 1;
+    filter: drop-shadow(0 0 4px var(--ice-cyan));
+  }
+}
+
+/* Mock Timeline Track */
+.monolith-timeline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(7, 10, 16, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 10px;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.timeline-track-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ice-400);
+  padding-right: 6px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.timeline-clip-blocks {
+  display: flex;
+  gap: 5px;
+  flex: 1;
+}
+
+.clip-block {
+  height: 18px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(14, 116, 144, 0.4), rgba(3, 105, 161, 0.5));
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  flex: 1;
+  position: relative;
+}
+
+.clip-block.highlight {
+  background: linear-gradient(90deg, rgba(2, 132, 199, 0.6), rgba(56, 189, 248, 0.6));
+  border-color: var(--ice-300);
+}
+
+.timeline-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--ice-cyan);
+  box-shadow: 0 0 12px var(--ice-cyan);
+  left: 42%;
+  animation: playheadSweep 6s infinite linear;
+}
+
+@keyframes playheadSweep {
+  0% {
+    left: 15%;
+  }
+  100% {
+    left: 90%;
+  }
+}
+
+/* Floating AI Discovery Badge */
+.landing.gothic-landing .floating-discovery.gothic-floating-talisman {
+  position: absolute !important;
+  bottom: -22px !important;
+  right: -20px !important;
+  background: rgba(12, 18, 28, 0.95) !important;
+  border: 1px solid var(--ice-400) !important;
+  border-radius: 12px !important;
+  padding: 12px 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  box-shadow:
+    0 15px 35px rgba(0, 0, 0, 0.85),
+    0 0 25px rgba(56, 189, 248, 0.35) !important;
+  backdrop-filter: blur(16px);
+  animation: floatTalisman 4s infinite ease-in-out;
+  z-index: 10;
+}
+
+@keyframes floatTalisman {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.talisman-spark {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(14, 116, 144, 0.4));
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  display: grid;
+  place-items: center;
+  color: var(--ice-cyan);
+}
+
+.talisman-info b {
+  display: block;
+  font-size: 13px;
+  color: #fff;
+}
+
+.talisman-info span {
+  font-size: 11px;
+  color: var(--ice-300);
+}
+
+.talisman-check {
+  color: #34d399;
+  filter: drop-shadow(0 0 6px #34d399);
+}
+
+/* ==========================================================================
+   FEATURE GRIMOIRE — THE 3 PILLARS OF GOTHIC WINTER
+   ========================================================================== */
+.gothic-features-section {
+  max-width: 1440px;
+  width: 100%;
+  margin: 60px auto 90px;
+  padding: 0 48px;
+  box-sizing: border-box;
+}
+
+.gothic-section-header {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto 54px;
+}
+
+.gothic-section-header h2 {
+  font-family: var(--font-gothic) !important;
+  font-size: 38px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1.5px !important;
+  color: #fff !important;
+  margin: 0 0 16px !important;
+  text-shadow: 0 0 35px rgba(125, 211, 252, 0.35) !important;
+}
+
+.gothic-section-header p {
+  font-size: 16px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.gothic-pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+.gothic-pillar-card {
+  background: rgba(10, 15, 24, 0.7);
+  border: 1px solid var(--goth-border);
+  border-radius: 16px;
+  padding: 34px 28px;
+  box-sizing: border-box;
+  backdrop-filter: blur(16px);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+}
+
+.gothic-pillar-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.4), transparent);
+}
+
+.gothic-pillar-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--ice-400);
+  box-shadow:
+    0 20px 45px -15px rgba(0, 0, 0, 0.8),
+    0 0 35px rgba(14, 116, 144, 0.3);
+}
+
+.pillar-icon-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(15, 23, 42, 0.8));
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  display: grid;
+  place-items: center;
+  color: var(--ice-cyan);
+  margin-bottom: 24px;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+  transition: all 0.3s ease;
+}
+
+.gothic-pillar-card:hover .pillar-icon-box {
+  transform: scale(1.1);
+  border-color: var(--ice-cyan);
+  box-shadow: 0 0 28px rgba(103, 232, 249, 0.4);
+}
+
+.gothic-pillar-card h3 {
+  font-family: var(--font-gothic);
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 12px;
+  letter-spacing: 0.5px;
+}
+
+.gothic-pillar-card p {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0 0 20px;
+  flex: 1;
+}
+
+.pillar-micro-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ice-400);
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.85;
+}
+
+/* ==========================================================================
+   INTERACTIVE CAPTION FORGE (LIVE DEMO COMPONENT)
+   ========================================================================== */
+.gothic-caption-forge {
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto 90px;
+  padding: 0 48px;
+  box-sizing: border-box;
+}
+
+.forge-card {
+  background: linear-gradient(135deg, rgba(14, 21, 33, 0.85), rgba(8, 12, 18, 0.95));
+  border: 1px solid var(--goth-border);
+  border-radius: 20px;
+  padding: 44px;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 48px;
+  align-items: center;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
+}
+
+.forge-left h3 {
+  font-family: var(--font-gothic);
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 16px;
+}
+
+.forge-left p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0 0 28px;
+}
+
+.forge-preset-selector {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.preset-chip {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.preset-chip:hover {
+  border-color: var(--ice-400);
+  color: #fff;
+}
+
+.preset-chip.active {
+  background: linear-gradient(135deg, rgba(14, 116, 144, 0.35), rgba(3, 105, 161, 0.35));
+  border-color: var(--ice-cyan);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.35);
+}
+
+.forge-stage {
+  background: radial-gradient(circle at 50% 50%, #0d1e30, #04070d);
+  border: 1px solid rgba(125, 211, 252, 0.2);
+  border-radius: 14px;
+  padding: 48px 32px;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.8);
+}
+
+.forge-stage::before {
+  content: 'LIVE RENDER PREVIEW';
+  position: absolute;
+  top: 14px;
+  left: 18px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 1.5px;
+  color: var(--ice-400);
+  opacity: 0.6;
+}
+
+.forge-caption-display {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.3;
+  transition: all 0.3s ease;
+}
+
+/* Preset 1: Glacial Bold */
+.style-glacial {
+  font-family: var(--font-sans);
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.style-glacial mark {
+  background: transparent;
+  color: var(--ice-cyan);
+  text-shadow:
+    0 0 24px rgba(103, 232, 249, 0.8),
+    0 0 45px rgba(56, 189, 248, 0.5);
+}
+
+/* Preset 2: Gothic Monolith */
+.style-gothic {
+  font-family: var(--font-gothic);
+  color: #e2e8f0;
+  letter-spacing: 2px;
+  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
+}
+.style-gothic mark {
+  background: transparent;
+  color: #fff;
+  border-bottom: 2px solid var(--ice-cyan);
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+}
+
+/* Preset 3: Cyber Frost / Brainrot */
+.style-cyber {
+  font-family: var(--font-sans);
+  color: #facc15;
+  text-transform: uppercase;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  transform: rotate(-1deg);
+}
+.style-cyber mark {
+  background: #f43f5e;
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 6px;
+  box-shadow: 0 0 25px rgba(244, 63, 94, 0.7);
+  display: inline-block;
+  transform: scale(1.08) rotate(2deg);
+}
+
+/* ==========================================================================
+   THE WINTER FAMILIAR — COZY GOTHIC MASCOT
+   ========================================================================== */
+.gothic-familiar-section {
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto 90px;
+  padding: 0 48px;
+  box-sizing: border-box;
+}
+
+.familiar-card {
+  background: linear-gradient(135deg, rgba(14, 21, 33, 0.7), rgba(7, 11, 17, 0.88));
+  border: 1px solid var(--goth-border);
+  border-radius: 20px;
+  padding: 36px 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 36px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+}
+
+.familiar-left {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.familiar-cat-avatar {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border: 2px solid var(--ice-400);
+  box-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.familiar-cat-glow {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.35), transparent 70%);
+  animation: pulseRune 3s infinite ease-in-out;
+}
+
+.familiar-copy h4 {
+  font-family: var(--font-gothic);
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 6px;
+}
+
+.familiar-copy p {
+  font-size: 14.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+  max-width: 580px;
+}
+
+.familiar-cta-btn {
+  background: rgba(14, 116, 144, 0.25);
+  border: 1px solid var(--ice-400);
+  color: var(--ice-cyan);
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+.familiar-cta-btn:hover {
+  background: var(--ice-500);
+  color: #06080d;
+  box-shadow: 0 0 25px rgba(56, 189, 248, 0.6);
+}
+
+/* ==========================================================================
+   FOOTER (SACRED GOTHIC GEOMETRY & COMPATIBILITY)
+   ========================================================================== */
+.landing.gothic-landing .landing-footer.gothic-footer {
+  margin-top: auto !important;
+  border-top: 1px solid var(--goth-border-subtle) !important;
+  background: rgba(3, 5, 9, 0.95) !important;
+  backdrop-filter: blur(20px);
+  padding: 32px 48px !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  box-sizing: border-box;
+}
+
+.footer-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  width: 100%;
+}
+
+.footer-motto {
+  color: var(--ice-300);
+  font-weight: 500;
+}
+
+.landing.gothic-landing .landing-footer .footer-badges {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.footer-badge-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  transition: color 0.2s ease;
+}
+
+.footer-badge-item svg {
+  color: var(--ice-400);
+}
+
+.footer-badge-item:hover {
+  color: #fff;
+}
+
+.footer-tagline {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--ice-cyan);
+  opacity: 0.8;
+}
+
+/* ==========================================================================
+   RESPONSIVE CRAFTSMANSHIP (NO HORIZONTAL OVERFLOW AT 390px)
+   ========================================================================== */
+@media (max-width: 1100px) {
+  .landing.gothic-landing .hero.gothic-hero {
+    grid-template-columns: 1fr;
+    gap: 48px;
+    margin-top: 24px !important;
+  }
+
+  .gothic-monolith {
+    max-width: 100%;
+  }
+
+  .gothic-pillars-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .forge-card {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .familiar-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .landing.gothic-landing .landing-nav.gothic-nav {
+    padding: 16px 20px !important;
+  }
+
+  .landing.gothic-landing .hero.gothic-hero {
+    padding: 0 20px !important;
+    margin: 20px auto 48px !important;
+  }
+
+  .landing.gothic-landing .hero h1 {
+    font-size: 40px !important;
+  }
+
+  .gothic-hero-lead {
+    font-size: 15px;
+  }
+
+  .monolith-body {
+    grid-template-columns: 1fr;
+  }
+
+  .landing.gothic-landing .floating-discovery.gothic-floating-talisman {
+    position: static !important;
+    margin-top: 14px !important;
+  }
+
+  .gothic-features-section,
+  .gothic-caption-forge,
+  .gothic-familiar-section {
+    padding: 0 20px;
+    margin-bottom: 60px;
+  }
+
+  .forge-card {
+    padding: 24px;
+  }
+
+  .footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+  }
+
+  .landing.gothic-landing .landing-footer .footer-badges {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .landing.gothic-landing .text-button.gothic-nav-btn-ghost {
+    display: none !important;
+  }
+
+  .gothic-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .landing.gothic-landing .dark-button.large.gothic-cta-primary,
+  .landing.gothic-landing .demo-button.gothic-cta-demo {
+    justify-content: center;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
