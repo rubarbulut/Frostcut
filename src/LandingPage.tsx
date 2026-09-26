@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import {
   Snowflake,
   ArrowRight,
@@ -13,8 +13,7 @@ import {
   Zap,
   Lock,
   Type,
-  Heart,
-  Volume2,
+  Flame,
 } from 'lucide-react';
 import type { Project } from './model';
 import './landing-gothic.css';
@@ -27,8 +26,8 @@ interface LandingPageProps {
   resumeProject?: Project;
 }
 
-// ❄️ Interactive Canvas: Procedural Snow & Rolling Cold Mist
-function GothicSnowCanvas() {
+// 🌌 Canvas Engine: Aurora Borealis, Gothic Castle Silhouette, Rolling Mist & Snow
+function GothicAtmosphereCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -59,7 +58,7 @@ function GothicSnowCanvas() {
       phase: number;
     }
 
-    const flakesCount = Math.min(90, Math.floor(window.innerWidth / 15));
+    const flakesCount = Math.min(85, Math.floor(window.innerWidth / 16));
     const flakes: Flake[] = [];
 
     for (let i = 0; i < flakesCount; i++) {
@@ -82,12 +81,162 @@ function GothicSnowCanvas() {
     };
     window.addEventListener('mousemove', onMouseMove);
 
+    // Precalculate Gothic Castle Silhouette coordinates relative to width/height
+    const drawCastleSilhouette = (cWidth: number, cHeight: number) => {
+      const baseY = Math.min(cHeight * 0.62, cHeight - 260);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(0, cHeight);
+      ctx.lineTo(0, baseY + 60);
+
+      // Distant jagged mountains & fortress spires
+      ctx.lineTo(cWidth * 0.05, baseY + 30);
+      ctx.lineTo(cWidth * 0.08, baseY - 20); // Spire 1
+      ctx.lineTo(cWidth * 0.1, baseY + 25);
+      ctx.lineTo(cWidth * 0.14, baseY + 20);
+
+      // Cathedral Spire Left
+      ctx.lineTo(cWidth * 0.17, baseY - 80); // High spire
+      ctx.lineTo(cWidth * 0.18, baseY - 120); // Cross tip
+      ctx.lineTo(cWidth * 0.19, baseY - 80);
+      ctx.lineTo(cWidth * 0.22, baseY + 10);
+
+      // Castle Wall & Flying Buttresses
+      ctx.lineTo(cWidth * 0.26, baseY - 10);
+      ctx.lineTo(cWidth * 0.28, baseY - 50); // Turret
+      ctx.lineTo(cWidth * 0.3, baseY - 15);
+      ctx.lineTo(cWidth * 0.35, baseY);
+
+      // Central Grand Gothic Spire
+      ctx.lineTo(cWidth * 0.44, baseY - 30);
+      ctx.lineTo(cWidth * 0.47, baseY - 140); // Grand needle
+      ctx.lineTo(cWidth * 0.48, baseY - 170); // Finial
+      ctx.lineTo(cWidth * 0.49, baseY - 140);
+      ctx.lineTo(cWidth * 0.52, baseY - 20);
+
+      // Cathedral Nave & Roof Ridge
+      ctx.lineTo(cWidth * 0.58, baseY - 35);
+      ctx.lineTo(cWidth * 0.62, baseY - 65); // Clock / Bell Tower
+      ctx.lineTo(cWidth * 0.64, baseY - 110); // Bell spire
+      ctx.lineTo(cWidth * 0.65, baseY - 65);
+      ctx.lineTo(cWidth * 0.7, baseY - 10);
+
+      // Right Fortress Bastion
+      ctx.lineTo(cWidth * 0.75, baseY + 15);
+      ctx.lineTo(cWidth * 0.79, baseY - 70); // Watchtower
+      ctx.lineTo(cWidth * 0.81, baseY - 30);
+      ctx.lineTo(cWidth * 0.86, baseY + 10);
+      ctx.lineTo(cWidth * 0.9, baseY - 45); // East spire
+      ctx.lineTo(cWidth * 0.92, baseY + 20);
+      ctx.lineTo(cWidth, baseY + 50);
+      ctx.lineTo(cWidth, cHeight);
+      ctx.closePath();
+
+      // Deep obsidian gradient fill
+      const castleGrad = ctx.createLinearGradient(0, baseY - 180, 0, cHeight);
+      castleGrad.addColorStop(0, 'rgba(8, 14, 24, 0.45)');
+      castleGrad.addColorStop(0.4, 'rgba(5, 8, 14, 0.75)');
+      castleGrad.addColorStop(1, 'rgba(2, 4, 8, 0.95)');
+      ctx.fillStyle = castleGrad;
+      ctx.fill();
+
+      // Delicate Candlelit Amber Lancet Windows
+      const drawWindow = (wx: number, wy: number, ww: number, wh: number) => {
+        ctx.save();
+        ctx.fillStyle = 'rgba(251, 191, 36, 0.75)';
+        ctx.shadowColor = '#f59e0b';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.ellipse(wx, wy, ww, wh, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      };
+
+      drawWindow(cWidth * 0.18, baseY - 40, 2, 6);
+      drawWindow(cWidth * 0.48, baseY - 75, 2.5, 8);
+      drawWindow(cWidth * 0.48, baseY - 45, 2.5, 7);
+      drawWindow(cWidth * 0.635, baseY - 40, 2.5, 7);
+      drawWindow(cWidth * 0.795, baseY - 35, 2, 5);
+
+      ctx.restore();
+    };
+
     let frame = 0;
     const render = () => {
       frame++;
       ctx.clearRect(0, 0, width, height);
 
-      // 1. Rolling Cold Mist Layers along bottom & edges
+      // 1. 🌌 Aurora Borealis (Waving Ribbons of Northern Light)
+      ctx.save();
+      const wave1 = Math.sin(frame * 0.007) * 35;
+      const wave2 = Math.cos(frame * 0.009) * 45;
+
+      // Aurora 1: Ethereal Emerald / Teal Ribbon
+      const auroraGrad1 = ctx.createLinearGradient(0, 0, width, height * 0.45);
+      auroraGrad1.addColorStop(0, 'transparent');
+      auroraGrad1.addColorStop(0.3, 'rgba(45, 212, 191, 0.08)');
+      auroraGrad1.addColorStop(0.6, 'rgba(20, 184, 166, 0.04)');
+      auroraGrad1.addColorStop(1, 'transparent');
+
+      ctx.beginPath();
+      ctx.moveTo(0, height * 0.12 + wave1);
+      ctx.bezierCurveTo(
+        width * 0.3,
+        height * 0.05 + wave2,
+        width * 0.7,
+        height * 0.28 + wave1,
+        width,
+        height * 0.15 + wave2,
+      );
+      ctx.lineTo(width, height * 0.4);
+      ctx.bezierCurveTo(
+        width * 0.7,
+        height * 0.45 + wave1,
+        width * 0.3,
+        height * 0.2 + wave2,
+        0,
+        height * 0.3 + wave1,
+      );
+      ctx.closePath();
+      ctx.fillStyle = auroraGrad1;
+      ctx.fill();
+
+      // Aurora 2: Glacial Cyan & Soft Twilight Violet
+      const auroraGrad2 = ctx.createLinearGradient(width, 0, 0, height * 0.5);
+      auroraGrad2.addColorStop(0, 'transparent');
+      auroraGrad2.addColorStop(0.4, 'rgba(56, 189, 248, 0.09)');
+      auroraGrad2.addColorStop(0.7, 'rgba(168, 85, 247, 0.05)');
+      auroraGrad2.addColorStop(1, 'transparent');
+
+      ctx.beginPath();
+      ctx.moveTo(0, height * 0.22 - wave2);
+      ctx.bezierCurveTo(
+        width * 0.35,
+        height * 0.35 + wave1,
+        width * 0.65,
+        height * 0.12 - wave2,
+        width,
+        height * 0.25 + wave1,
+      );
+      ctx.lineTo(width, height * 0.48);
+      ctx.bezierCurveTo(
+        width * 0.65,
+        height * 0.3 - wave2,
+        width * 0.35,
+        height * 0.5 + wave1,
+        0,
+        height * 0.38 - wave2,
+      );
+      ctx.closePath();
+      ctx.fillStyle = auroraGrad2;
+      ctx.fill();
+      ctx.restore();
+
+      // 2. 🏰 Gothic Castle Silhouette
+      drawCastleSilhouette(width, height);
+
+      // 3. 🌫️ Rolling Cold Winter Mist
       const mistX1 = ((frame * 0.35) % (width + 600)) - 300;
       const grad1 = ctx.createRadialGradient(
         mistX1,
@@ -97,7 +246,7 @@ function GothicSnowCanvas() {
         height - 60,
         Math.min(550, width * 0.6),
       );
-      grad1.addColorStop(0, 'rgba(14, 116, 144, 0.09)');
+      grad1.addColorStop(0, 'rgba(14, 116, 144, 0.1)');
       grad1.addColorStop(0.6, 'rgba(6, 78, 110, 0.03)');
       grad1.addColorStop(1, 'transparent');
       ctx.fillStyle = grad1;
@@ -112,19 +261,19 @@ function GothicSnowCanvas() {
         height - 120,
         Math.min(600, width * 0.7),
       );
-      grad2.addColorStop(0, 'rgba(56, 189, 248, 0.06)');
+      grad2.addColorStop(0, 'rgba(56, 189, 248, 0.07)');
       grad2.addColorStop(0.7, 'rgba(15, 23, 42, 0.02)');
       grad2.addColorStop(1, 'transparent');
       ctx.fillStyle = grad2;
       ctx.fillRect(0, height - 420, width, 420);
 
-      // 2. Snow & Ice Crystals
+      // 4. ❄️ Falling Snow Crystals with Mouse Deflection
       for (let i = 0; i < flakes.length; i++) {
         const f = flakes[i];
         f.y += f.speedY;
         f.x += f.speedX + Math.sin(frame * 0.015 + f.phase) * 0.25;
 
-        // Subtle mouse deflection (snow parts around cursor)
+        // Snow parts smoothly around cursor
         const dx = f.x - mouseX;
         const dy = f.y - mouseY;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -164,176 +313,281 @@ function GothicSnowCanvas() {
   return <canvas ref={canvasRef} className="gothic-snow-canvas" aria-hidden="true" />;
 }
 
-// 🐱 Interactive Winter Cat Mascot with Eye Tracking & Purr Burst
-function WinterCatFamiliar() {
-  const catRef = useRef<HTMLDivElement>(null);
+// 🕯️ Warm Amber Lantern Cursor: Follows mouse and provides warm light through the cold
+function WarmAmberLantern() {
+  const [pos, setPos] = useState({ x: -1000, y: -1000 });
+
+  useEffect(() => {
+    let targetX = -1000;
+    let targetY = -1000;
+    let currentX = -1000;
+    let currentY = -1000;
+    let frameId: number;
+
+    const onMove = (e: globalThis.MouseEvent) => {
+      targetX = e.clientX;
+      targetY = e.clientY;
+    };
+    window.addEventListener('mousemove', onMove);
+
+    const lerp = () => {
+      currentX += (targetX - currentX) * 0.14;
+      currentY += (targetY - currentY) * 0.14;
+      setPos({ x: currentX, y: currentY });
+      frameId = requestAnimationFrame(lerp);
+    };
+    lerp();
+
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      cancelAnimationFrame(frameId);
+    };
+  }, []);
+
+  if (pos.x < -500) return null;
+
+  return (
+    <div
+      className="warm-amber-lantern"
+      style={{
+        transform: `translate(${pos.x}px, ${pos.y}px)`,
+      }}
+      aria-hidden="true"
+    >
+      <div className="lantern-ember-core" />
+      <div className="lantern-amber-halo" />
+    </div>
+  );
+}
+
+// 🧊 Frost Thaw Card Wrapper: Frost melts away when mouse hovers over it
+interface FrostThawCardProps {
+  className?: string;
+  children: ReactNode;
+}
+
+function FrostThawCard({ className = '', children }: FrostThawCardProps) {
+  const [thawPos, setThawPos] = useState({ x: -500, y: -500, active: false });
+
+  const handlePointerMove = (e: MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setThawPos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      active: true,
+    });
+  };
+
+  const handlePointerLeave = () => {
+    setThawPos((prev) => ({ ...prev, active: false }));
+  };
+
+  return (
+    <div
+      className={`frost-thaw-card ${className} ${thawPos.active ? 'thawing' : ''}`}
+      onMouseMove={handlePointerMove}
+      onMouseLeave={handlePointerLeave}
+      style={
+        {
+          '--thaw-x': `${thawPos.x}px`,
+          '--thaw-y': `${thawPos.y}px`,
+        } as any
+      }
+    >
+      {/* Dynamic Melting Frost Overlay */}
+      <div className="frost-glass-sheet" aria-hidden="true" />
+      <div className="thaw-amber-edge" aria-hidden="true" />
+      <div className="card-inner-content">{children}</div>
+    </div>
+  );
+}
+
+// 🐱 Pixel Art Scottish Fold Cat (Faithfully based on user's chubby fold photo)
+function PixelScottishFoldMascot() {
   const [pupilOffset, setPupilOffset] = useState({ x: 0, y: 0 });
   const [purring, setPurring] = useState(false);
   const [tipIndex, setTipIndex] = useState(0);
-  const [burstCount, setBurstCount] = useState(0);
+  const [burstKey, setBurstKey] = useState(0);
+  const [blinking, setBlinking] = useState(false);
 
   const tips = [
-    'Your footage stays 100% on your device. Zero cloud uploads, zero privacy leaks.',
-    'Auto Cut finds hooks and cuts awkward silences in seconds.',
-    'Dynamic subtitles with semantic keyword styling boost viewer retention.',
-    'Render and export directly from your local browser with WebCodecs.',
+    'Hey! Your footage stays 100% on your device. Zero cloud uploads, zero privacy leaks.',
+    'Auto Cut slices dead pauses and repeated takes automatically.',
+    'Dynamic subtitles with semantic keyword pops boost viewer retention by 40%.',
+    'Render and export directly from your local browser with WebCodecs at 60 FPS.',
   ];
 
-  // Mouse tracking eyes
+  // Natural pixel blinking
+  useEffect(() => {
+    const blinkInterval = setInterval(() => {
+      setBlinking(true);
+      setTimeout(() => setBlinking(false), 180);
+    }, 4200);
+    return () => clearInterval(blinkInterval);
+  }, []);
+
+  // Pupil eye-tracking towards mouse
   useEffect(() => {
     const handleMove = (e: globalThis.MouseEvent) => {
-      if (!catRef.current) return;
-      const rect = catRef.current.getBoundingClientRect();
-      const catCenterX = rect.left + rect.width / 2;
-      const catCenterY = rect.top + rect.height / 2;
+      const el = document.getElementById('pixel-cat-container');
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const dx = e.clientX - cx;
+      const dy = e.clientY - cy;
 
-      const dx = e.clientX - catCenterX;
-      const dy = e.clientY - catCenterY;
       const angle = Math.atan2(dy, dx);
-      const dist = Math.min(3.5, Math.hypot(dx, dy) / 40);
-
-      setPupilOffset({
-        x: Math.cos(angle) * dist,
-        y: Math.sin(angle) * dist,
-      });
+      // Discrete pixel step: -1, 0, or 1 in pixel grid
+      const px = Math.round(Math.cos(angle));
+      const py = Math.round(Math.sin(angle));
+      setPupilOffset({ x: px, y: py });
     };
 
     window.addEventListener('mousemove', handleMove);
     return () => window.removeEventListener('mousemove', handleMove);
   }, []);
 
-  const handleCatClick = () => {
+  const handleClick = () => {
     setPurring(true);
-    setBurstCount((c) => c + 1);
+    setBurstKey((k) => k + 1);
     setTipIndex((prev) => (prev + 1) % tips.length);
     setTimeout(() => setPurring(false), 900);
   };
 
   return (
-    <div className="cat-interactive-card" onClick={handleCatClick} role="button" tabIndex={0}>
-      <div className="cat-visual-stage" ref={catRef}>
-        {/* Ambient Glow behind Cat */}
+    <div
+      className="cat-interactive-card pixel-cat-card"
+      id="pixel-cat-container"
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      title="Click your chubby Scottish Fold for tips!"
+    >
+      <div className="cat-visual-stage">
+        {/* Ambient warm amber & frost aura */}
         <div className={`cat-aura-glow ${purring ? 'purr-active' : ''}`} />
 
-        {/* SVG Cat Character with Eye Tracking */}
+        {/* 48x48 Authentic Pixel Art Scottish Fold SVG */}
         <svg
-          className={`winter-cat-svg ${purring ? 'cat-bounce' : ''}`}
-          viewBox="0 0 120 120"
-          width="90"
-          height="90"
+          className={`pixel-cat-svg ${purring ? 'cat-bounce' : ''}`}
+          viewBox="0 0 48 48"
+          width="100"
+          height="100"
+          shapeRendering="crispEdges"
         >
-          {/* Ears */}
-          <polygon points="26,45 14,14 48,30" fill="#f8fafc" stroke="#38bdf8" strokeWidth="1.5" />
-          <polygon points="26,42 19,20 42,32" fill="#fda4af" opacity="0.75" />
-          <polygon points="94,45 106,14 72,30" fill="#f8fafc" stroke="#38bdf8" strokeWidth="1.5" />
-          <polygon points="94,42 101,20 78,32" fill="#fda4af" opacity="0.75" />
-
-          {/* Earmuffs band (Winter accessory) */}
-          <path
-            d="M 22,40 Q 60,18 98,40"
-            fill="none"
-            stroke="#0284c7"
-            strokeWidth="3.5"
-            strokeLinecap="round"
-          />
-
-          {/* Earmuff fluff */}
-          <circle cx="20" cy="44" r="10" fill="#38bdf8" />
-          <circle cx="20" cy="44" r="7" fill="#e0f2fe" />
-          <circle cx="100" cy="44" r="10" fill="#38bdf8" />
-          <circle cx="100" cy="44" r="7" fill="#e0f2fe" />
-
-          {/* Chubby Head / Body */}
-          <ellipse cx="60" cy="65" rx="42" ry="38" fill="#f8fafc" />
-          {/* Soft body contour / shadow */}
-          <ellipse cx="60" cy="74" rx="36" ry="26" fill="#e2e8f0" opacity="0.4" />
-
-          {/* Eyes (Left & Right) */}
-          <g transform="translate(42, 58)">
-            <ellipse cx="0" cy="0" rx="7.5" ry="9" fill="#0c1829" />
-            <circle
-              cx={pupilOffset.x}
-              cy={pupilOffset.y}
-              r="4.2"
-              fill="#38bdf8"
-              filter="drop-shadow(0 0 3px #67e8f9)"
-            />
-            <circle cx={pupilOffset.x + 1.2} cy={pupilOffset.y - 1.2} r="1.5" fill="#ffffff" />
-          </g>
-
-          <g transform="translate(78, 58)">
-            <ellipse cx="0" cy="0" rx="7.5" ry="9" fill="#0c1829" />
-            <circle
-              cx={pupilOffset.x}
-              cy={pupilOffset.y}
-              r="4.2"
-              fill="#38bdf8"
-              filter="drop-shadow(0 0 3px #67e8f9)"
-            />
-            <circle cx={pupilOffset.x + 1.2} cy={pupilOffset.y - 1.2} r="1.5" fill="#ffffff" />
-          </g>
-
-          {/* Cute Nose */}
-          <polygon points="60,69 56,65 64,65" fill="#f43f5e" />
-
-          {/* Mouth */}
-          <path
-            d="M 54,71 Q 60,75 60,71 Q 60,75 66,71"
-            fill="none"
-            stroke="#475569"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-
-          {/* Whiskers */}
-          <line
-            x1="24"
-            y1="66"
-            x2="40"
-            y2="68"
-            stroke="#94a3b8"
-            strokeWidth="1.2"
-            strokeLinecap="round"
-          />
-          <line
-            x1="22"
-            y1="73"
-            x2="40"
-            y2="71"
-            stroke="#94a3b8"
-            strokeWidth="1.2"
-            strokeLinecap="round"
-          />
-          <line
-            x1="96"
-            y1="66"
-            x2="80"
-            y2="68"
-            stroke="#94a3b8"
-            strokeWidth="1.2"
-            strokeLinecap="round"
-          />
-          <line
-            x1="98"
-            y1="73"
-            x2="80"
-            y2="71"
-            stroke="#94a3b8"
-            strokeWidth="1.2"
-            strokeLinecap="round"
-          />
-
-          {/* Paws resting at bottom */}
-          <ellipse cx="44" cy="98" rx="8" ry="5" fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1" />
-          <ellipse cx="76" cy="98" rx="8" ry="5" fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1" />
+          {/* Shadow underneath */}
+          <rect x="8" y="44" width="32" height="2" fill="rgba(3,7,14,0.5)" />
+          {/* Striped Fluffy Tail (Swishing to the right) */}
+          <rect x="36" y="38" width="5" height="4" fill="#cbd5e1" />
+          <rect x="40" y="35" width="4" height="4" fill="#94a3b8" />
+          <rect x="42" y="31" width="4" height="4" fill="#cbd5e1" />
+          <rect x="43" y="27" width="3" height="4" fill="#64748b" />
+          <rect x="42" y="23" width="3" height="4" fill="#475569" />
+          <rect x="40" y="21" width="3" height="3" fill="#334155" /> {/* Dark tail tip */}
+          {/* Chubby Body / Flanks (Silvery cream white Scottish Fold) */}
+          <rect x="10" y="24" width="28" height="19" fill="#f8fafc" />
+          <rect x="9" y="26" width="30" height="15" fill="#f8fafc" />
+          {/* Body Shading & Fluff */}
+          <rect x="8" y="28" width="2" height="12" fill="#e2e8f0" />
+          <rect x="38" y="28" width="2" height="12" fill="#cbd5e1" />
+          <rect x="10" y="42" width="28" height="2" fill="#cbd5e1" />
+          {/* Soft Grey Tabby Stripes on Flanks */}
+          <rect x="10" y="30" width="3" height="2" fill="#94a3b8" />
+          <rect x="10" y="34" width="4" height="2" fill="#94a3b8" />
+          <rect x="10" y="38" width="3" height="2" fill="#94a3b8" />
+          <rect x="35" y="30" width="4" height="2" fill="#94a3b8" />
+          <rect x="34" y="35" width="4" height="2" fill="#94a3b8" />
+          {/* Big Chubby Cream/White Belly */}
+          <rect x="14" y="28" width="20" height="14" fill="#ffffff" />
+          {/* Front Paws: Curled cutely on chest/belly (Photo pose!) */}
+          {/* Left Curled Paw */}
+          <rect x="16" y="28" width="5" height="4" fill="#f1f5f9" />
+          <rect x="15" y="29" width="6" height="3" fill="#e2e8f0" />
+          <rect x="17" y="31" width="1" height="1" fill="#fda4af" />
+          <rect x="19" y="31" width="1" height="1" fill="#fda4af" />
+          {/* Right Curled Paw */}
+          <rect x="27" y="28" width="5" height="4" fill="#f1f5f9" />
+          <rect x="27" y="29" width="6" height="3" fill="#e2e8f0" />
+          <rect x="28" y="31" width="1" height="1" fill="#fda4af" />
+          <rect x="30" y="31" width="1" height="1" fill="#fda4af" />
+          {/* Round Head (Scottish Fold) */}
+          <rect x="11" y="9" width="26" height="17" fill="#f8fafc" />
+          <rect x="10" y="11" width="28" height="13" fill="#f8fafc" />
+          {/* Folded Ears (Small, folded down tightly like photo) */}
+          {/* Left Folded Ear */}
+          <rect x="9" y="8" width="5" height="4" fill="#94a3b8" />
+          <rect x="10" y="10" width="4" height="3" fill="#cbd5e1" />
+          <rect x="11" y="11" width="2" height="2" fill="#fda4af" /> {/* inner pink fold */}
+          {/* Right Folded Ear */}
+          <rect x="34" y="8" width="5" height="4" fill="#94a3b8" />
+          <rect x="34" y="10" width="4" height="3" fill="#cbd5e1" />
+          <rect x="35" y="11" width="2" height="2" fill="#fda4af" />
+          {/* Forehead Grey Tabby "M" Stripes */}
+          <rect x="21" y="10" width="1" height="3" fill="#94a3b8" />
+          <rect x="26" y="10" width="1" height="3" fill="#94a3b8" />
+          <rect x="22" y="12" width="4" height="1" fill="#64748b" />
+          <rect x="23" y="13" width="2" height="2" fill="#94a3b8" />
+          {/* Chubby Cheeks Shadow */}
+          <rect x="10" y="18" width="3" height="4" fill="#e2e8f0" />
+          <rect x="35" y="18" width="3" height="4" fill="#e2e8f0" />
+          {/* Soulful Ice-Blue Eyes (with pupil tracking & blinking) */}
+          {blinking ? (
+            <>
+              {/* Closed happy eyes while blinking or purring */}
+              <rect x="15" y="17" width="5" height="1" fill="#334155" />
+              <rect x="28" y="17" width="5" height="1" fill="#334155" />
+            </>
+          ) : (
+            <>
+              {/* Left Eye */}
+              <rect x="15" y="15" width="5" height="5" fill="#0284c7" />
+              <rect x="16" y="15" width="3" height="5" fill="#38bdf8" />
+              <rect x="15" y="16" width="5" height="3" fill="#7dd3fc" />
+              {/* Left Eye Pupil (Tracking Mouse) */}
+              <rect
+                x={17 + pupilOffset.x}
+                y={16 + pupilOffset.y}
+                width="2"
+                height="3"
+                fill="#0f172a"
+              />
+              <rect x="18" y="15" width="1" height="1" fill="#ffffff" /> {/* Eye glint */}
+              {/* Right Eye */}
+              <rect x="28" y="15" width="5" height="5" fill="#0284c7" />
+              <rect x="29" y="15" width="3" height="5" fill="#38bdf8" />
+              <rect x="28" y="16" width="5" height="3" fill="#7dd3fc" />
+              {/* Right Eye Pupil (Tracking Mouse) */}
+              <rect
+                x={30 + pupilOffset.x}
+                y={16 + pupilOffset.y}
+                width="2"
+                height="3"
+                fill="#0f172a"
+              />
+              <rect x="31" y="15" width="1" height="1" fill="#ffffff" />
+            </>
+          )}
+          {/* Cute Greyish Pink Nose */}
+          <rect x="23" y="20" width="2" height="1" fill="#f43f5e" />
+          <rect x="23" y="21" width="2" height="1" fill="#e11d48" />
+          {/* Mouth (Sweet cat smile) */}
+          <rect x="22" y="22" width="1" height="1" fill="#64748b" />
+          <rect x="25" y="22" width="1" height="1" fill="#64748b" />
+          <rect x="23" y="22" width="2" height="1" fill="#f8fafc" />
+          {/* Delicate Pixel Whiskers */}
+          <rect x="6" y="19" width="4" height="1" fill="#94a3b8" />
+          <rect x="5" y="22" width="5" height="1" fill="#94a3b8" />
+          <rect x="38" y="19" width="4" height="1" fill="#94a3b8" />
+          <rect x="38" y="22" width="5" height="1" fill="#94a3b8" />
         </svg>
 
-        {/* Floating Heart / Snowflakes on Click */}
+        {/* Floating Heart / Amber Sparks on Purr */}
         {purring && (
-          <div className="purr-hearts" key={burstCount}>
+          <div className="purr-hearts" key={burstKey}>
             <span className="burst-item i1">❄️</span>
-            <span className="burst-item i2">💙</span>
-            <span className="burst-item i3">✨</span>
+            <span className="burst-item i2">✨</span>
+            <span className="burst-item i3">💙</span>
           </div>
         )}
       </div>
@@ -341,7 +595,7 @@ function WinterCatFamiliar() {
       <div className="cat-dialog-wrap">
         <div className="cat-status-line">
           <span className="cat-dot" />
-          <b>FROSTCUT MASCOT</b>
+          <b>SCOTTISH FOLD GUARDIAN</b>
           <span className="cat-sub-hint">Click me for tips</span>
         </div>
         <p className="cat-quote">{tips[tipIndex]}</p>
@@ -374,8 +628,12 @@ export default function LandingPage({
 
   return (
     <main className="landing gothic-landing">
-      {/* Background Interactive Snow & Cold Mist Canvas */}
-      <GothicSnowCanvas />
+      {/* Background Interactive Canvas: Aurora Borealis + Gothic Castle + Snow */}
+      <GothicAtmosphereCanvas />
+
+      {/* Warm Amber Lantern Cursor */}
+      <WarmAmberLantern />
+
       <div className="gothic-ambient-veil" />
 
       <div className="gothic-content-wrap">
@@ -455,112 +713,132 @@ export default function LandingPage({
             )}
           </div>
 
-          {/* Right Column: The Obsidian Monolith (3D Editor Showcase) */}
+          {/* Right Column: The Obsidian Monolith (3D Editor Showcase with Frost Thawing) */}
           <div className="hero-product gothic-monolith-wrapper">
-            <div
-              className="gothic-monolith"
-              onMouseMove={handleMonolithMove}
-              onMouseLeave={handleMonolithLeave}
-              style={{
-                transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-              }}
-            >
-              {/* Monolith Header */}
-              <div className="product-top monolith-header">
-                <span className="monolith-brand-tag">
-                  <Snowflake size={15} /> frostcut
-                </span>
-                <span className="monolith-project-pill">
-                  A better story <ChevronDown size={12} />
-                </span>
-                <div className="monolith-status-dot" title="Local Engine Active" />
-              </div>
+            <FrostThawCard className="monolith-thaw-shell">
+              <div
+                className="gothic-monolith"
+                onMouseMove={handleMonolithMove}
+                onMouseLeave={handleMonolithLeave}
+                style={{
+                  transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+                }}
+              >
+                {/* Monolith Header */}
+                <div className="product-top monolith-header">
+                  <span className="monolith-brand-tag">
+                    <Snowflake size={15} /> frostcut
+                  </span>
+                  <span className="monolith-project-pill">
+                    A better story <ChevronDown size={12} />
+                  </span>
+                  <div className="monolith-status-dot" title="Local Engine Active" />
+                </div>
 
-              {/* Monolith Split Body */}
-              <div className="product-preview monolith-body">
-                {/* Left: Transcript Card */}
-                <div className="mock-transcript monolith-transcript-card">
-                  <div>
-                    <span className="monolith-card-tag">THE GOOD PARTS</span>
-                    <p className="monolith-transcript-text">
-                      The secret to a<br />
-                      <mark>better video</mark>
+                {/* Monolith Split Body */}
+                <div className="product-preview monolith-body">
+                  {/* Left: Transcript Card */}
+                  <div className="mock-transcript monolith-transcript-card">
+                    <div>
+                      <span className="monolith-card-tag">THE GOOD PARTS</span>
+                      <p className="monolith-transcript-text">
+                        The secret to a<br />
+                        <mark>better video</mark>
+                        <br />
+                        is a better story.
+                      </p>
+                    </div>
+                    <div className="monolith-silence-alert">
+                      <Check size={13} /> Silence removed
+                    </div>
+                  </div>
+
+                  {/* Right: 9:16 Glacial Mobile Poster */}
+                  <div className="story-poster monolith-screen-mock">
+                    <span className="screen-eyebrow">MAKE ROOM FOR</span>
+                    <strong className="screen-headline">
+                      the
                       <br />
-                      is a better story.
-                    </p>
-                  </div>
-                  <div className="monolith-silence-alert">
-                    <Check size={13} /> Silence removed
-                  </div>
-                </div>
-
-                {/* Right: 9:16 Glacial Mobile Poster */}
-                <div className="story-poster monolith-screen-mock">
-                  <span className="screen-eyebrow">MAKE ROOM FOR</span>
-                  <strong className="screen-headline">
-                    the
-                    <br />
-                    <em>good</em>
-                    <br />
-                    parts.
-                  </strong>
-                  <div className="poster-caption screen-caption-bubble">
-                    A <mark>better</mark> story.
+                      <em>good</em>
+                      <br />
+                      parts.
+                    </strong>
+                    <div className="poster-caption screen-caption-bubble">
+                      A <mark>better</mark> story.
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Toolbar & Icicle Waveform */}
-              <div className="mock-toolbar monolith-toolbar">
-                <Scissors size={14} style={{ color: 'var(--ice-400)' }} />
+                {/* Toolbar & Icicle Waveform */}
+                <div className="mock-toolbar monolith-toolbar">
+                  <Scissors size={14} style={{ color: 'var(--ice-400)' }} />
 
-                <div className="monolith-icicle-waveform" title="Glacial Audio Spectral Analysis">
-                  <span className="icicle-bar" style={{ height: '14px', animationDelay: '0.1s' }} />
-                  <span className="icicle-bar" style={{ height: '22px', animationDelay: '0.4s' }} />
-                  <span className="icicle-bar" style={{ height: '9px', animationDelay: '0.2s' }} />
-                  <span className="icicle-bar" style={{ height: '18px', animationDelay: '0.5s' }} />
-                  <span className="icicle-bar" style={{ height: '24px', animationDelay: '0.3s' }} />
-                  <span className="icicle-bar" style={{ height: '12px', animationDelay: '0.6s' }} />
-                  <span
-                    className="icicle-bar"
-                    style={{ height: '20px', animationDelay: '0.15s' }}
-                  />
+                  <div className="monolith-icicle-waveform" title="Glacial Audio Spectral Analysis">
+                    <span
+                      className="icicle-bar"
+                      style={{ height: '14px', animationDelay: '0.1s' }}
+                    />
+                    <span
+                      className="icicle-bar"
+                      style={{ height: '22px', animationDelay: '0.4s' }}
+                    />
+                    <span
+                      className="icicle-bar"
+                      style={{ height: '9px', animationDelay: '0.2s' }}
+                    />
+                    <span
+                      className="icicle-bar"
+                      style={{ height: '18px', animationDelay: '0.5s' }}
+                    />
+                    <span
+                      className="icicle-bar"
+                      style={{ height: '24px', animationDelay: '0.3s' }}
+                    />
+                    <span
+                      className="icicle-bar"
+                      style={{ height: '12px', animationDelay: '0.6s' }}
+                    />
+                    <span
+                      className="icicle-bar"
+                      style={{ height: '20px', animationDelay: '0.15s' }}
+                    />
+                  </div>
+
+                  <span className="monolith-timecode">
+                    00:04 <em>/ 00:24</em>
+                  </span>
+                  <Play size={12} fill="currentColor" style={{ color: 'var(--ice-cyan)' }} />
                 </div>
 
-                <span className="monolith-timecode">
-                  00:04 <em>/ 00:24</em>
-                </span>
-                <Play size={12} fill="currentColor" style={{ color: 'var(--ice-cyan)' }} />
-              </div>
-
-              {/* Timeline Track */}
-              <div className="mock-timeline monolith-timeline">
-                <span className="timeline-track-label">V1</span>
-                <div className="timeline-clip-blocks">
-                  <div className="clip-block" />
-                  <div className="clip-block highlight" />
-                  <div className="clip-block" />
-                  <div className="clip-block highlight" />
+                {/* Timeline Track */}
+                <div className="mock-timeline monolith-timeline">
+                  <span className="timeline-track-label">V1</span>
+                  <div className="timeline-clip-blocks">
+                    <div className="clip-block" />
+                    <div className="clip-block highlight" />
+                    <div className="clip-block" />
+                    <div className="clip-block highlight" />
+                  </div>
+                  <div className="mock-playhead timeline-playhead" />
                 </div>
-                <div className="mock-playhead timeline-playhead" />
-              </div>
 
-              {/* Floating Discovery Talisman */}
-              <div className="floating-discovery gothic-floating-talisman">
-                <span className="discovery-icon talisman-spark">
-                  <Sparkles size={20} />
-                </span>
-                <div className="talisman-info">
-                  <b>The good parts, found.</b>
-                  <span>3 moments worth sharing</span>
+                {/* Floating Discovery Talisman */}
+                <div className="floating-discovery gothic-floating-talisman">
+                  <span className="discovery-icon talisman-spark">
+                    <Sparkles size={20} />
+                  </span>
+                  <div className="talisman-info">
+                    <b>The good parts, found.</b>
+                    <span>3 moments worth sharing</span>
+                  </div>
+                  <Check className="talisman-check" size={17} />
                 </div>
-                <Check className="talisman-check" size={17} />
               </div>
-            </div>
+            </FrostThawCard>
           </div>
         </section>
 
-        {/* Feature Grid: Clean, creator-focused core benefits */}
+        {/* Feature Grid: Clean, creator-focused core benefits with Frost Thaw */}
         <section className="gothic-features-section">
           <div className="gothic-section-header">
             <h2>Engineered for Short-Form Creators</h2>
@@ -572,7 +850,7 @@ export default function LandingPage({
 
           <div className="gothic-pillars-grid">
             {/* Pillar 1 */}
-            <div className="gothic-pillar-card">
+            <FrostThawCard className="gothic-pillar-card">
               <div className="pillar-icon-box">
                 <Scissors size={26} />
               </div>
@@ -584,10 +862,10 @@ export default function LandingPage({
               <div className="pillar-micro-tag">
                 <Zap size={13} /> INSTANT AUDIO ANALYSIS
               </div>
-            </div>
+            </FrostThawCard>
 
             {/* Pillar 2 */}
-            <div className="gothic-pillar-card">
+            <FrostThawCard className="gothic-pillar-card">
               <div className="pillar-icon-box">
                 <Type size={26} />
               </div>
@@ -599,10 +877,10 @@ export default function LandingPage({
               <div className="pillar-micro-tag">
                 <Sparkles size={13} /> HIGH-RETENTION STYLES
               </div>
-            </div>
+            </FrostThawCard>
 
             {/* Pillar 3 */}
-            <div className="gothic-pillar-card">
+            <FrostThawCard className="gothic-pillar-card">
               <div className="pillar-icon-box">
                 <ShieldCheck size={26} />
               </div>
@@ -614,66 +892,68 @@ export default function LandingPage({
               <div className="pillar-micro-tag">
                 <Lock size={13} /> ZERO CLOUD STORAGE
               </div>
-            </div>
+            </FrostThawCard>
           </div>
         </section>
 
-        {/* Interactive Subtitle Style Playground */}
+        {/* Interactive Subtitle Style Playground with Frost Thaw */}
         <section className="gothic-caption-forge">
-          <div className="forge-card">
-            <div className="forge-left">
-              <h3>Dynamic Subtitle Styles</h3>
-              <p>
-                See how FrostCut animates and highlights critical keywords to stop the scroll and
-                maximize watch time.
-              </p>
-              <div className="forge-preset-selector">
-                <button
-                  className={`preset-chip ${captionPreset === 'clean' ? 'active' : ''}`}
-                  onClick={() => setCaptionPreset('clean')}
-                >
-                  Clean White
-                </button>
-                <button
-                  className={`preset-chip ${captionPreset === 'glacial' ? 'active' : ''}`}
-                  onClick={() => setCaptionPreset('glacial')}
-                >
-                  Glacial Cyan
-                </button>
-                <button
-                  className={`preset-chip ${captionPreset === 'bold' ? 'active' : ''}`}
-                  onClick={() => setCaptionPreset('bold')}
-                >
-                  Brainrot Pop
-                </button>
+          <FrostThawCard className="forge-card-thaw-wrap">
+            <div className="forge-card">
+              <div className="forge-left">
+                <h3>Dynamic Subtitle Styles</h3>
+                <p>
+                  See how FrostCut animates and highlights critical keywords to stop the scroll and
+                  maximize watch time.
+                </p>
+                <div className="forge-preset-selector">
+                  <button
+                    className={`preset-chip ${captionPreset === 'clean' ? 'active' : ''}`}
+                    onClick={() => setCaptionPreset('clean')}
+                  >
+                    Clean White
+                  </button>
+                  <button
+                    className={`preset-chip ${captionPreset === 'glacial' ? 'active' : ''}`}
+                    onClick={() => setCaptionPreset('glacial')}
+                  >
+                    Glacial Cyan
+                  </button>
+                  <button
+                    className={`preset-chip ${captionPreset === 'bold' ? 'active' : ''}`}
+                    onClick={() => setCaptionPreset('bold')}
+                  >
+                    Brainrot Pop
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div className="forge-stage">
-              <div className={`forge-caption-display style-${captionPreset}`}>
-                {captionPreset === 'clean' && (
-                  <span>
-                    FIND THE <mark>HOOK.</mark> CUT THE REST.
-                  </span>
-                )}
-                {captionPreset === 'glacial' && (
-                  <span>
-                    10 MINUTES <mark>INTO SECONDS.</mark>
-                  </span>
-                )}
-                {captionPreset === 'bold' && (
-                  <span>
-                    WAIT FOR THE <mark>PLOT TWIST</mark> 🔥
-                  </span>
-                )}
+              <div className="forge-stage">
+                <div className={`forge-caption-display style-${captionPreset}`}>
+                  {captionPreset === 'clean' && (
+                    <span>
+                      FIND THE <mark>HOOK.</mark> CUT THE REST.
+                    </span>
+                  )}
+                  {captionPreset === 'glacial' && (
+                    <span>
+                      10 MINUTES <mark>INTO SECONDS.</mark>
+                    </span>
+                  )}
+                  {captionPreset === 'bold' && (
+                    <span>
+                      WAIT FOR THE <mark>PLOT TWIST</mark> 🔥
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          </FrostThawCard>
         </section>
 
-        {/* Featured Winter Mascot Interactive Card */}
+        {/* Featured Scottish Fold Cat Mascot */}
         <section className="gothic-familiar-section">
-          <WinterCatFamiliar />
+          <PixelScottishFoldMascot />
         </section>
 
         {/* Footer */}

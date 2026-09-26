@@ -1354,6 +1354,167 @@
 }
 
 /* ==========================================================================
+   WARM AMBER LANTERN CURSOR
+   Ambient warm candlelight/ember light cutting through the gothic winter cold
+   ========================================================================== */
+.warm-amber-lantern {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 999;
+  transform: translate(-1000px, -1000px);
+  will-change: transform;
+}
+
+.lantern-ember-core {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fef3c7;
+  box-shadow:
+    0 0 10px #f59e0b,
+    0 0 20px #d97706,
+    0 0 35px rgba(245, 158, 11, 0.6);
+  opacity: 0.85;
+}
+
+.lantern-amber-halo {
+  position: absolute;
+  top: -150px;
+  left: -150px;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(245, 158, 11, 0.12) 0%,
+    rgba(217, 119, 6, 0.04) 45%,
+    transparent 70%
+  );
+  filter: blur(12px);
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   FROST THAW CARDS ("BUZ ŞEFFAFLAŞIR")
+   Cards are frosted; mouse thaw reveals crisp dark glass under the warm amber glow
+   ========================================================================== */
+.frost-thaw-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.frost-thaw-card .frost-glass-sheet {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  backdrop-filter: blur(3px);
+  background: radial-gradient(
+    circle 130px at var(--thaw-x, -500px) var(--thaw-y, -500px),
+    transparent 0%,
+    rgba(186, 230, 253, 0.04) 60%,
+    rgba(186, 230, 253, 0.1) 100%
+  );
+  opacity: 0.9;
+  transition: opacity 0.5s ease;
+}
+
+.frost-thaw-card.thawing .frost-glass-sheet {
+  opacity: 1;
+}
+
+.frost-thaw-card .thaw-amber-edge {
+  position: absolute;
+  top: var(--thaw-y, -500px);
+  left: var(--thaw-x, -500px);
+  width: 240px;
+  height: 240px;
+  margin-top: -120px;
+  margin-left: -120px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    transparent 45%,
+    rgba(245, 158, 11, 0.18) 75%,
+    transparent 85%
+  );
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.frost-thaw-card.thawing .thaw-amber-edge {
+  opacity: 1;
+}
+
+.frost-thaw-card .card-inner-content {
+  position: relative;
+  z-index: 4;
+  height: 100%;
+}
+
+.monolith-thaw-shell {
+  width: 100%;
+  max-width: 580px;
+}
+
+.forge-card-thaw-wrap {
+  width: 100%;
+  border-radius: 20px;
+}
+
+/* ==========================================================================
+   PIXEL ART SCOTTISH FOLD MASCOT
+   ========================================================================== */
+.pixel-cat-card {
+  background: linear-gradient(135deg, rgba(14, 21, 33, 0.8), rgba(6, 10, 16, 0.95)) !important;
+  border: 1px solid rgba(125, 211, 252, 0.22) !important;
+  border-radius: 20px !important;
+  padding: 28px 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 32px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.75),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.pixel-cat-card:hover {
+  border-color: #f59e0b !important;
+  box-shadow:
+    0 25px 60px rgba(0, 0, 0, 0.85),
+    0 0 35px rgba(245, 158, 11, 0.25) !important;
+  transform: translateY(-2px);
+}
+
+.pixel-cat-svg {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.8));
+  user-select: none;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pixel-cat-card:hover .pixel-cat-svg {
+  transform: scale(1.08) rotate(-1deg);
+}
+
+/* ==========================================================================
    RESPONSIVE CRAFTSMANSHIP (NO HORIZONTAL OVERFLOW AT 390px)
    ========================================================================== */
 @media (max-width: 1100px) {
