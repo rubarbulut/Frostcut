@@ -1061,56 +1061,57 @@
   transition: all 0.3s ease;
 }
 
-/* Preset 1: Glacial Bold */
-.style-glacial {
+/* Preset 1: Clean White */
+.style-clean {
   font-family: var(--font-sans);
   color: #fff;
-  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.style-clean mark {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Preset 2: Glacial Cyan */
+.style-glacial {
+  font-family: var(--font-sans);
+  color: #e0f2fe;
   letter-spacing: 1px;
 }
 .style-glacial mark {
-  background: transparent;
+  background: rgba(56, 189, 248, 0.18);
   color: var(--ice-cyan);
+  padding: 3px 10px;
+  border-radius: 5px;
+  border: 1px solid rgba(56, 189, 248, 0.45);
   text-shadow:
     0 0 24px rgba(103, 232, 249, 0.8),
     0 0 45px rgba(56, 189, 248, 0.5);
 }
 
-/* Preset 2: Gothic Monolith */
-.style-gothic {
-  font-family: var(--font-gothic);
-  color: #e2e8f0;
-  letter-spacing: 2px;
-  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
-}
-.style-gothic mark {
-  background: transparent;
-  color: #fff;
-  border-bottom: 2px solid var(--ice-cyan);
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
-}
-
-/* Preset 3: Cyber Frost / Brainrot */
-.style-cyber {
+/* Preset 3: Bold Pop / Brainrot */
+.style-bold {
   font-family: var(--font-sans);
-  color: #facc15;
+  color: #fef08a;
   text-transform: uppercase;
   font-weight: 900;
   letter-spacing: -0.5px;
-  transform: rotate(-1deg);
 }
-.style-cyber mark {
+.style-bold mark {
   background: #f43f5e;
   color: #fff;
   padding: 4px 12px;
   border-radius: 6px;
   box-shadow: 0 0 25px rgba(244, 63, 94, 0.7);
   display: inline-block;
-  transform: scale(1.08) rotate(2deg);
+  transform: scale(1.08) rotate(1.5deg);
 }
 
 /* ==========================================================================
-   THE WINTER FAMILIAR — COZY GOTHIC MASCOT
+   INTERACTIVE WINTER CAT MASCOT CARD
    ========================================================================== */
 .gothic-familiar-section {
   max-width: 1440px;
@@ -1120,80 +1121,175 @@
   box-sizing: border-box;
 }
 
-.familiar-card {
-  background: linear-gradient(135deg, rgba(14, 21, 33, 0.7), rgba(7, 11, 17, 0.88));
+.cat-interactive-card {
+  background: linear-gradient(135deg, rgba(14, 21, 33, 0.75), rgba(7, 11, 17, 0.9));
   border: 1px solid var(--goth-border);
   border-radius: 20px;
-  padding: 36px 44px;
+  padding: 32px 40px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 36px;
   position: relative;
   overflow: hidden;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.familiar-left {
-  display: flex;
-  align-items: center;
-  gap: 28px;
+.cat-interactive-card:hover {
+  border-color: var(--ice-400);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.8),
+    0 0 35px rgba(56, 189, 248, 0.25);
+  transform: translateY(-2px);
 }
 
-.familiar-cat-avatar {
+.cat-visual-stage {
   position: relative;
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #1e293b, #0f172a);
-  border: 2px solid var(--ice-400);
-  box-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
+  width: 110px;
+  height: 110px;
   display: grid;
   place-items: center;
   flex-shrink: 0;
 }
 
-.familiar-cat-glow {
+.cat-aura-glow {
   position: absolute;
-  inset: -6px;
+  inset: -10px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.35), transparent 70%);
-  animation: pulseRune 3s infinite ease-in-out;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.25), transparent 70%);
+  animation: pulseRune 3.5s infinite ease-in-out;
+  pointer-events: none;
+  transition: all 0.4s ease;
 }
 
-.familiar-copy h4 {
-  font-family: var(--font-gothic);
+.cat-aura-glow.purr-active {
+  background: radial-gradient(circle, rgba(103, 232, 249, 0.55), transparent 75%);
+  transform: scale(1.3);
+}
+
+.winter-cat-svg {
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  user-select: none;
+}
+
+.cat-interactive-card:hover .winter-cat-svg {
+  transform: scale(1.05);
+}
+
+.winter-cat-svg.cat-bounce {
+  animation: catPurrWiggle 0.6s ease-in-out;
+}
+
+@keyframes catPurrWiggle {
+  0%,
+  100% {
+    transform: scale(1) rotate(0);
+  }
+  25% {
+    transform: scale(1.12) rotate(-5deg);
+  }
+  50% {
+    transform: scale(1.15) rotate(4deg);
+  }
+  75% {
+    transform: scale(1.1) rotate(-3deg);
+  }
+}
+
+/* Floating Emoji / Hearts Burst on Purr */
+.purr-hearts {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+}
+
+.burst-item {
+  position: absolute;
   font-size: 20px;
-  font-weight: 700;
-  color: #fff;
-  margin: 0 0 6px;
+  animation: floatBurst 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.familiar-copy p {
-  font-size: 14.5px;
-  color: var(--text-secondary);
+.burst-item.i1 {
+  animation-delay: 0s;
+  --tx: -30px;
+  --ty: -55px;
+}
+
+.burst-item.i2 {
+  animation-delay: 0.1s;
+  --tx: 5px;
+  --ty: -70px;
+}
+
+.burst-item.i3 {
+  animation-delay: 0.15s;
+  --tx: 35px;
+  --ty: -50px;
+}
+
+@keyframes floatBurst {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.4);
+  }
+  40% {
+    opacity: 1;
+    transform: translate(var(--tx), var(--ty)) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--tx) * 1.3), calc(var(--ty) - 25px)) scale(0.8);
+  }
+}
+
+.cat-dialog-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.cat-status-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.cat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 10px #34d399;
+}
+
+.cat-status-line b {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--ice-400);
+}
+
+.cat-sub-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.cat-quote {
+  font-size: 17px;
   line-height: 1.5;
+  color: #f1f5f9;
   margin: 0;
-  max-width: 580px;
-}
-
-.familiar-cta-btn {
-  background: rgba(14, 116, 144, 0.25);
-  border: 1px solid var(--ice-400);
-  color: var(--ice-cyan);
-  font-weight: 600;
-  font-size: 13.5px;
-  padding: 12px 24px;
-  border-radius: 8px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.3s ease;
-}
-
-.familiar-cta-btn:hover {
-  background: var(--ice-500);
-  color: #06080d;
-  box-shadow: 0 0 25px rgba(56, 189, 248, 0.6);
+  font-weight: 500;
+  transition: opacity 0.2s ease;
 }
 
 /* ==========================================================================

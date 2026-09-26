@@ -10,11 +10,11 @@ import {
   Check,
   ChevronDown,
   MessageSquareText,
-  Cat,
   Zap,
   Lock,
-  Layers,
-  Sparkle,
+  Type,
+  Heart,
+  Volume2,
 } from 'lucide-react';
 import type { Project } from './model';
 import './landing-gothic.css';
@@ -27,7 +27,7 @@ interface LandingPageProps {
   resumeProject?: Project;
 }
 
-// Interactive Snow & Cold Mist Canvas
+// ❄️ Interactive Canvas: Procedural Snow & Rolling Cold Mist
 function GothicSnowCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -59,7 +59,7 @@ function GothicSnowCanvas() {
       phase: number;
     }
 
-    const flakesCount = Math.min(85, Math.floor(window.innerWidth / 16));
+    const flakesCount = Math.min(90, Math.floor(window.innerWidth / 15));
     const flakes: Flake[] = [];
 
     for (let i = 0; i < flakesCount; i++) {
@@ -87,6 +87,38 @@ function GothicSnowCanvas() {
       frame++;
       ctx.clearRect(0, 0, width, height);
 
+      // 1. Rolling Cold Mist Layers along bottom & edges
+      const mistX1 = ((frame * 0.35) % (width + 600)) - 300;
+      const grad1 = ctx.createRadialGradient(
+        mistX1,
+        height - 60,
+        40,
+        mistX1,
+        height - 60,
+        Math.min(550, width * 0.6),
+      );
+      grad1.addColorStop(0, 'rgba(14, 116, 144, 0.09)');
+      grad1.addColorStop(0.6, 'rgba(6, 78, 110, 0.03)');
+      grad1.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad1;
+      ctx.fillRect(0, height - 380, width, 380);
+
+      const mistX2 = ((frame * 0.2 + 500) % (width + 700)) - 350;
+      const grad2 = ctx.createRadialGradient(
+        width - mistX2,
+        height - 120,
+        60,
+        width - mistX2,
+        height - 120,
+        Math.min(600, width * 0.7),
+      );
+      grad2.addColorStop(0, 'rgba(56, 189, 248, 0.06)');
+      grad2.addColorStop(0.7, 'rgba(15, 23, 42, 0.02)');
+      grad2.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad2;
+      ctx.fillRect(0, height - 420, width, 420);
+
+      // 2. Snow & Ice Crystals
       for (let i = 0; i < flakes.length; i++) {
         const f = flakes[i];
         f.y += f.speedY;
@@ -132,6 +164,192 @@ function GothicSnowCanvas() {
   return <canvas ref={canvasRef} className="gothic-snow-canvas" aria-hidden="true" />;
 }
 
+// 🐱 Interactive Winter Cat Mascot with Eye Tracking & Purr Burst
+function WinterCatFamiliar() {
+  const catRef = useRef<HTMLDivElement>(null);
+  const [pupilOffset, setPupilOffset] = useState({ x: 0, y: 0 });
+  const [purring, setPurring] = useState(false);
+  const [tipIndex, setTipIndex] = useState(0);
+  const [burstCount, setBurstCount] = useState(0);
+
+  const tips = [
+    'Your footage stays 100% on your device. Zero cloud uploads, zero privacy leaks.',
+    'Auto Cut finds hooks and cuts awkward silences in seconds.',
+    'Dynamic subtitles with semantic keyword styling boost viewer retention.',
+    'Render and export directly from your local browser with WebCodecs.',
+  ];
+
+  // Mouse tracking eyes
+  useEffect(() => {
+    const handleMove = (e: globalThis.MouseEvent) => {
+      if (!catRef.current) return;
+      const rect = catRef.current.getBoundingClientRect();
+      const catCenterX = rect.left + rect.width / 2;
+      const catCenterY = rect.top + rect.height / 2;
+
+      const dx = e.clientX - catCenterX;
+      const dy = e.clientY - catCenterY;
+      const angle = Math.atan2(dy, dx);
+      const dist = Math.min(3.5, Math.hypot(dx, dy) / 40);
+
+      setPupilOffset({
+        x: Math.cos(angle) * dist,
+        y: Math.sin(angle) * dist,
+      });
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    return () => window.removeEventListener('mousemove', handleMove);
+  }, []);
+
+  const handleCatClick = () => {
+    setPurring(true);
+    setBurstCount((c) => c + 1);
+    setTipIndex((prev) => (prev + 1) % tips.length);
+    setTimeout(() => setPurring(false), 900);
+  };
+
+  return (
+    <div className="cat-interactive-card" onClick={handleCatClick} role="button" tabIndex={0}>
+      <div className="cat-visual-stage" ref={catRef}>
+        {/* Ambient Glow behind Cat */}
+        <div className={`cat-aura-glow ${purring ? 'purr-active' : ''}`} />
+
+        {/* SVG Cat Character with Eye Tracking */}
+        <svg
+          className={`winter-cat-svg ${purring ? 'cat-bounce' : ''}`}
+          viewBox="0 0 120 120"
+          width="90"
+          height="90"
+        >
+          {/* Ears */}
+          <polygon points="26,45 14,14 48,30" fill="#f8fafc" stroke="#38bdf8" strokeWidth="1.5" />
+          <polygon points="26,42 19,20 42,32" fill="#fda4af" opacity="0.75" />
+          <polygon points="94,45 106,14 72,30" fill="#f8fafc" stroke="#38bdf8" strokeWidth="1.5" />
+          <polygon points="94,42 101,20 78,32" fill="#fda4af" opacity="0.75" />
+
+          {/* Earmuffs band (Winter accessory) */}
+          <path
+            d="M 22,40 Q 60,18 98,40"
+            fill="none"
+            stroke="#0284c7"
+            strokeWidth="3.5"
+            strokeLinecap="round"
+          />
+
+          {/* Earmuff fluff */}
+          <circle cx="20" cy="44" r="10" fill="#38bdf8" />
+          <circle cx="20" cy="44" r="7" fill="#e0f2fe" />
+          <circle cx="100" cy="44" r="10" fill="#38bdf8" />
+          <circle cx="100" cy="44" r="7" fill="#e0f2fe" />
+
+          {/* Chubby Head / Body */}
+          <ellipse cx="60" cy="65" rx="42" ry="38" fill="#f8fafc" />
+          {/* Soft body contour / shadow */}
+          <ellipse cx="60" cy="74" rx="36" ry="26" fill="#e2e8f0" opacity="0.4" />
+
+          {/* Eyes (Left & Right) */}
+          <g transform="translate(42, 58)">
+            <ellipse cx="0" cy="0" rx="7.5" ry="9" fill="#0c1829" />
+            <circle
+              cx={pupilOffset.x}
+              cy={pupilOffset.y}
+              r="4.2"
+              fill="#38bdf8"
+              filter="drop-shadow(0 0 3px #67e8f9)"
+            />
+            <circle cx={pupilOffset.x + 1.2} cy={pupilOffset.y - 1.2} r="1.5" fill="#ffffff" />
+          </g>
+
+          <g transform="translate(78, 58)">
+            <ellipse cx="0" cy="0" rx="7.5" ry="9" fill="#0c1829" />
+            <circle
+              cx={pupilOffset.x}
+              cy={pupilOffset.y}
+              r="4.2"
+              fill="#38bdf8"
+              filter="drop-shadow(0 0 3px #67e8f9)"
+            />
+            <circle cx={pupilOffset.x + 1.2} cy={pupilOffset.y - 1.2} r="1.5" fill="#ffffff" />
+          </g>
+
+          {/* Cute Nose */}
+          <polygon points="60,69 56,65 64,65" fill="#f43f5e" />
+
+          {/* Mouth */}
+          <path
+            d="M 54,71 Q 60,75 60,71 Q 60,75 66,71"
+            fill="none"
+            stroke="#475569"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+
+          {/* Whiskers */}
+          <line
+            x1="24"
+            y1="66"
+            x2="40"
+            y2="68"
+            stroke="#94a3b8"
+            strokeWidth="1.2"
+            strokeLinecap="round"
+          />
+          <line
+            x1="22"
+            y1="73"
+            x2="40"
+            y2="71"
+            stroke="#94a3b8"
+            strokeWidth="1.2"
+            strokeLinecap="round"
+          />
+          <line
+            x1="96"
+            y1="66"
+            x2="80"
+            y2="68"
+            stroke="#94a3b8"
+            strokeWidth="1.2"
+            strokeLinecap="round"
+          />
+          <line
+            x1="98"
+            y1="73"
+            x2="80"
+            y2="71"
+            stroke="#94a3b8"
+            strokeWidth="1.2"
+            strokeLinecap="round"
+          />
+
+          {/* Paws resting at bottom */}
+          <ellipse cx="44" cy="98" rx="8" ry="5" fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1" />
+          <ellipse cx="76" cy="98" rx="8" ry="5" fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1" />
+        </svg>
+
+        {/* Floating Heart / Snowflakes on Click */}
+        {purring && (
+          <div className="purr-hearts" key={burstCount}>
+            <span className="burst-item i1">❄️</span>
+            <span className="burst-item i2">💙</span>
+            <span className="burst-item i3">✨</span>
+          </div>
+        )}
+      </div>
+
+      <div className="cat-dialog-wrap">
+        <div className="cat-status-line">
+          <span className="cat-dot" />
+          <b>FROSTCUT MASCOT</b>
+          <span className="cat-sub-hint">Click me for tips</span>
+        </div>
+        <p className="cat-quote">{tips[tipIndex]}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function LandingPage({
   onStartEditing,
   onOpenProject,
@@ -145,18 +363,18 @@ export default function LandingPage({
     const rect = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
-    setTilt({ x: y * -10, y: x * 10 });
+    setTilt({ x: y * -9, y: x * 9 });
   };
   const handleMonolithLeave = () => {
     setTilt({ x: 0, y: 0 });
   };
 
-  // Caption Forge Demo Preset
-  const [captionPreset, setCaptionPreset] = useState<'glacial' | 'gothic' | 'cyber'>('glacial');
+  // Subtitle Preview Preset
+  const [captionPreset, setCaptionPreset] = useState<'clean' | 'glacial' | 'bold'>('glacial');
 
   return (
     <main className="landing gothic-landing">
-      {/* Background Interactive Snow Canvas */}
+      {/* Background Interactive Snow & Cold Mist Canvas */}
       <GothicSnowCanvas />
       <div className="gothic-ambient-veil" />
 
@@ -342,13 +560,13 @@ export default function LandingPage({
           </div>
         </section>
 
-        {/* Feature Grimoire: 3 Pillars of Gothic Winter */}
+        {/* Feature Grid: Clean, creator-focused core benefits */}
         <section className="gothic-features-section">
           <div className="gothic-section-header">
-            <h2>The Architecture of Cold Speed</h2>
+            <h2>Engineered for Short-Form Creators</h2>
             <p>
-              Forged without compromise. Every heavy calculation happens directly inside your
-              browser’s hardware sandbox.
+              Auto Cut finds the hooks and removes awkward pauses. Dynamic captions style your words
+              automatically. Everything runs privately on your device.
             </p>
           </div>
 
@@ -358,28 +576,28 @@ export default function LandingPage({
               <div className="pillar-icon-box">
                 <Scissors size={26} />
               </div>
-              <h3>The Blade of Silence</h3>
+              <h3>Silence & Pause Removal</h3>
               <p>
-                Surgical silence detection and cadence sculpting. AI isolates dead air, repeated
-                takes, and weak hooks without human hesitation.
+                Detect dead air, repeated takes, and silent gaps automatically. Keep your pacing
+                tight, energetic, and natural with zero manual timeline scrubbing.
               </p>
               <div className="pillar-micro-tag">
-                <Zap size={13} /> ZERO LATENCY DECISIONS
+                <Zap size={13} /> INSTANT AUDIO ANALYSIS
               </div>
             </div>
 
             {/* Pillar 2 */}
             <div className="gothic-pillar-card">
               <div className="pillar-icon-box">
-                <Sparkle size={26} />
+                <Type size={26} />
               </div>
-              <h3>Living Runes</h3>
+              <h3>Dynamic Kinetic Subtitles</h3>
               <p>
-                Dynamic subtitles with soul. Semantic word highlighting, kinetic physics, and
-                streamer-ready styles designed for instant viral retention.
+                Auto-generate word-by-word animated captions with keyword emphasis and custom color
+                presets. Formatted for YouTube Shorts, Reels, and TikTok safe areas.
               </p>
               <div className="pillar-micro-tag">
-                <Layers size={13} /> GPU ACCELERATED TEXT
+                <Sparkles size={13} /> HIGH-RETENTION STYLES
               </div>
             </div>
 
@@ -388,64 +606,64 @@ export default function LandingPage({
               <div className="pillar-icon-box">
                 <ShieldCheck size={26} />
               </div>
-              <h3>The Obsidian Vault</h3>
+              <h3>100% Local-First & Private</h3>
               <p>
-                No cloud uploads. No subscription servers peeking at your raw drafts. Your private
-                footage stays locked on your local drive forever.
+                Your raw footage never uploads to any server. Transcription, timeline editing, and
+                MP4 export run directly inside your browser via WebCodecs and WebAssembly.
               </p>
               <div className="pillar-micro-tag">
-                <Lock size={13} /> 100% AIR-GAPPED PRIVACY
+                <Lock size={13} /> ZERO CLOUD STORAGE
               </div>
             </div>
           </div>
         </section>
 
-        {/* Interactive Caption Forge */}
+        {/* Interactive Subtitle Style Playground */}
         <section className="gothic-caption-forge">
           <div className="forge-card">
             <div className="forge-left">
-              <h3>Interactive Rune Forge</h3>
+              <h3>Dynamic Subtitle Styles</h3>
               <p>
-                Test our kinetic subtitle styling engine right now. Choose a tone to see how
-                important words ignite attention.
+                See how FrostCut animates and highlights critical keywords to stop the scroll and
+                maximize watch time.
               </p>
               <div className="forge-preset-selector">
+                <button
+                  className={`preset-chip ${captionPreset === 'clean' ? 'active' : ''}`}
+                  onClick={() => setCaptionPreset('clean')}
+                >
+                  Clean White
+                </button>
                 <button
                   className={`preset-chip ${captionPreset === 'glacial' ? 'active' : ''}`}
                   onClick={() => setCaptionPreset('glacial')}
                 >
-                  Glacial Bold
+                  Glacial Cyan
                 </button>
                 <button
-                  className={`preset-chip ${captionPreset === 'gothic' ? 'active' : ''}`}
-                  onClick={() => setCaptionPreset('gothic')}
+                  className={`preset-chip ${captionPreset === 'bold' ? 'active' : ''}`}
+                  onClick={() => setCaptionPreset('bold')}
                 >
-                  Gothic Monolith
-                </button>
-                <button
-                  className={`preset-chip ${captionPreset === 'cyber' ? 'active' : ''}`}
-                  onClick={() => setCaptionPreset('cyber')}
-                >
-                  Brainrot Pulse
+                  Brainrot Pop
                 </button>
               </div>
             </div>
 
             <div className="forge-stage">
               <div className={`forge-caption-display style-${captionPreset}`}>
+                {captionPreset === 'clean' && (
+                  <span>
+                    FIND THE <mark>HOOK.</mark> CUT THE REST.
+                  </span>
+                )}
                 {captionPreset === 'glacial' && (
                   <span>
-                    EVERY <mark>STORY</mark> CARVED IN ICE.
+                    10 MINUTES <mark>INTO SECONDS.</mark>
                   </span>
                 )}
-                {captionPreset === 'gothic' && (
+                {captionPreset === 'bold' && (
                   <span>
-                    SILENCE <mark>SEVERED.</mark> CINEMA AWAKENS.
-                  </span>
-                )}
-                {captionPreset === 'cyber' && (
-                  <span>
-                    WAIT FOR THE <mark>PLOT TWIST</mark> ⚡
+                    WAIT FOR THE <mark>PLOT TWIST</mark> 🔥
                   </span>
                 )}
               </div>
@@ -453,26 +671,9 @@ export default function LandingPage({
           </div>
         </section>
 
-        {/* The Winter Familiar: Cozy Cat Mascot */}
+        {/* Featured Winter Mascot Interactive Card */}
         <section className="gothic-familiar-section">
-          <div className="familiar-card">
-            <div className="familiar-left">
-              <div className="familiar-cat-avatar">
-                <div className="familiar-cat-glow" />
-                <Cat size={42} style={{ color: '#bae6fd', position: 'relative', zIndex: 2 }} />
-              </div>
-              <div className="familiar-copy">
-                <h4>Guarded by the Winter Familiar</h4>
-                <p>
-                  While you focus on the vision, our cozy background engine transcodes, slices, and
-                  syncs your timeline in whisper-quiet harmony. No telemetry, no waiting queues.
-                </p>
-              </div>
-            </div>
-            <button className="familiar-cta-btn" onClick={onStartEditing}>
-              Launch Sanctuary →
-            </button>
-          </div>
+          <WinterCatFamiliar />
         </section>
 
         {/* Footer */}
