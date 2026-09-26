@@ -468,118 +468,137 @@ function PixelScottishFoldMascot() {
         {/* Ambient warm amber & frost aura */}
         <div className={`cat-aura-glow ${purring ? 'purr-active' : ''}`} />
 
-        {/* 48x48 Authentic Pixel Art Scottish Fold SVG */}
+        {/* 48x48 Authentic Pixel Art Scottish Fold SVG in Sitting Posture with Cozy Scarf */}
         <svg
           className={`pixel-cat-svg ${purring ? 'cat-bounce' : ''}`}
           viewBox="0 0 48 48"
-          width="100"
-          height="100"
+          width="105"
+          height="105"
           shapeRendering="crispEdges"
         >
-          {/* Shadow underneath */}
-          <rect x="8" y="44" width="32" height="2" fill="rgba(3,7,14,0.5)" />
-          {/* Striped Fluffy Tail (Swishing to the right) */}
-          <rect x="36" y="38" width="5" height="4" fill="#cbd5e1" />
-          <rect x="40" y="35" width="4" height="4" fill="#94a3b8" />
-          <rect x="42" y="31" width="4" height="4" fill="#cbd5e1" />
-          <rect x="43" y="27" width="3" height="4" fill="#64748b" />
-          <rect x="42" y="23" width="3" height="4" fill="#475569" />
-          <rect x="40" y="21" width="3" height="3" fill="#334155" /> {/* Dark tail tip */}
-          {/* Chubby Body / Flanks (Silvery cream white Scottish Fold) */}
-          <rect x="10" y="24" width="28" height="19" fill="#f8fafc" />
-          <rect x="9" y="26" width="30" height="15" fill="#f8fafc" />
-          {/* Body Shading & Fluff */}
-          <rect x="8" y="28" width="2" height="12" fill="#e2e8f0" />
-          <rect x="38" y="28" width="2" height="12" fill="#cbd5e1" />
-          <rect x="10" y="42" width="28" height="2" fill="#cbd5e1" />
-          {/* Soft Grey Tabby Stripes on Flanks */}
-          <rect x="10" y="30" width="3" height="2" fill="#94a3b8" />
-          <rect x="10" y="34" width="4" height="2" fill="#94a3b8" />
-          <rect x="10" y="38" width="3" height="2" fill="#94a3b8" />
-          <rect x="35" y="30" width="4" height="2" fill="#94a3b8" />
-          <rect x="34" y="35" width="4" height="2" fill="#94a3b8" />
-          {/* Big Chubby Cream/White Belly */}
-          <rect x="14" y="28" width="20" height="14" fill="#ffffff" />
-          {/* Front Paws: Curled cutely on chest/belly (Photo pose!) */}
-          {/* Left Curled Paw */}
-          <rect x="16" y="28" width="5" height="4" fill="#f1f5f9" />
-          <rect x="15" y="29" width="6" height="3" fill="#e2e8f0" />
-          <rect x="17" y="31" width="1" height="1" fill="#fda4af" />
-          <rect x="19" y="31" width="1" height="1" fill="#fda4af" />
-          {/* Right Curled Paw */}
-          <rect x="27" y="28" width="5" height="4" fill="#f1f5f9" />
-          <rect x="27" y="29" width="6" height="3" fill="#e2e8f0" />
-          <rect x="28" y="31" width="1" height="1" fill="#fda4af" />
-          <rect x="30" y="31" width="1" height="1" fill="#fda4af" />
+          {/* Ground shadow beneath paws and sitting body */}
+          <rect x="7" y="43" width="34" height="2" fill="rgba(3,7,14,0.55)" />
+          {/* Striped Fluffy Tail (curling peacefully beside the cat on the floor) */}
+          <rect x="35" y="41" width="6" height="3" fill="#cbd5e1" />
+          <rect x="39" y="38" width="4" height="4" fill="#94a3b8" />
+          <rect x="41" y="34" width="4" height="4" fill="#cbd5e1" />
+          <rect x="42" y="29" width="3" height="5" fill="#64748b" />
+          <rect x="41" y="25" width="3" height="4" fill="#475569" />
+          <rect x="39" y="23" width="3" height="3" fill="#334155" /> {/* Dark tail tip */}
+          {/* Chubby Sitting Body & Haunches */}
+          {/* Left Sitting Haunch/Thigh */}
+          <rect x="8" y="32" width="9" height="11" fill="#f8fafc" />
+          <rect x="7" y="34" width="2" height="8" fill="#cbd5e1" />
+          <rect x="8" y="35" width="3" height="2" fill="#94a3b8" />
+          <rect x="8" y="39" width="3" height="2" fill="#94a3b8" />
+          {/* Right Sitting Haunch/Thigh */}
+          <rect x="31" y="32" width="9" height="11" fill="#f8fafc" />
+          <rect x="39" y="34" width="2" height="8" fill="#cbd5e1" />
+          <rect x="37" y="35" width="3" height="2" fill="#94a3b8" />
+          <rect x="37" y="39" width="3" height="2" fill="#94a3b8" />
+          {/* Central Chubby Belly & Chest (Creamy white) */}
+          <rect x="13" y="25" width="22" height="17" fill="#f8fafc" />
+          <rect x="15" y="26" width="18" height="15" fill="#ffffff" />
+          {/* Front Left Leg & Paw Planted on the Ground */}
+          <rect x="16" y="32" width="5" height="9" fill="#f1f5f9" />
+          <rect x="15" y="40" width="7" height="4" fill="#ffffff" />
+          <rect x="16" y="43" width="5" height="1" fill="#cbd5e1" />
+          <rect x="17" y="42" width="1" height="1" fill="#fda4af" />
+          <rect x="19" y="42" width="1" height="1" fill="#fda4af" />
+          {/* Front Right Leg & Paw Planted on the Ground */}
+          <rect x="27" y="32" width="5" height="9" fill="#f1f5f9" />
+          <rect x="26" y="40" width="7" height="4" fill="#ffffff" />
+          <rect x="27" y="43" width="5" height="1" fill="#cbd5e1" />
+          <rect x="28" y="42" width="1" height="1" fill="#fda4af" />
+          <rect x="30" y="42" width="1" height="1" fill="#fda4af" />
+          {/* 🧣 Cozy Knit Winter Scarf (Warm Amber/Crimson Pattern) */}
+          {/* Main Scarf Wrap Around Neck */}
+          <rect x="11" y="21" width="26" height="5" fill="#d97706" />
+          <rect x="12" y="22" width="24" height="3" fill="#f59e0b" />
+          <rect x="14" y="21" width="3" height="5" fill="#be123c" />
+          <rect x="20" y="21" width="2" height="5" fill="#be123c" />
+          <rect x="26" y="21" width="2" height="5" fill="#be123c" />
+          <rect x="31" y="21" width="3" height="5" fill="#be123c" />
+          {/* Scarf Knot */}
+          <rect x="21" y="23" width="6" height="4" fill="#b45309" />
+          <rect x="22" y="24" width="4" height="2" fill="#d97706" />
+          {/* Scarf Tail Hanging Down in Front */}
+          <rect x="22" y="26" width="4" height="9" fill="#d97706" />
+          <rect x="22" y="28" width="4" height="2" fill="#f59e0b" />
+          <rect x="22" y="32" width="4" height="2" fill="#be123c" />
+          {/* Scarf Tassels / Fringe */}
+          <rect x="22" y="35" width="1" height="2" fill="#fbbf24" />
+          <rect x="24" y="35" width="1" height="2" fill="#fbbf24" />
+          <rect x="25" y="35" width="1" height="2" fill="#fbbf24" />
           {/* Round Head (Scottish Fold) */}
-          <rect x="11" y="9" width="26" height="17" fill="#f8fafc" />
-          <rect x="10" y="11" width="28" height="13" fill="#f8fafc" />
-          {/* Folded Ears (Small, folded down tightly like photo) */}
+          <rect x="11" y="8" width="26" height="15" fill="#f8fafc" />
+          <rect x="10" y="10" width="28" height="11" fill="#f8fafc" />
+          {/* Folded Ears (Folded tightly downwards on head like photo) */}
           {/* Left Folded Ear */}
-          <rect x="9" y="8" width="5" height="4" fill="#94a3b8" />
-          <rect x="10" y="10" width="4" height="3" fill="#cbd5e1" />
-          <rect x="11" y="11" width="2" height="2" fill="#fda4af" /> {/* inner pink fold */}
+          <rect x="9" y="7" width="5" height="4" fill="#94a3b8" />
+          <rect x="10" y="9" width="4" height="3" fill="#cbd5e1" />
+          <rect x="11" y="10" width="2" height="2" fill="#fda4af" />
           {/* Right Folded Ear */}
-          <rect x="34" y="8" width="5" height="4" fill="#94a3b8" />
-          <rect x="34" y="10" width="4" height="3" fill="#cbd5e1" />
-          <rect x="35" y="11" width="2" height="2" fill="#fda4af" />
+          <rect x="34" y="7" width="5" height="4" fill="#94a3b8" />
+          <rect x="34" y="9" width="4" height="3" fill="#cbd5e1" />
+          <rect x="35" y="10" width="2" height="2" fill="#fda4af" />
           {/* Forehead Grey Tabby "M" Stripes */}
-          <rect x="21" y="10" width="1" height="3" fill="#94a3b8" />
-          <rect x="26" y="10" width="1" height="3" fill="#94a3b8" />
-          <rect x="22" y="12" width="4" height="1" fill="#64748b" />
-          <rect x="23" y="13" width="2" height="2" fill="#94a3b8" />
+          <rect x="21" y="9" width="1" height="3" fill="#94a3b8" />
+          <rect x="26" y="9" width="1" height="3" fill="#94a3b8" />
+          <rect x="22" y="11" width="4" height="1" fill="#64748b" />
+          <rect x="23" y="12" width="2" height="2" fill="#94a3b8" />
           {/* Chubby Cheeks Shadow */}
-          <rect x="10" y="18" width="3" height="4" fill="#e2e8f0" />
-          <rect x="35" y="18" width="3" height="4" fill="#e2e8f0" />
+          <rect x="10" y="16" width="3" height="4" fill="#e2e8f0" />
+          <rect x="35" y="16" width="3" height="4" fill="#e2e8f0" />
           {/* Soulful Ice-Blue Eyes (with pupil tracking & blinking) */}
           {blinking ? (
             <>
               {/* Closed happy eyes while blinking or purring */}
-              <rect x="15" y="17" width="5" height="1" fill="#334155" />
-              <rect x="28" y="17" width="5" height="1" fill="#334155" />
+              <rect x="15" y="15" width="5" height="1" fill="#334155" />
+              <rect x="28" y="15" width="5" height="1" fill="#334155" />
             </>
           ) : (
             <>
               {/* Left Eye */}
-              <rect x="15" y="15" width="5" height="5" fill="#0284c7" />
-              <rect x="16" y="15" width="3" height="5" fill="#38bdf8" />
-              <rect x="15" y="16" width="5" height="3" fill="#7dd3fc" />
+              <rect x="15" y="13" width="5" height="5" fill="#0284c7" />
+              <rect x="16" y="13" width="3" height="5" fill="#38bdf8" />
+              <rect x="15" y="14" width="5" height="3" fill="#7dd3fc" />
               {/* Left Eye Pupil (Tracking Mouse) */}
               <rect
                 x={17 + pupilOffset.x}
-                y={16 + pupilOffset.y}
+                y={14 + pupilOffset.y}
                 width="2"
                 height="3"
                 fill="#0f172a"
               />
-              <rect x="18" y="15" width="1" height="1" fill="#ffffff" /> {/* Eye glint */}
+              <rect x="18" y="13" width="1" height="1" fill="#ffffff" /> {/* Eye glint */}
               {/* Right Eye */}
-              <rect x="28" y="15" width="5" height="5" fill="#0284c7" />
-              <rect x="29" y="15" width="3" height="5" fill="#38bdf8" />
-              <rect x="28" y="16" width="5" height="3" fill="#7dd3fc" />
+              <rect x="28" y="13" width="5" height="5" fill="#0284c7" />
+              <rect x="29" y="13" width="3" height="5" fill="#38bdf8" />
+              <rect x="28" y="14" width="5" height="3" fill="#7dd3fc" />
               {/* Right Eye Pupil (Tracking Mouse) */}
               <rect
                 x={30 + pupilOffset.x}
-                y={16 + pupilOffset.y}
+                y={14 + pupilOffset.y}
                 width="2"
                 height="3"
                 fill="#0f172a"
               />
-              <rect x="31" y="15" width="1" height="1" fill="#ffffff" />
+              <rect x="31" y="13" width="1" height="1" fill="#ffffff" />
             </>
           )}
           {/* Cute Greyish Pink Nose */}
-          <rect x="23" y="20" width="2" height="1" fill="#f43f5e" />
-          <rect x="23" y="21" width="2" height="1" fill="#e11d48" />
+          <rect x="23" y="18" width="2" height="1" fill="#f43f5e" />
+          <rect x="23" y="19" width="2" height="1" fill="#e11d48" />
           {/* Mouth (Sweet cat smile) */}
-          <rect x="22" y="22" width="1" height="1" fill="#64748b" />
-          <rect x="25" y="22" width="1" height="1" fill="#64748b" />
-          <rect x="23" y="22" width="2" height="1" fill="#f8fafc" />
+          <rect x="22" y="20" width="1" height="1" fill="#64748b" />
+          <rect x="25" y="20" width="1" height="1" fill="#64748b" />
+          <rect x="23" y="20" width="2" height="1" fill="#f8fafc" />
           {/* Delicate Pixel Whiskers */}
-          <rect x="6" y="19" width="4" height="1" fill="#94a3b8" />
-          <rect x="5" y="22" width="5" height="1" fill="#94a3b8" />
-          <rect x="38" y="19" width="4" height="1" fill="#94a3b8" />
-          <rect x="38" y="22" width="5" height="1" fill="#94a3b8" />
+          <rect x="6" y="17" width="4" height="1" fill="#94a3b8" />
+          <rect x="5" y="20" width="5" height="1" fill="#94a3b8" />
+          <rect x="38" y="17" width="4" height="1" fill="#94a3b8" />
+          <rect x="38" y="20" width="5" height="1" fill="#94a3b8" />
         </svg>
 
         {/* Floating Heart / Amber Sparks on Purr */}
