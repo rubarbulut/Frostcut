@@ -69,24 +69,37 @@ export async function resolveRemoteMedia(
 
   if (ytId) {
     const thumbnailUrl = getYouTubeThumbnail(ytId);
+    let resolvedTitle = `YouTube Media (${ytId})`;
+
+    // Try fetching enriched metadata from local engine if available
+    try {
+      const metaRes = await fetch(`/api/youtube-meta?url=${encodeURIComponent(trimmed)}`);
+      if (metaRes.ok) {
+        const metaData = await metaRes.json();
+        if (metaData.title) resolvedTitle = metaData.title;
+      }
+    } catch {
+      // Offline or standalone mode: continue with standard YouTube ID & thumbnail
+    }
+
     return {
       url: trimmed,
       source: 'youtube',
       id: ytId,
-      title: `YouTube Media (${ytId})`,
+      title: resolvedTitle,
       thumbnailUrl,
       availableFormats: [
         {
           formatId: 'yt-video-1080',
           type: 'video',
-          quality: '1080p / 720p',
+          quality: '1080p / 720p (H.264 MP4)',
           ext: 'mp4',
           downloadUrl: trimmed,
         },
         {
           formatId: 'yt-audio-high',
           type: 'audio',
-          quality: 'High Audio (320kbps)',
+          quality: 'High Audio (AAC/MP3)',
           ext: 'mp3',
           downloadUrl: trimmed,
         },
@@ -120,7 +133,7 @@ export async function resolveRemoteMedia(
 
 /**
  * Downloads a remote YouTube stream or direct URL into a standard browser File object.
- * Uses Cobalt API or direct fetch with progress reporting.
+ * Uses local high-performance yt-dlp backend with direct fallbacks.
  */
 export async function downloadRemoteMedia(
   mediaMeta: RemoteMediaMeta,
@@ -134,55 +147,49 @@ export async function downloadRemoteMedia(
 
   report('resolving', 10, 'Connecting to stream resolver…');
 
+  const sanitizedTitle = (mediaMeta.title || 'frostcut-import')
+    .replace(/[^a-zA-Z0-9_\- ]/g, '_')
+    .trim()
+    .slice(0, 50) || 'youtube_import';
+  const ext = targetType === 'audio' ? 'mp3' : 'mp4';
+  const mime = targetType === 'audio' ? 'audio/mpeg' : 'video/mp4';
+
   if (mediaMeta.source === 'youtube') {
-    // Attempt resolving via Cobalt open stream API
+    report('resolving', 25, 'Fetching high-quality H.264 stream from media engine…');
+
     try {
-      report('resolving', 25, 'Fetching media stream information…');
-      const cobaltPayload = {
-        url: mediaMeta.url,
-        videoQuality: '1080',
-        audioFormat: targetType === 'audio' ? 'mp3' : 'best',
-        downloadMode: targetType === 'audio' ? 'audio' : 'auto',
-      };
+      const downloadEndpoint = `/api/youtube-download?url=${encodeURIComponent(mediaMeta.url)}&type=${targetType}`;
+      report('downloading', 45, 'Downloading video & audio streams…');
 
-      const response = await fetch('https://api.cobalt.tools/api/json', {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(cobaltPayload),
-        signal,
-      });
+      const response = await fetch(downloadEndpoint, { signal });
 
-      if (response.ok) {
-        const data = await response.json();
-        const streamUrl = data.url || data.stream;
-        if (streamUrl) {
-          report('downloading', 45, 'Downloading media data to local memory…');
-          const fileRes = await fetch(streamUrl, { signal });
-          if (!fileRes.ok) throw new Error(`Download failed with status ${fileRes.status}`);
-
-          const blob = await fileRes.blob();
-          report('processing', 90, 'Preparing media file for local editor…');
-          const ext = targetType === 'audio' ? 'mp3' : 'mp4';
-          const mime = targetType === 'audio' ? 'audio/mpeg' : 'video/mp4';
-          const sanitizedTitle = (mediaMeta.title || 'frostcut-import')
-            .replace(/[^a-zA-Z0-9_-]/g, '_')
-            .slice(0, 40);
-
-          const file = new File([blob], `${sanitizedTitle}.${ext}`, { type: mime });
-          report('ready', 100, 'Import completed successfully!');
-          return file;
-        }
+      if (!response.ok) {
+        let errMsg = `Download failed (${response.status})`;
+        try {
+          const errJson = await response.json();
+          if (errJson.error) errMsg = errJson.error;
+        } catch {}
+        throw new Error(errMsg);
       }
-    } catch (apiErr) {
-      // Fallback: If external API is rate-limited or blocked, create simulated playable clip or throw helpful guidance
-      console.warn('External stream resolver unavailable, falling back:', apiErr);
+
+      report('processing', 85, 'Packaging video into local media container…');
+      const blob = await response.blob();
+
+      if (blob.type.includes('text') || blob.size < 1000) {
+        throw new Error('The downloaded stream was invalid or empty.');
+      }
+
+      const file = new File([blob], `${sanitizedTitle}.${ext}`, { type: mime });
+      report('ready', 100, 'Import completed successfully!');
+      return file;
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') throw err;
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`YouTube download error: ${message}`);
     }
   }
 
-  // Direct fetch for standard URLs
+  // Direct fetch for standard URLs (direct MP4/MP3)
   report('downloading', 35, 'Fetching file directly…');
   const directRes = await fetch(mediaMeta.url, { signal });
   if (!directRes.ok) {
@@ -192,10 +199,11 @@ export async function downloadRemoteMedia(
   }
 
   const blob = await directRes.blob();
-  const ext = targetType === 'audio' ? 'mp3' : 'mp4';
-  const mime = targetType === 'audio' ? 'audio/mpeg' : 'video/mp4';
-  const file = new File([blob], `${mediaMeta.title || 'remote-import'}.${ext}`, { type: mime });
+  if (blob.type.includes('text')) {
+    throw new Error('The provided URL returned a web page instead of media content.');
+  }
 
+  const file = new File([blob], `${sanitizedTitle}.${ext}`, { type: mime });
   report('ready', 100, 'Import complete!');
   return file;
 }

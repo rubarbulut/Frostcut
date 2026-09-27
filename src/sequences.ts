@@ -40,7 +40,7 @@ export function sequenceViews(p: Project): ProjectSequence[] {
           exportSettings: p.exportSettings,
           suggestions: p.suggestions,
         }
-      : { ...s, adjustments: s.adjustments },
+      : ('adjustments' in s ? s : { ...s, adjustments: undefined }),
   );
 }
 export function syncSequence(p: Project): Project {
