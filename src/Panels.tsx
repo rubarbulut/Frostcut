@@ -10,6 +10,7 @@ import {
   MessageSquareText,
   Diamond,
   Volume2,
+  Youtube,
 } from 'lucide-react';
 import { useEditor, mediaUrls } from './store';
 import {
@@ -28,9 +29,11 @@ import { TransformControls } from './TransformControls';
 export function MediaPanel({
   onImport,
   onRelink,
+  onOpenImporter,
 }: {
   onImport: () => void;
   onRelink: (id: string) => void;
+  onOpenImporter?: () => void;
 }) {
   const { project: p, mediaRevision } = useEditor();
   void mediaRevision;
@@ -38,13 +41,34 @@ export function MediaPanel({
     <div className="media-panel">
       <div className="panel-title">
         <span>Project media</span>
-        <span className="count">{p.media.length}</span>
+        <div className="panel-title-actions">
+          <span className="count">{p.media.length}</span>
+          {onOpenImporter && (
+            <button
+              className="mini-yt-btn"
+              onClick={onOpenImporter}
+              title="Import YouTube or Audio"
+              aria-label="Import from YouTube"
+            >
+              <Youtube size={13} />
+            </button>
+          )}
+        </div>
       </div>
-      <button className="import-zone" onClick={onImport}>
-        <Upload size={22} />
-        <b>Import footage</b>
-        <span>or drop a video anywhere</span>
-      </button>
+      <div className="media-import-actions">
+        <button className="import-zone" onClick={onImport}>
+          <Upload size={20} />
+          <b>Import footage</b>
+          <span>or drop a video anywhere</span>
+        </button>
+        {onOpenImporter && (
+          <button className="import-zone remote-import-zone" onClick={onOpenImporter}>
+            <Youtube size={20} />
+            <b>YouTube / Audio</b>
+            <span>URL, MP3, WAV, MP4</span>
+          </button>
+        )}
+      </div>
       <div className="asset-list">
         {p.media.map((m) => (
           <div key={m.id} className="asset-card">

@@ -73,6 +73,8 @@ import CaptionEditor from './CaptionEditor';
 import TranscriptionSetup from './TranscriptionSetup';
 import { resolveQuality, recommendedQuality, transcriptionModels } from './transcription-config';
 import LandingPage from './LandingPage';
+import { MediaImporterModal } from './importer/MediaImporterModal';
+import './importer/importer.css';
 import { SequencePicker } from './SequencePicker';
 import { createShortSequences } from './sequences';
 import { analyzeSource, measuredSilences } from './analyze-source';
@@ -109,6 +111,7 @@ export default function App() {
   const [screen, setScreen] = useState<'landing' | 'editor'>('landing'),
     [modal, setModal] = useState<'project' | 'auto' | 'export' | 'transcribe' | null>(null),
     [panel, setPanel] = useState('media'),
+    [importerOpen, setImporterOpen] = useState(false),
     [resume, setResume] = useState<Project>(),
     [toast, setToast] = useState(''),
     [projectName, setProjectName] = useState('My first cut'),
@@ -614,6 +617,10 @@ export default function App() {
             setScreen('editor');
           }}
           resumeProject={resume}
+          onImportFile={(file) => {
+            setScreen('editor');
+            void importFile(file);
+          }}
         />
       ) : (
         <main
@@ -725,7 +732,11 @@ export default function App() {
                 </button>
               </div>
               {panel === 'media' ? (
-                <MediaPanel onImport={() => importClick()} onRelink={(id) => importClick(id)} />
+                <MediaPanel
+                  onImport={() => importClick()}
+                  onRelink={(id) => importClick(id)}
+                  onOpenImporter={() => setImporterOpen(true)}
+                />
               ) : (
                 <TranscriptPanel
                   onTranscribe={() => setModal('transcribe')}
@@ -1695,6 +1706,11 @@ export default function App() {
           </button>
         </div>
       )}
+      <MediaImporterModal
+        isOpen={importerOpen}
+        onClose={() => setImporterOpen(false)}
+        onMediaReady={(file) => void importFile(file)}
+      />
     </>
   );
 }

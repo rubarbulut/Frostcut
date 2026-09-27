@@ -50,40 +50,56 @@ export async function inspectMedia(file: File): Promise<MediaAsset> {
   if (file.size > 1_500_000_000)
     throw new Error('For this P0 build, use a source smaller than 1.5 GB.');
   return new Promise((resolve, reject) => {
-    const video = document.createElement('video'),
-      url = URL.createObjectURL(file);
-    video.preload = 'metadata';
+    const isAudio =
+      file.type.startsWith('audio/') || /\.(mp3|wav|m4a|aac|ogg)$/i.test(file.name);
+    const mediaEl = isAudio ? document.createElement('audio') : document.createElement('video');
+    const url = URL.createObjectURL(file);
+    mediaEl.preload = 'metadata';
     const cleanup = () => {
       URL.revokeObjectURL(url);
-      video.removeAttribute('src');
-      video.load();
+      mediaEl.removeAttribute('src');
+      mediaEl.load();
     };
     const timeout = setTimeout(() => {
       cleanup();
-      reject(new Error('This video could not be opened. Try an H.264 MP4.'));
+      reject(
+        new Error(
+          isAudio
+            ? 'This audio file could not be opened. Try an MP3 or WAV.'
+            : 'This video could not be opened. Try an H.264 MP4.',
+        ),
+      );
     }, 15000);
-    video.onloadedmetadata = () => {
+    mediaEl.onloadedmetadata = () => {
       clearTimeout(timeout);
-      const { duration, videoWidth, videoHeight } = video;
+      const duration = mediaEl.duration;
+      const videoWidth = 'videoWidth' in mediaEl ? (mediaEl.videoWidth as number) : 1280;
+      const videoHeight = 'videoHeight' in mediaEl ? (mediaEl.videoHeight as number) : 720;
       cleanup();
-      if (!Number.isFinite(duration) || duration <= 0 || !videoWidth)
+      if (!Number.isFinite(duration) || duration <= 0 || (!isAudio && !videoWidth))
         return reject(new Error('Choose a playable video file.'));
       resolve({
         id: uid(),
         name: file.name,
         duration,
-        width: videoWidth,
-        height: videoHeight,
+        width: videoWidth || 1280,
+        height: videoHeight || 720,
         size: file.size,
-        type: file.type || 'video/mp4',
+        type: file.type || (isAudio ? 'audio/mpeg' : 'video/mp4'),
       });
     };
-    video.onerror = () => {
+    mediaEl.onerror = () => {
       clearTimeout(timeout);
       cleanup();
-      reject(new Error('Your browser cannot preview this format. Try an H.264 MP4.'));
+      reject(
+        new Error(
+          isAudio
+            ? 'Your browser cannot preview this audio format. Try an MP3 or WAV.'
+            : 'Your browser cannot preview this format. Try an H.264 MP4.',
+        ),
+      );
     };
-    video.src = url;
+    mediaEl.src = url;
   });
 }
 async function runEngine<T>(
