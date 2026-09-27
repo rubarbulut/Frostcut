@@ -45,12 +45,102 @@ function GothicAtmosphereCanvas() {
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
+    // Pre-render Castle Silhouette into Offscreen Canvas to avoid 30+ path re-calculations every frame
+    const offscreenCastle = document.createElement('canvas');
+    const renderCastleOffscreen = (cWidth: number, cHeight: number) => {
+      offscreenCastle.width = cWidth;
+      offscreenCastle.height = cHeight;
+      const cCtx = offscreenCastle.getContext('2d');
+      if (!cCtx) return;
+
+      const baseY = Math.min(cHeight * 0.62, cHeight - 260);
+
+      cCtx.save();
+      cCtx.beginPath();
+      cCtx.moveTo(0, cHeight);
+      cCtx.lineTo(0, baseY + 60);
+
+      // Distant jagged mountains & fortress spires
+      cCtx.lineTo(cWidth * 0.05, baseY + 30);
+      cCtx.lineTo(cWidth * 0.08, baseY - 20); // Spire 1
+      cCtx.lineTo(cWidth * 0.1, baseY + 25);
+      cCtx.lineTo(cWidth * 0.14, baseY + 20);
+
+      // Cathedral Spire Left
+      cCtx.lineTo(cWidth * 0.17, baseY - 80);
+      cCtx.lineTo(cWidth * 0.18, baseY - 120);
+      cCtx.lineTo(cWidth * 0.19, baseY - 80);
+      cCtx.lineTo(cWidth * 0.22, baseY + 10);
+
+      // Castle Wall & Flying Buttresses
+      cCtx.lineTo(cWidth * 0.26, baseY - 10);
+      cCtx.lineTo(cWidth * 0.28, baseY - 50);
+      cCtx.lineTo(cWidth * 0.3, baseY - 15);
+      cCtx.lineTo(cWidth * 0.35, baseY);
+
+      // Central Grand Gothic Spire
+      cCtx.lineTo(cWidth * 0.44, baseY - 30);
+      cCtx.lineTo(cWidth * 0.47, baseY - 140);
+      cCtx.lineTo(cWidth * 0.48, baseY - 170);
+      cCtx.lineTo(cWidth * 0.49, baseY - 140);
+      cCtx.lineTo(cWidth * 0.52, baseY - 20);
+
+      // Cathedral Nave & Roof Ridge
+      cCtx.lineTo(cWidth * 0.58, baseY - 35);
+      cCtx.lineTo(cWidth * 0.62, baseY - 65);
+      cCtx.lineTo(cWidth * 0.64, baseY - 110);
+      cCtx.lineTo(cWidth * 0.65, baseY - 65);
+      cCtx.lineTo(cWidth * 0.7, baseY - 10);
+
+      // Right Fortress Bastion
+      cCtx.lineTo(cWidth * 0.75, baseY + 15);
+      cCtx.lineTo(cWidth * 0.79, baseY - 70);
+      cCtx.lineTo(cWidth * 0.81, baseY - 30);
+      cCtx.lineTo(cWidth * 0.86, baseY + 10);
+      cCtx.lineTo(cWidth * 0.9, baseY - 45);
+      cCtx.lineTo(cWidth * 0.92, baseY + 20);
+      cCtx.lineTo(cWidth, baseY + 50);
+      cCtx.lineTo(cWidth, cHeight);
+      cCtx.closePath();
+
+      // Deep obsidian gradient fill
+      const castleGrad = cCtx.createLinearGradient(0, baseY - 180, 0, cHeight);
+      castleGrad.addColorStop(0, 'rgba(8, 14, 24, 0.45)');
+      castleGrad.addColorStop(0.4, 'rgba(5, 8, 14, 0.75)');
+      castleGrad.addColorStop(1, 'rgba(2, 4, 8, 0.95)');
+      cCtx.fillStyle = castleGrad;
+      cCtx.fill();
+
+      // Delicate Candlelit Amber Lancet Windows
+      const drawWindow = (wx: number, wy: number, ww: number, wh: number) => {
+        cCtx.save();
+        cCtx.fillStyle = 'rgba(251, 191, 36, 0.85)';
+        cCtx.shadowColor = '#f59e0b';
+        cCtx.shadowBlur = 6;
+        cCtx.beginPath();
+        cCtx.ellipse(wx, wy, ww, wh, 0, 0, Math.PI * 2);
+        cCtx.fill();
+        cCtx.restore();
+      };
+
+      drawWindow(cWidth * 0.18, baseY - 40, 2, 6);
+      drawWindow(cWidth * 0.48, baseY - 75, 2.5, 8);
+      drawWindow(cWidth * 0.48, baseY - 45, 2.5, 7);
+      drawWindow(cWidth * 0.635, baseY - 40, 2.5, 7);
+      drawWindow(cWidth * 0.795, baseY - 35, 2, 5);
+
+      cCtx.restore();
+    };
+
+    renderCastleOffscreen(width, height);
+
     const onResize = () => {
       if (!canvas) return;
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
+      renderCastleOffscreen(width, height);
     };
-    window.addEventListener('resize', onResize);
+    window.addEventListener('resize', onResize, { passive: true });
 
     // Particle definition
     interface Flake {
@@ -59,21 +149,19 @@ function GothicAtmosphereCanvas() {
       radius: number;
       speedY: number;
       speedX: number;
-      alpha: number;
       phase: number;
     }
 
-    const flakesCount = Math.min(85, Math.floor(window.innerWidth / 16));
+    const flakesCount = Math.min(65, Math.floor(window.innerWidth / 20));
     const flakes: Flake[] = [];
 
     for (let i = 0; i < flakesCount; i++) {
       flakes.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        radius: Math.random() * 2.2 + 0.6,
-        speedY: Math.random() * 0.7 + 0.35,
-        speedX: Math.random() * 0.4 - 0.2,
-        alpha: Math.random() * 0.6 + 0.25,
+        radius: Math.random() * 1.8 + 0.6,
+        speedY: Math.random() * 0.6 + 0.3,
+        speedX: Math.random() * 0.3 - 0.15,
         phase: Math.random() * Math.PI * 2,
       });
     }
@@ -84,100 +172,28 @@ function GothicAtmosphereCanvas() {
       mouseX = e.clientX;
       mouseY = e.clientY;
     };
-    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mousemove', onMouseMove, { passive: true });
 
-    // Precalculate Gothic Castle Silhouette coordinates relative to width/height
-    const drawCastleSilhouette = (cWidth: number, cHeight: number) => {
-      const baseY = Math.min(cHeight * 0.62, cHeight - 260);
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(0, cHeight);
-      ctx.lineTo(0, baseY + 60);
-
-      // Distant jagged mountains & fortress spires
-      ctx.lineTo(cWidth * 0.05, baseY + 30);
-      ctx.lineTo(cWidth * 0.08, baseY - 20); // Spire 1
-      ctx.lineTo(cWidth * 0.1, baseY + 25);
-      ctx.lineTo(cWidth * 0.14, baseY + 20);
-
-      // Cathedral Spire Left
-      ctx.lineTo(cWidth * 0.17, baseY - 80); // High spire
-      ctx.lineTo(cWidth * 0.18, baseY - 120); // Cross tip
-      ctx.lineTo(cWidth * 0.19, baseY - 80);
-      ctx.lineTo(cWidth * 0.22, baseY + 10);
-
-      // Castle Wall & Flying Buttresses
-      ctx.lineTo(cWidth * 0.26, baseY - 10);
-      ctx.lineTo(cWidth * 0.28, baseY - 50); // Turret
-      ctx.lineTo(cWidth * 0.3, baseY - 15);
-      ctx.lineTo(cWidth * 0.35, baseY);
-
-      // Central Grand Gothic Spire
-      ctx.lineTo(cWidth * 0.44, baseY - 30);
-      ctx.lineTo(cWidth * 0.47, baseY - 140); // Grand needle
-      ctx.lineTo(cWidth * 0.48, baseY - 170); // Finial
-      ctx.lineTo(cWidth * 0.49, baseY - 140);
-      ctx.lineTo(cWidth * 0.52, baseY - 20);
-
-      // Cathedral Nave & Roof Ridge
-      ctx.lineTo(cWidth * 0.58, baseY - 35);
-      ctx.lineTo(cWidth * 0.62, baseY - 65); // Clock / Bell Tower
-      ctx.lineTo(cWidth * 0.64, baseY - 110); // Bell spire
-      ctx.lineTo(cWidth * 0.65, baseY - 65);
-      ctx.lineTo(cWidth * 0.7, baseY - 10);
-
-      // Right Fortress Bastion
-      ctx.lineTo(cWidth * 0.75, baseY + 15);
-      ctx.lineTo(cWidth * 0.79, baseY - 70); // Watchtower
-      ctx.lineTo(cWidth * 0.81, baseY - 30);
-      ctx.lineTo(cWidth * 0.86, baseY + 10);
-      ctx.lineTo(cWidth * 0.9, baseY - 45); // East spire
-      ctx.lineTo(cWidth * 0.92, baseY + 20);
-      ctx.lineTo(cWidth, baseY + 50);
-      ctx.lineTo(cWidth, cHeight);
-      ctx.closePath();
-
-      // Deep obsidian gradient fill
-      const castleGrad = ctx.createLinearGradient(0, baseY - 180, 0, cHeight);
-      castleGrad.addColorStop(0, 'rgba(8, 14, 24, 0.45)');
-      castleGrad.addColorStop(0.4, 'rgba(5, 8, 14, 0.75)');
-      castleGrad.addColorStop(1, 'rgba(2, 4, 8, 0.95)');
-      ctx.fillStyle = castleGrad;
-      ctx.fill();
-
-      // Delicate Candlelit Amber Lancet Windows
-      const drawWindow = (wx: number, wy: number, ww: number, wh: number) => {
-        ctx.save();
-        ctx.fillStyle = 'rgba(251, 191, 36, 0.75)';
-        ctx.shadowColor = '#f59e0b';
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.ellipse(wx, wy, ww, wh, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      };
-
-      drawWindow(cWidth * 0.18, baseY - 40, 2, 6);
-      drawWindow(cWidth * 0.48, baseY - 75, 2.5, 8);
-      drawWindow(cWidth * 0.48, baseY - 45, 2.5, 7);
-      drawWindow(cWidth * 0.635, baseY - 40, 2.5, 7);
-      drawWindow(cWidth * 0.795, baseY - 35, 2, 5);
-
-      ctx.restore();
+    let isVisible = true;
+    const onVisibility = () => {
+      isVisible = !document.hidden;
+      if (isVisible) {
+        cancelAnimationFrame(animId);
+        animId = requestAnimationFrame(render);
+      }
     };
+    document.addEventListener('visibilitychange', onVisibility);
 
     let frame = 0;
     const render = () => {
+      if (!isVisible) return;
       frame++;
       ctx.clearRect(0, 0, width, height);
 
       // 1. 🌌 Aurora Borealis (Waving Ribbons of Northern Light)
-      ctx.save();
       const wave1 = Math.sin(frame * 0.007) * 35;
       const wave2 = Math.cos(frame * 0.009) * 45;
 
-      // Aurora 1: Ethereal Emerald / Teal Ribbon
       const auroraGrad1 = ctx.createLinearGradient(0, 0, width, height * 0.45);
       auroraGrad1.addColorStop(0, 'transparent');
       auroraGrad1.addColorStop(0.3, 'rgba(45, 212, 191, 0.08)');
@@ -207,85 +223,40 @@ function GothicAtmosphereCanvas() {
       ctx.fillStyle = auroraGrad1;
       ctx.fill();
 
-      // Aurora 2: Glacial Cyan & Soft Twilight Violet
-      const auroraGrad2 = ctx.createLinearGradient(width, 0, 0, height * 0.5);
-      auroraGrad2.addColorStop(0, 'transparent');
-      auroraGrad2.addColorStop(0.4, 'rgba(56, 189, 248, 0.09)');
-      auroraGrad2.addColorStop(0.7, 'rgba(168, 85, 247, 0.05)');
-      auroraGrad2.addColorStop(1, 'transparent');
-
-      ctx.beginPath();
-      ctx.moveTo(0, height * 0.22 - wave2);
-      ctx.bezierCurveTo(
-        width * 0.35,
-        height * 0.35 + wave1,
-        width * 0.65,
-        height * 0.12 - wave2,
-        width,
-        height * 0.25 + wave1,
-      );
-      ctx.lineTo(width, height * 0.48);
-      ctx.bezierCurveTo(
-        width * 0.65,
-        height * 0.3 - wave2,
-        width * 0.35,
-        height * 0.5 + wave1,
-        0,
-        height * 0.38 - wave2,
-      );
-      ctx.closePath();
-      ctx.fillStyle = auroraGrad2;
-      ctx.fill();
-      ctx.restore();
-
-      // 2. 🏰 Gothic Castle Silhouette
-      drawCastleSilhouette(width, height);
+      // 2. 🏰 Gothic Castle Silhouette (BLITTED IN 1 GPU CALL FROM CACHED CANVAS)
+      ctx.drawImage(offscreenCastle, 0, 0);
 
       // 3. 🌫️ Rolling Cold Winter Mist
-      const mistX1 = ((frame * 0.35) % (width + 600)) - 300;
+      const mistX1 = ((frame * 0.3) % (width + 500)) - 250;
       const grad1 = ctx.createRadialGradient(
         mistX1,
         height - 60,
-        40,
+        30,
         mistX1,
         height - 60,
-        Math.min(550, width * 0.6),
+        Math.min(500, width * 0.55),
       );
-      grad1.addColorStop(0, 'rgba(14, 116, 144, 0.1)');
-      grad1.addColorStop(0.6, 'rgba(6, 78, 110, 0.03)');
-      grad1.addColorStop(1, 'transparent');
+      grad1.addColorStop(0, 'rgba(14, 116, 144, 0.08)');
+      grad1.addColorStop(0.7, 'transparent');
       ctx.fillStyle = grad1;
-      ctx.fillRect(0, height - 380, width, 380);
+      ctx.fillRect(0, height - 320, width, 320);
 
-      const mistX2 = ((frame * 0.2 + 500) % (width + 700)) - 350;
-      const grad2 = ctx.createRadialGradient(
-        width - mistX2,
-        height - 120,
-        60,
-        width - mistX2,
-        height - 120,
-        Math.min(600, width * 0.7),
-      );
-      grad2.addColorStop(0, 'rgba(56, 189, 248, 0.07)');
-      grad2.addColorStop(0.7, 'rgba(15, 23, 42, 0.02)');
-      grad2.addColorStop(1, 'transparent');
-      ctx.fillStyle = grad2;
-      ctx.fillRect(0, height - 420, width, 420);
-
-      // 4. ❄️ Falling Snow Crystals with Mouse Deflection
+      // 4. ❄️ Falling Snow (BATCHED IN 1 SINGLE GPU DRAW CALL)
+      ctx.fillStyle = 'rgba(186, 230, 253, 0.55)';
+      ctx.beginPath();
       for (let i = 0; i < flakes.length; i++) {
         const f = flakes[i];
         f.y += f.speedY;
-        f.x += f.speedX + Math.sin(frame * 0.015 + f.phase) * 0.25;
+        f.x += f.speedX + Math.sin(frame * 0.015 + f.phase) * 0.2;
 
-        // Snow parts smoothly around cursor
         const dx = f.x - mouseX;
         const dy = f.y - mouseY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 90) {
-          const force = (1 - dist / 90) * 1.5;
-          f.x += (dx / (dist || 1)) * force;
-          f.y += (dy / (dist || 1)) * force;
+        const distSq = dx * dx + dy * dy;
+        if (distSq < 6400 && distSq > 0) {
+          const dist = Math.sqrt(distSq);
+          const force = (1 - dist / 80) * 1.2;
+          f.x += (dx / dist) * force;
+          f.y += (dy / dist) * force;
         }
 
         if (f.y > height + 5) {
@@ -295,22 +266,20 @@ function GothicAtmosphereCanvas() {
         if (f.x > width + 5) f.x = -5;
         if (f.x < -5) f.x = width + 5;
 
-        ctx.beginPath();
+        ctx.moveTo(f.x + f.radius, f.y);
         ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(186, 230, 253, ${f.alpha})`;
-        ctx.shadowColor = '#7dd3fc';
-        ctx.shadowBlur = f.radius > 1.8 ? 8 : 0;
-        ctx.fill();
       }
+      ctx.fill();
 
       animId = requestAnimationFrame(render);
     };
 
-    render();
+    animId = requestAnimationFrame(render);
 
     return () => {
       window.removeEventListener('resize', onResize);
       window.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('visibilitychange', onVisibility);
       cancelAnimationFrame(animId);
     };
   }, []);
@@ -319,8 +288,9 @@ function GothicAtmosphereCanvas() {
 }
 
 // 🕯️ Warm Amber Lantern Cursor: Follows mouse and provides warm light through the cold
+// (100% GPU Hardware Accelerated - ZERO React state re-renders)
 function WarmAmberLantern() {
-  const [pos, setPos] = useState({ x: -1000, y: -1000 });
+  const lanternRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let targetX = -1000;
@@ -328,20 +298,29 @@ function WarmAmberLantern() {
     let currentX = -1000;
     let currentY = -1000;
     let frameId: number;
+    let visible = false;
 
     const onMove = (e: globalThis.MouseEvent) => {
       targetX = e.clientX;
       targetY = e.clientY;
+      if (!visible) {
+        visible = true;
+        currentX = targetX;
+        currentY = targetY;
+        if (lanternRef.current) lanternRef.current.style.opacity = '1';
+      }
     };
-    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mousemove', onMove, { passive: true });
 
     const lerp = () => {
-      currentX += (targetX - currentX) * 0.14;
-      currentY += (targetY - currentY) * 0.14;
-      setPos({ x: currentX, y: currentY });
+      currentX += (targetX - currentX) * 0.16;
+      currentY += (targetY - currentY) * 0.16;
+      if (lanternRef.current && visible) {
+        lanternRef.current.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+      }
       frameId = requestAnimationFrame(lerp);
     };
-    lerp();
+    frameId = requestAnimationFrame(lerp);
 
     return () => {
       window.removeEventListener('mousemove', onMove);
@@ -349,14 +328,11 @@ function WarmAmberLantern() {
     };
   }, []);
 
-  if (pos.x < -500) return null;
-
   return (
     <div
+      ref={lanternRef}
       className="warm-amber-lantern"
-      style={{
-        transform: `translate(${pos.x}px, ${pos.y}px)`,
-      }}
+      style={{ opacity: 0, willChange: 'transform' }}
       aria-hidden="true"
     >
       <div className="lantern-ember-core" />
@@ -366,38 +342,44 @@ function WarmAmberLantern() {
 }
 
 // 🧊 Frost Thaw Card Wrapper: Frost melts away when mouse hovers over it
+// (Direct CSS Custom Property updates - ZERO React setState re-renders)
 interface FrostThawCardProps {
   className?: string;
   children: ReactNode;
 }
 
 function FrostThawCard({ className = '', children }: FrostThawCardProps) {
-  const [thawPos, setThawPos] = useState({ x: -500, y: -500, active: false });
+  const cardRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>(0);
 
   const handlePointerMove = (e: MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setThawPos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-      active: true,
+    const card = cardRef.current;
+    if (!card) return;
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+    cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      if (!card) return;
+      const rect = card.getBoundingClientRect();
+      card.style.setProperty('--thaw-x', `${clientX - rect.left}px`);
+      card.style.setProperty('--thaw-y', `${clientY - rect.top}px`);
+      card.classList.add('thawing');
     });
   };
 
   const handlePointerLeave = () => {
-    setThawPos((prev) => ({ ...prev, active: false }));
+    cancelAnimationFrame(rafRef.current);
+    const card = cardRef.current;
+    if (!card) return;
+    card.classList.remove('thawing');
   };
 
   return (
     <div
-      className={`frost-thaw-card ${className} ${thawPos.active ? 'thawing' : ''}`}
+      ref={cardRef}
+      className={`frost-thaw-card ${className}`}
       onMouseMove={handlePointerMove}
       onMouseLeave={handlePointerLeave}
-      style={
-        {
-          '--thaw-x': `${thawPos.x}px`,
-          '--thaw-y': `${thawPos.y}px`,
-        } as any
-      }
     >
       {/* Dynamic Melting Frost Overlay */}
       <div className="frost-glass-sheet" aria-hidden="true" />
@@ -431,26 +413,43 @@ function PixelScottishFoldMascot() {
     return () => clearInterval(blinkInterval);
   }, []);
 
-  // Pupil eye-tracking towards mouse
+  // Pupil eye-tracking towards mouse (RAF throttled + viewport check)
   useEffect(() => {
-    const handleMove = (e: globalThis.MouseEvent) => {
-      const el = document.getElementById('pixel-cat-container');
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const dx = e.clientX - cx;
-      const dy = e.clientY - cy;
+    let lastX = 0;
+    let lastY = 0;
+    let rafId: number;
 
-      const angle = Math.atan2(dy, dx);
-      // Discrete pixel step: -1, 0, or 1 in pixel grid
-      const px = Math.round(Math.cos(angle));
-      const py = Math.round(Math.sin(angle));
-      setPupilOffset({ x: px, y: py });
+    const handleMove = (e: globalThis.MouseEvent) => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const el = document.getElementById('pixel-cat-container');
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        // Skip calculation if element is offscreen
+        if (rect.bottom < 0 || rect.top > window.innerHeight) return;
+
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dx = e.clientX - cx;
+        const dy = e.clientY - cy;
+
+        const angle = Math.atan2(dy, dx);
+        // Discrete pixel step: -1, 0, or 1 in pixel grid
+        const px = Math.round(Math.cos(angle));
+        const py = Math.round(Math.sin(angle));
+        if (px !== lastX || py !== lastY) {
+          lastX = px;
+          lastY = py;
+          setPupilOffset({ x: px, y: py });
+        }
+      });
     };
 
-    window.addEventListener('mousemove', handleMove);
-    return () => window.removeEventListener('mousemove', handleMove);
+    window.addEventListener('mousemove', handleMove, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      cancelAnimationFrame(rafId);
+    };
   }, []);
 
   const handleClick = () => {
@@ -628,6 +627,135 @@ function PixelScottishFoldMascot() {
   );
 }
 
+// 🗿 The Obsidian Monolith: 3D Interactive Editor Showcase
+// (100% Direct DOM Ref & RAF - ZERO React Root Re-renders on MouseMove)
+function ObsidianMonolith() {
+  const monolithRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>(0);
+
+  const handleMonolithMove = (e: MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+
+    cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      if (monolithRef.current) {
+        monolithRef.current.style.transform = `rotateX(${y * -8}deg) rotateY(${x * 8}deg)`;
+      }
+    });
+  };
+
+  const handleMonolithLeave = () => {
+    cancelAnimationFrame(rafRef.current);
+    if (monolithRef.current) {
+      monolithRef.current.style.transform = 'rotateX(0deg) rotateY(0deg)';
+    }
+  };
+
+  return (
+    <div className="hero-product gothic-monolith-wrapper">
+      <FrostThawCard className="monolith-thaw-shell">
+        <div
+          ref={monolithRef}
+          className="gothic-monolith"
+          onMouseMove={handleMonolithMove}
+          onMouseLeave={handleMonolithLeave}
+        >
+          {/* Monolith Header */}
+          <div className="product-top monolith-header">
+            <span className="monolith-brand-tag">
+              <Snowflake size={15} /> frostcut
+            </span>
+            <span className="monolith-project-pill">
+              A better story <ChevronDown size={12} />
+            </span>
+            <div className="monolith-status-dot" title="Local Engine Active" />
+          </div>
+
+          {/* Monolith Split Body */}
+          <div className="product-preview monolith-body">
+            {/* Left: Transcript Card */}
+            <div className="mock-transcript monolith-transcript-card">
+              <div>
+                <span className="monolith-card-tag">THE GOOD PARTS</span>
+                <p className="monolith-transcript-text">
+                  The secret to a<br />
+                  <mark>better video</mark>
+                  <br />
+                  is a better story.
+                </p>
+              </div>
+              <div className="monolith-silence-alert">
+                <Check size={13} /> Silence removed
+              </div>
+            </div>
+
+            {/* Right: 9:16 Glacial Mobile Poster */}
+            <div className="story-poster monolith-screen-mock">
+              <span className="screen-eyebrow">MAKE ROOM FOR</span>
+              <strong className="screen-headline">
+                the
+                <br />
+                <em>good</em>
+                <br />
+                parts.
+              </strong>
+              <div className="poster-caption screen-caption-bubble">
+                A <mark>better</mark> story.
+              </div>
+            </div>
+          </div>
+
+          {/* Toolbar & Icicle Waveform */}
+          <div className="mock-toolbar monolith-toolbar">
+            <Scissors size={14} style={{ color: 'var(--ice-400)' }} />
+
+            <div className="monolith-icicle-waveform" title="Glacial Audio Spectral Analysis">
+              <span className="icicle-bar" style={{ height: '14px', animationDelay: '0.1s' }} />
+              <span className="icicle-bar" style={{ height: '22px', animationDelay: '0.4s' }} />
+              <span className="icicle-bar" style={{ height: '9px', animationDelay: '0.2s' }} />
+              <span className="icicle-bar" style={{ height: '18px', animationDelay: '0.5s' }} />
+              <span className="icicle-bar" style={{ height: '24px', animationDelay: '0.3s' }} />
+              <span className="icicle-bar" style={{ height: '12px', animationDelay: '0.6s' }} />
+              <span className="icicle-bar" style={{ height: '20px', animationDelay: '0.15s' }} />
+            </div>
+
+            <span className="monolith-timecode">
+              00:04 <em>/ 00:24</em>
+            </span>
+            <Play size={12} fill="currentColor" style={{ color: 'var(--ice-cyan)' }} />
+          </div>
+
+          {/* Timeline Track */}
+          <div className="mock-timeline monolith-timeline">
+            <span className="timeline-track-label">V1</span>
+            <div className="timeline-clip-blocks">
+              <div className="clip-block" />
+              <div className="clip-block highlight" />
+              <div className="clip-block" />
+              <div className="clip-block highlight" />
+            </div>
+            <div className="mock-playhead timeline-playhead" />
+          </div>
+
+          {/* Floating Discovery Talisman */}
+          <div className="floating-discovery gothic-floating-talisman">
+            <span className="discovery-icon talisman-spark">
+              <Sparkles size={20} />
+            </span>
+            <div className="talisman-info">
+              <b>The good parts, found.</b>
+              <span>3 moments worth sharing</span>
+            </div>
+            <Check className="talisman-check" size={17} />
+          </div>
+        </div>
+      </FrostThawCard>
+    </div>
+  );
+}
+
 export default function LandingPage({
   onStartEditing,
   onOpenProject,
@@ -637,18 +765,6 @@ export default function LandingPage({
   resumeProject,
   onImportFile,
 }: LandingPageProps) {
-  // 3D Monolith Tilt
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const handleMonolithMove = (e: MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    setTilt({ x: y * -9, y: x * 9 });
-  };
-  const handleMonolithLeave = () => {
-    setTilt({ x: 0, y: 0 });
-  };
-
   // Subtitle Preview Preset
   const [captionPreset, setCaptionPreset] = useState<'clean' | 'glacial' | 'bold'>('glacial');
 
@@ -771,128 +887,7 @@ export default function LandingPage({
           </div>
 
           {/* Right Column: The Obsidian Monolith (3D Editor Showcase with Frost Thawing) */}
-          <div className="hero-product gothic-monolith-wrapper">
-            <FrostThawCard className="monolith-thaw-shell">
-              <div
-                className="gothic-monolith"
-                onMouseMove={handleMonolithMove}
-                onMouseLeave={handleMonolithLeave}
-                style={{
-                  transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-                }}
-              >
-                {/* Monolith Header */}
-                <div className="product-top monolith-header">
-                  <span className="monolith-brand-tag">
-                    <Snowflake size={15} /> frostcut
-                  </span>
-                  <span className="monolith-project-pill">
-                    A better story <ChevronDown size={12} />
-                  </span>
-                  <div className="monolith-status-dot" title="Local Engine Active" />
-                </div>
-
-                {/* Monolith Split Body */}
-                <div className="product-preview monolith-body">
-                  {/* Left: Transcript Card */}
-                  <div className="mock-transcript monolith-transcript-card">
-                    <div>
-                      <span className="monolith-card-tag">THE GOOD PARTS</span>
-                      <p className="monolith-transcript-text">
-                        The secret to a<br />
-                        <mark>better video</mark>
-                        <br />
-                        is a better story.
-                      </p>
-                    </div>
-                    <div className="monolith-silence-alert">
-                      <Check size={13} /> Silence removed
-                    </div>
-                  </div>
-
-                  {/* Right: 9:16 Glacial Mobile Poster */}
-                  <div className="story-poster monolith-screen-mock">
-                    <span className="screen-eyebrow">MAKE ROOM FOR</span>
-                    <strong className="screen-headline">
-                      the
-                      <br />
-                      <em>good</em>
-                      <br />
-                      parts.
-                    </strong>
-                    <div className="poster-caption screen-caption-bubble">
-                      A <mark>better</mark> story.
-                    </div>
-                  </div>
-                </div>
-
-                {/* Toolbar & Icicle Waveform */}
-                <div className="mock-toolbar monolith-toolbar">
-                  <Scissors size={14} style={{ color: 'var(--ice-400)' }} />
-
-                  <div className="monolith-icicle-waveform" title="Glacial Audio Spectral Analysis">
-                    <span
-                      className="icicle-bar"
-                      style={{ height: '14px', animationDelay: '0.1s' }}
-                    />
-                    <span
-                      className="icicle-bar"
-                      style={{ height: '22px', animationDelay: '0.4s' }}
-                    />
-                    <span
-                      className="icicle-bar"
-                      style={{ height: '9px', animationDelay: '0.2s' }}
-                    />
-                    <span
-                      className="icicle-bar"
-                      style={{ height: '18px', animationDelay: '0.5s' }}
-                    />
-                    <span
-                      className="icicle-bar"
-                      style={{ height: '24px', animationDelay: '0.3s' }}
-                    />
-                    <span
-                      className="icicle-bar"
-                      style={{ height: '12px', animationDelay: '0.6s' }}
-                    />
-                    <span
-                      className="icicle-bar"
-                      style={{ height: '20px', animationDelay: '0.15s' }}
-                    />
-                  </div>
-
-                  <span className="monolith-timecode">
-                    00:04 <em>/ 00:24</em>
-                  </span>
-                  <Play size={12} fill="currentColor" style={{ color: 'var(--ice-cyan)' }} />
-                </div>
-
-                {/* Timeline Track */}
-                <div className="mock-timeline monolith-timeline">
-                  <span className="timeline-track-label">V1</span>
-                  <div className="timeline-clip-blocks">
-                    <div className="clip-block" />
-                    <div className="clip-block highlight" />
-                    <div className="clip-block" />
-                    <div className="clip-block highlight" />
-                  </div>
-                  <div className="mock-playhead timeline-playhead" />
-                </div>
-
-                {/* Floating Discovery Talisman */}
-                <div className="floating-discovery gothic-floating-talisman">
-                  <span className="discovery-icon talisman-spark">
-                    <Sparkles size={20} />
-                  </span>
-                  <div className="talisman-info">
-                    <b>The good parts, found.</b>
-                    <span>3 moments worth sharing</span>
-                  </div>
-                  <Check className="talisman-check" size={17} />
-                </div>
-              </div>
-            </FrostThawCard>
-          </div>
+          <ObsidianMonolith />
         </section>
 
         {/* Feature Grid: Clean, creator-focused core benefits with Frost Thaw */}

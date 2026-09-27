@@ -442,7 +442,7 @@
 .gothic-monolith {
   width: 100%;
   max-width: 580px;
-  background: rgba(9, 14, 23, 0.88);
+  background: linear-gradient(165deg, rgba(13, 20, 34, 0.96) 0%, rgba(7, 11, 19, 0.98) 100%);
   border: 1px solid var(--goth-border);
   border-radius: 18px;
   padding: 22px;
@@ -451,11 +451,11 @@
     0 25px 60px -15px rgba(0, 0, 0, 0.9),
     0 0 55px rgba(14, 116, 144, 0.28),
     inset 0 1px 1px rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
   transition:
     transform 0.18s cubic-bezier(0.2, 0, 0.2, 1),
     box-shadow 0.3s ease;
+  will-change: transform;
+  contain: layout style;
   position: relative;
   overflow: visible;
 }
@@ -1391,11 +1391,10 @@
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(245, 158, 11, 0.12) 0%,
-    rgba(217, 119, 6, 0.04) 45%,
+    rgba(245, 158, 11, 0.16) 0%,
+    rgba(217, 119, 6, 0.05) 45%,
     transparent 70%
   );
-  filter: blur(12px);
   pointer-events: none;
 }
 
@@ -1410,6 +1409,7 @@
   transition:
     border-color 0.3s ease,
     box-shadow 0.3s ease;
+  contain: layout style;
 }
 
 .frost-thaw-card .frost-glass-sheet {
@@ -1417,7 +1417,6 @@
   inset: 0;
   pointer-events: none;
   z-index: 2;
-  backdrop-filter: blur(3px);
   background: radial-gradient(
     circle 130px at var(--thaw-x, -500px) var(--thaw-y, -500px),
     transparent 0%,
