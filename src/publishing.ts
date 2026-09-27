@@ -17,7 +17,12 @@ export function keywords(text: string, limit = 5) {
     .slice(0, limit)
     .map(([word]) => word);
 }
-export type PublishingMetadata = { title: string; description: string; hashtags: string };
+export type PublishingMetadata = {
+  title: string;
+  description: string;
+  hashtags: string;
+  chapterAttachment?: { sourceFingerprint: string; text: string };
+};
 export function mediaCredits(p: Project) {
   return p.media
     .filter((m) => m.attribution && p.clips.some((c) => c.mediaId === m.id))

@@ -17,6 +17,7 @@ export function sequenceSnapshot(p: Project, id: string, name: string): ProjectS
     captions: p.captions,
     subtitleVariants: p.subtitleVariants,
     publishing: p.publishing,
+    chapters: p.chapters,
     exportSettings: p.exportSettings,
     suggestions: p.suggestions,
   });
@@ -33,6 +34,7 @@ export function sequenceViews(p: Project): ProjectSequence[] {
           captions: p.captions,
           subtitleVariants: p.subtitleVariants,
           publishing: p.publishing,
+          chapters: p.chapters,
           exportSettings: p.exportSettings,
           suggestions: p.suggestions,
         }
@@ -53,7 +55,7 @@ export function switchSequence(project: Project, id: string): Project {
     target = p.sequences?.find((s) => s.id === id);
   if (!target) throw new Error('This sequence is no longer in the project.');
   const { id: _, name: __, ...timeline } = structuredClone(target);
-  return { ...p, ...timeline, activeSequenceId: id };
+  return { ...p, ...timeline, chapters: target.chapters, activeSequenceId: id };
 }
 export function createShortSequences(project: Project, suggestions: Suggestion[]): Project {
   if (!suggestions.length) throw new Error('Select at least one highlight.');
@@ -77,6 +79,7 @@ export function createShortSequences(project: Project, suggestions: Suggestion[]
       s.reason,
     );
     next.suggestions = [];
+    next.chapters = undefined;
     if (!next.clips.length)
       throw new Error(
         'This suggestion contains no footage after its cuts. Analyze again with lower silence sensitivity.',

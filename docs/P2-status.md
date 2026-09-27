@@ -16,7 +16,7 @@ Paid services, uploads, account connections and cloud compute are not silently e
 | Stabilization | Pending | Measured source motion and bounded correction/crop, preview/review/apply, export evidence |
 | Adjustment layers | Pending | Timeline-wide visual adjustment over a bounded interval, stacking, trimming, persistence and export |
 | Nested sequences | Pending | Reference/insert sequences with timing, audio and captions, cycle protection, edit propagation and export |
-| AI chapters | Pending | Transcript-based boundaries/titles, review/edit, navigation and chapter export, timing invalidation |
+| AI chapters | Editor and local-model path implemented; model/browser verification pending | Transcript-based boundaries/titles, review/edit, navigation and chapter export, timing invalidation |
 | Brand kit learning | Caption profiles implemented; browser review pending | Learn editable reusable branding from approved project examples; persistent profiles and explicit application |
 | AI style memory | Pending | Learn from accepted edits, explain proposed defaults, apply/reject/reset and persist across projects |
 | Analytics learning | Pending | Real imported/connected performance data, traceable feedback suggestions; no invented metrics |
@@ -79,3 +79,25 @@ rendering must be updated together for visual features.
   delivery remain pending while the user is gaming. This is caption branding;
   logo recognition, general edit-style memory and analytics learning are not
   included. See [brand-kits.md](brand-kits.md) for use and review steps.
+
+## Transcript chapter delivery
+
+- Creator tools → Chapters offers manual editing, a non-model transcript structure
+  mode and a real local semantic embedding worker. Both suggestion paths use
+  existing timeline-adjusted transcript text; titles are extracted from that text.
+- Start times, titles and list membership are editable. Chapters save per sequence,
+  participate in undo/save/open, support jumping to saved chapters and export to
+  YouTube text, chapter VTT and JSON. Newly split parts start without inherited
+  chapter times; the original retains its own list.
+- Timeline/transcript changes invalidate chapter export until reviewed. YouTube
+  exports check 00:00 start, at least three chapters and minimum 10-second lengths.
+  Publishing drafts can append/update the chapter block and detect stale attached
+  times/titles before saving/copying/downloading metadata.
+- 23 focused unit tests passed across chapter logic, worker lifecycle and existing
+  sequence/creator regressions (926 ms). After final range/lifecycle changes,
+  the 10 chapter tests passed again (590 ms). Type-check passed before those
+  small final changes. No media render or AI model inference was started.
+- Model card, Apache-2.0 upstream license, 118 MB quantized file and pinned model
+  revision were checked. Real model inference, generated chapter quality, browser
+  interactions and final production build remain **unverified**, so AI chapters
+  is not marked complete. See [chapters.md](chapters.md) for exact limits and QA.

@@ -9,6 +9,7 @@ import {
 import type { PublishingMetadata } from './publishing';
 import type { Attribution } from './stock';
 import { validVisualEffects, type VisualEffects } from './visual-effects';
+import { validChapterSet, type ChapterSet } from './chapter-data';
 export type Preset = 'YouTube Shorts' | 'TikTok' | 'Instagram Reel' | 'YouTube' | 'Custom';
 export type CaptionPreset = 'Clean' | 'Bold' | 'Brainrot';
 export type CaptionAnimation = 'none' | 'pop' | 'bounce' | 'glow' | 'typewriter' | 'karaoke';
@@ -141,6 +142,7 @@ export type Suggestion = {
   status: 'pending' | 'applied' | 'dismissed';
 };
 export type Project = {
+  chapters?: ChapterSet;
   publishing?: PublishingMetadata;
   subtitleVariants?: SubtitleVariant[];
   beats?: Record<string, number[]>;
@@ -198,6 +200,7 @@ export type ProjectSequence = Pick<
   | 'suggestions'
   | 'subtitleVariants'
   | 'publishing'
+  | 'chapters'
 > & {
   id: string;
   name: string;
@@ -603,6 +606,11 @@ export function validateProject(value: unknown): Project {
     )
       fail();
     if (p.media.length > 500 || p.clips.length > 10000) fail();
+    if (p.chapters !== undefined && !validChapterSet(p.chapters)) fail();
+    const chapterAttachment = p.publishing?.chapterAttachment;
+    if (chapterAttachment !== undefined && (!chapterAttachment ||
+      !string(chapterAttachment.sourceFingerprint) || !chapterAttachment.sourceFingerprint.trim() || chapterAttachment.sourceFingerprint.length > 500 ||
+      !string(chapterAttachment.text) || !chapterAttachment.text.trim() || chapterAttachment.text.length > 5000)) fail();
     if (
       p.publishing !== undefined &&
       (!p.publishing ||
@@ -965,6 +973,7 @@ export function validateProject(value: unknown): Project {
           captions: s.captions,
           subtitleVariants: s.subtitleVariants,
           publishing: s.publishing,
+          chapters: s.chapters,
           exportSettings: s.exportSettings,
           suggestions: [],
           sequences: undefined,
@@ -979,6 +988,7 @@ export function validateProject(value: unknown): Project {
           captions: checked.captions,
           subtitleVariants: checked.subtitleVariants,
           publishing: checked.publishing,
+          chapters: checked.chapters,
           exportSettings: checked.exportSettings,
           suggestions: [],
         };

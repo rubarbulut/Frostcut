@@ -3,6 +3,7 @@ import { useEditor, downloadBlob } from './store';
 import { metadataDrafts, mediaCredits, type PublishingMetadata } from './publishing';
 import { Field } from './components';
 import { safeFilename } from './zip';
+import { appendChapters, publishingChaptersStale } from './chapters';
 export function PublishTools() {
   const { project: p, commit } = useEditor();
   const generated = metadataDrafts(p);
@@ -16,6 +17,7 @@ export function PublishTools() {
   const [status, setStatus] = useState('');
   const text = () => `${draft.title}\n\n${draft.description}\n\n${draft.hashtags}`;
   const credits = mediaCredits(p);
+  const staleChapters = publishingChaptersStale(p, draft);
   return (
     <div className="creator-section">
       <p>
@@ -52,9 +54,46 @@ export function PublishTools() {
           onChange={(e) => setDraft({ ...draft, hashtags: e.target.value })}
         />
       </Field>
+      {p.chapters && (
+        <button
+          className="secondary"
+          onClick={() => {
+            try {
+              setDraft(appendChapters(p, draft));
+              setStatus(
+                'Chapters updated in the description. Review and save the publishing draft.',
+              );
+            } catch (e) {
+              setStatus((e as Error).message);
+            }
+          }}
+        >
+          Append saved chapters to description
+        </button>
+      )}
+      {staleChapters && (
+        <p role="alert">
+          The appended chapters changed or their timeline is outdated. Review/save the chapters and
+          append them again before saving or exporting this description.
+        </p>
+      )}
+      {draft.chapterAttachment && (
+        <button
+          className="text-button"
+          onClick={() => {
+            setDraft({ ...draft, chapterAttachment: undefined });
+            setStatus(
+              'Description kept as manual text. Chapter times will no longer be checked automatically.',
+            );
+          }}
+        >
+          Keep description as manual text
+        </button>
+      )}
       <div className="button-row">
         <button
           className="primary"
+          disabled={staleChapters}
           onClick={() => {
             commit({ ...p, publishing: draft }, 'Save publishing metadata');
             setStatus('Saved with this sequence.');
@@ -64,6 +103,7 @@ export function PublishTools() {
         </button>
         <button
           className="secondary"
+          disabled={staleChapters}
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(text());
@@ -77,6 +117,7 @@ export function PublishTools() {
         </button>
         <button
           className="secondary"
+          disabled={staleChapters}
           onClick={() =>
             downloadBlob(
               new Blob([text()], { type: 'text/plain;charset=utf-8' }),

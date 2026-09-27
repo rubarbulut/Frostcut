@@ -98,6 +98,7 @@ export function createEqualPartSequences(
     });
     next.suggestions = [];
     next.publishing = undefined;
+    next.chapters = undefined;
     next.subtitleVariants = p.subtitleVariants
       ?.filter((v) => v.sourceFingerprint === fingerprint)
       .map((v) => ({
