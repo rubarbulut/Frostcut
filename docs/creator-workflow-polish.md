@@ -14,6 +14,18 @@
   follow each part's Waiting / Rendering / Rendered / Cancelled / Failed / Skipped
   state. Rendered means encoded in memory; it is not yet a saved file. ZIP packing
   and save completion are separate status messages. No changes to encoding quality.
+- Batch preflight checks every selected part's linked media, nonempty timeline and
+  basic export dimensions/frame rate before starting the first render. Missing files
+  are listed by part and source name. The check is refreshed when media is relinked
+  and repeated on the export click. It reads metadata only; codec/decode failures
+  can still occur during rendering. Expand **Preview output filenames** to inspect
+  the actual ZIP entry names, including numbering and sanitized characters.
+- ZIP packing reports processed MB and completed files. It scans bounded 1 MB
+  buffers, periodically yields to UI input/paint, and honors cancellation between
+  chunks. MP4 bytes remain unchanged. UTF-8 filenames retain their extensions when
+  shortened; names that collide after sanitizing or case folding get suffixes.
+  Archive headers and the central directory now count toward the size limit, which
+  is checked before scanning any file for its checksum.
 - **Save location**, available before a batch render and on the single MP4 result:
   edit the output filename and optionally choose a folder. After rendering, click
   **Save ZIP/MP4 to folder**. Saving reuses the existing blob; it does not render again.
@@ -50,6 +62,14 @@ Native folder permissions/writes and visible keyboard/layout behavior still need
 manual check. Later, try a short existing render, select a folder, save twice and
 verify the numbered copy; deny/cancel the picker and verify browser download still
 works. Try bulk edits followed by Undo and project save/open.
+
+Follow-up: preflight/ZIP changes passed **13 tests in 951 ms** (`batch-plan`, `zip`,
+`export-destination`, one worker at a time) and a fresh TypeScript check. Tests verify
+inactive/missing audio sources, empty parts, filename preview parity, known CRC-32,
+UTF-8 ZIP headers/directory and exact stored bytes. The cancellation case uses only
+1 MB of synthetic bytes; the oversize case uses a size-only stand-in and allocates
+no large media file. No renderer, model, browser, benchmark or build was started.
+Runtime layout and progress responsiveness under an actual export remain unverified.
 
 API references: [directory picker](https://developer.mozilla.org/en-US/docs/Web/API/Window/showDirectoryPicker),
 [write permissions](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemHandle/requestPermission),

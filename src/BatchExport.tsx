@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useEditor } from './store';
+import { useEditor, mediaFiles } from './store';
 import { switchSequence, sequenceViews } from './sequences';
 import { exportMp4 } from './media';
-import { zipFiles, safeFilename } from './zip';
+import { zipFiles, type ZipProgress } from './zip';
 import { duration, timecode } from './model';
 import { estimatedMegabytes } from './export-settings';
 import { ExportDestination } from './ExportDestination';
+import { batchPlan } from './batch-plan';
 type PartStatus = 'Waiting' | 'Rendering' | 'Rendered' | 'Cancelled' | 'Failed' | 'Skipped';
 export function BatchExport() {
   const p = useEditor((state) => state.project);
   const setPlaying = useEditor((state) => state.setPlaying);
+  const mediaRevision = useEditor((state) => state.mediaRevision);
   const sequences = useMemo(() => sequenceViews(p), [p]);
   const summaries = useMemo(
     () =>
@@ -30,6 +32,7 @@ export function BatchExport() {
     [error, setError] = useState(''),
     [blob, setBlob] = useState<Blob>();
   const [saving, setSaving] = useState(false);
+  const [packing, setPacking] = useState<ZipProgress>();
   const [queue, setQueue] = useState<Record<string, PartStatus>>({});
   const chosen = useMemo(
     () => sequences.filter((s) => selected.includes(s.id)),
@@ -47,12 +50,14 @@ export function BatchExport() {
     [chosen, summaries],
   );
   const controlsBusy = busy || saving;
+  const plan = useMemo(() => batchPlan(p, selected, mediaFiles), [p, selected, mediaRevision]);
   function select(ids: string[]) {
     setSelected(ids);
     setBlob(undefined);
     setQueue({});
     setStatus('');
     setError('');
+    setPacking(undefined);
   }
   const abort = useRef<AbortController | null>(null);
   useEffect(
@@ -71,6 +76,13 @@ export function BatchExport() {
   }
   async function run() {
     if (abort.current || saving || !chosen.length) return;
+    const snapshot = useEditor.getState().project;
+    const checked = batchPlan(snapshot, selected, mediaFiles);
+    if (checked.errors.length) {
+      setError(checked.errors.join(' '));
+      return;
+    }
+    const parts = checked.entries;
     const c = new AbortController();
     abort.current = c;
     setBusy(true);
@@ -78,26 +90,27 @@ export function BatchExport() {
     setStatus('Preparing batch…');
     setError('');
     setBlob(undefined);
+    setPacking(undefined);
     setPlaying(false);
-    setQueue(Object.fromEntries(chosen.map((s) => [s.id, 'Waiting' as PartStatus])));
+    setQueue(Object.fromEntries(parts.map((s) => [s.id, 'Waiting' as PartStatus])));
     let currentId: string | undefined;
     try {
       const files: { name: string; blob: Blob }[] = [];
-      for (let i = 0; i < chosen.length; i++) {
+      for (let i = 0; i < parts.length; i++) {
         c.signal.throwIfAborted();
-        const sequence = chosen[i];
+        const sequence = parts[i];
         currentId = sequence.id;
         setQueue((q) => ({ ...q, [sequence.id]: 'Rendering' }));
-        const project = switchSequence(p, sequence.id);
+        const project = switchSequence(snapshot, sequence.id);
         const rendered = await exportMp4(project, c.signal, (message, percent) => {
           if (c.signal.aborted || abort.current !== c) return;
           setStatus(
-            `${i + 1}/${chosen.length} · ${sequence.name} · ${message}${percent === undefined ? '' : ` ${Math.round(percent)}%`}`,
+            `${i + 1}/${parts.length} · ${sequence.name} · ${message}${percent === undefined ? '' : ` ${Math.round(percent)}%`}`,
           );
         });
         c.signal.throwIfAborted();
         files.push({
-          name: `${String(i + 1).padStart(2, '0')}-${safeFilename(sequence.name)}.mp4`,
+          name: sequence.filename,
           blob: rendered,
         });
         setQueue((q) => ({ ...q, [sequence.id]: 'Rendered' }));
@@ -105,10 +118,13 @@ export function BatchExport() {
       }
       c.signal.throwIfAborted();
       setStatus('Packing MP4 files…');
-      const zip = await zipFiles(files, c.signal);
+      const zip = await zipFiles(files, c.signal, (progress) => {
+        if (c.signal.aborted || abort.current !== c) return;
+        setPacking(progress);
+      });
       c.signal.throwIfAborted();
       setBlob(zip);
-      setStatus(`${chosen.length} videos ready. Your active sequence is unchanged.`);
+      setStatus(`${parts.length} videos ready. Your active sequence is unchanged.`);
     } catch (e) {
       if (abort.current !== c) return;
       setQueue((q) =>
@@ -134,6 +150,7 @@ export function BatchExport() {
         abort.current = null;
         setBusy(false);
         setCancelling(false);
+        setPacking(undefined);
       }
     }
   }
@@ -199,6 +216,29 @@ export function BatchExport() {
           </label>
         ))}
       </div>
+      {!!selected.length && !!plan.errors.length && (
+        <div className="batch-preflight" role="alert">
+          <strong>Before exporting</strong>
+          <ul>
+            {plan.errors.map((issue, index) => (
+              <li key={index}>{issue}</li>
+            ))}
+          </ul>
+          <p>Relink missing files in Media, or deselect the affected parts.</p>
+        </div>
+      )}
+      {!!plan.entries.length && (
+        <details className="batch-file-preview">
+          <summary>Preview {plan.entries.length} output filenames</summary>
+          <ol>
+            {plan.entries.map((entry) => (
+              <li key={entry.id}>
+                <code>{entry.filename}</code>
+              </li>
+            ))}
+          </ol>
+        </details>
+      )}
       <ExportDestination
         blob={blob}
         defaultName={`${p.name}-shorts`}
@@ -207,7 +247,11 @@ export function BatchExport() {
         disabled={busy}
         onBusyChange={setSaving}
       />
-      <button className="primary" disabled={controlsBusy || !chosen.length} onClick={run}>
+      <button
+        className="primary"
+        disabled={controlsBusy || !chosen.length || !!plan.errors.length}
+        onClick={run}
+      >
         Export selected Shorts (.zip)
       </button>
       {busy && (
@@ -216,6 +260,21 @@ export function BatchExport() {
         </button>
       )}
       {status && <p role="status">{status}</p>}
+      {packing && !cancelling && (
+        <div className="batch-packing">
+          <label htmlFor="batch-zip-progress">
+            Packing ZIP · {packing.completedFiles}/{packing.totalFiles} files ·{' '}
+            {(packing.processedBytes / 1e6).toFixed(1)} / {(packing.totalBytes / 1e6).toFixed(1)} MB
+          </label>
+          <progress
+            id="batch-zip-progress"
+            aria-label="ZIP packaging progress"
+            value={packing.totalBytes ? packing.processedBytes : packing.completedFiles}
+            max={packing.totalBytes || packing.totalFiles || 1}
+          />
+          <small>{packing.currentFile}</small>
+        </div>
+      )}
       {error && <p role="alert">{error}</p>}
     </div>
   );

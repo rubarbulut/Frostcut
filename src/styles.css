@@ -3293,6 +3293,18 @@ details > summary {
 .batch-state[data-state='Rendering'] { color: #9ce7ff; }
 .batch-state[data-state='Rendered'] { color: #b6e8c9; }
 .batch-state[data-state='Failed'] { color: #ffb3ae; }
+.batch-preflight {
+  border: 1px solid #885a47;
+  border-radius: 8px;
+  padding: 12px;
+}
+.batch-preflight p { margin-bottom: 0; }
+.batch-file-preview,
+.batch-packing { overflow-wrap: anywhere; }
+.batch-file-preview ol { max-height: 180px; overflow-y: auto; padding-left: 24px; }
+.batch-file-preview li { padding: 4px 0; }
+.batch-packing { display: grid; gap: 8px; }
+.batch-packing progress { width: 100%; accent-color: #9ce7ff; }
 .part-tool-box,
 .export-destination {
   display: flex;
