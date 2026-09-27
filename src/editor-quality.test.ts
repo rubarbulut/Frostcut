@@ -10,6 +10,7 @@ import {
 } from './model';
 import { captionAppearance } from './caption-style';
 import { CAPTION_PALETTES, CAPTION_ANIMATIONS } from './CaptionAppearance';
+import { viralPhrases, keywordPattern, generateShortTitle, highlightRanges } from './highlights';
 
 describe('Video Editor Quality & Feature Control', () => {
   const sampleVideo: MediaAsset = {
@@ -177,4 +178,104 @@ describe('Video Editor Quality & Feature Control', () => {
     };
     expect(() => validateProject(invalid)).toThrow();
   });
+
+  it('detects Turkish & English viral hooks and generates clean short titles', () => {
+    // Turkish viral phrases
+    const turkishPhrase = 'Bunu biliyor muydunuz? Bugün sizlere harika bir taktik anlatacağım.';
+    expect(viralPhrases.some((p) => p.test(turkishPhrase))).toBe(true);
+
+    const titleQuestion = generateShortTitle('Bunu biliyor muydunuz?', 'question');
+    expect(titleQuestion).toBe('❓ "Bunu biliyor muydunuz?"');
+
+    const titleMistake = generateShortTitle('Yapılan en büyük hata nedir?', 'mistake');
+    expect(titleMistake).toBe('⚠️ "Yapılan en büyük hata nedir?"');
+
+    const titleSecret = generateShortTitle('İşte videonuzu viral yapacak sırrı', 'secret');
+    expect(titleSecret).toBe('💡 "İşte videonuzu viral yapacak sırrı"');
+
+    // Unicode word boundary test on Turkish keywords
+    expect(keywordPattern.test('önemli')).toBe(true);
+    expect(keywordPattern.test('püf noktası')).toBe(true);
+    expect(keywordPattern.test('taktik')).toBe(true);
+  });
+
+  it('prevents sentence fragmentation at commas and avoids hanging conjunctions', () => {
+    let p = createProject('Turkish Speech');
+    p = addMedia(p, {
+      id: 'm-speech',
+      name: 'speech.mp4',
+      duration: 60,
+      width: 1920,
+      height: 1080,
+      size: 5000,
+      type: 'video/mp4',
+    });
+
+    // Create 3 sentences:
+    // 1: Hook with comma (should NOT break at comma)
+    // 2: Middle explanation ending with complete period
+    // 3: Hanging clause ending with "çünkü"
+    const sentence1 = 'Bunu biliyor muydunuz, aslında herkes bu konuda çok büyük bir hata yapıyor.';
+    const sentence2 = 'Bu taktik ile izlenmelerinizi tam üç katına çıkarabilirsiniz.';
+    const sentence3 = 'Ve bu yöntemi mutlaka denemelisiniz çünkü';
+
+    const words1 = sentence1.split(' ').map((text, i) => ({
+      id: `w1-${i}`,
+      text,
+      start: i * 0.4,
+      end: i * 0.4 + 0.35,
+      speakerId: 'speaker-1',
+    }));
+
+    const offset2 = words1.at(-1)!.end + 0.5;
+    const words2 = sentence2.split(' ').map((text, i) => ({
+      id: `w2-${i}`,
+      text,
+      start: offset2 + i * 0.4,
+      end: offset2 + i * 0.4 + 0.35,
+      speakerId: 'speaker-1',
+    }));
+
+    const offset3 = words2.at(-1)!.end + 0.5;
+    const words3 = sentence3.split(' ').map((text, i) => ({
+      id: `w3-${i}`,
+      text,
+      start: offset3 + i * 0.4,
+      end: offset3 + i * 0.4 + 0.35,
+      speakerId: 'speaker-1',
+    }));
+
+    p.transcripts = [
+      {
+        mediaId: 'm-speech',
+        language: 'Turkish',
+        source: 'local',
+        words: [...words1, ...words2, ...words3],
+      },
+    ];
+
+    const clips = highlightRanges(p, {
+      goal: 'Short-form clips',
+      count: 1,
+      length: 14,
+      pacing: 'Natural',
+      reorder: false,
+      composite: false,
+      sensitivity: 50,
+    });
+
+    expect(clips.length).toBeGreaterThan(0);
+    const bestClip = clips[0];
+
+    // High viral potential score
+    expect(bestClip.score).toBeGreaterThanOrEqual(80);
+    expect(bestClip.reason).toContain('Viral Potential');
+
+    // Title includes hook icon
+    expect(bestClip.text).toMatch(/^[❓🔥💡⚠️🎬]/);
+
+    // Outro should not end on "çünkü"
+    expect(bestClip.text).not.toContain('çünkü');
+  });
 });
+
