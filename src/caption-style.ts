@@ -19,6 +19,8 @@ export function captionAppearance(style: CaptionStyle): CaptionAppearance {
       boxPadding: 4,
       shadow: true,
       fontFamily: 'sans',
+      italic: false, underline: false, strikethrough: false, align: 'center',
+      letterSpacing: 0, wordSpacing: 0, lineHeight: 1.22,
     };
   }
   return {
@@ -37,5 +39,12 @@ export function captionAppearance(style: CaptionStyle): CaptionAppearance {
     boxPadding: base.boxPadding ?? 4,
     shadow: base.shadow ?? true,
     fontFamily: base.fontFamily ?? 'sans',
+    italic: base.italic ?? false,
+    underline: base.underline ?? false,
+    strikethrough: base.strikethrough ?? false,
+    align: base.align ?? 'center',
+    letterSpacing: base.letterSpacing ?? 0,
+    wordSpacing: base.wordSpacing ?? 0,
+    lineHeight: base.lineHeight ?? 1.22,
   };
 }

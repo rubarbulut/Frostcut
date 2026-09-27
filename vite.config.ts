@@ -5,7 +5,7 @@ export default defineConfig({
   worker: { format: 'es' },
   optimizeDeps: { exclude: ['@ffmpeg/ffmpeg', '@huggingface/transformers'] },
   server: {
-    watch: { ignored: ['**/tests/.speech-browser/**', '**/test-results/**', '**/docs/qa/**'] },
+    watch: { ignored: ['**/tests/.speech-browser/**', '**/test-results/**', '**/docs/qa/**', '**/performance-results/**'] },
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'credentialless',

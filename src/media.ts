@@ -13,6 +13,7 @@ import {
 } from './model';
 import { mediaFiles } from './store';
 import { captionAppearance } from './caption-style';
+import { needsTypographyRenderer } from './caption-typography';
 import { cancelBackgroundMediaJobs } from './media-runtime';
 import { audioWindow } from './audio-crossfades';
 import { audioEffectsFilter } from './audio-tools';
@@ -302,7 +303,7 @@ export async function exportMp4(
       const visual =
         animated ||
         (p.captions.enabled &&
-          (p.captions.position === 'custom' || captionGroups(p).some((g) => captionEmoji(p, g))))
+          (p.captions.position === 'custom' || needsTypographyRenderer(captionAppearance(p.captions)) || captionGroups(p).some((g) => captionEmoji(p, g))))
           ? await renderCanvasVideo(p, w, h, fps, ff, files, signal, onProgress)
           : undefined;
       const args: string[] = [

@@ -184,7 +184,7 @@ export function SubtitleTools() {
                     setDraft({
                       ...draft,
                       cues: draft.cues.map((c, j) =>
-                        j === i ? { ...c, text: e.target.value } : c,
+                        j === i ? { ...c, text: e.target.value, words: undefined } : c,
                       ),
                     })
                   }

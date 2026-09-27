@@ -80,6 +80,7 @@ import { MediaImporterModal } from './importer/MediaImporterModal';
 import './importer/importer.css';
 import { SequencePicker } from './SequencePicker';
 import { createShortSequences } from './sequences';
+import { EqualParts } from './EqualParts';
 import { analyzeSource, measuredSilences } from './analyze-source';
 import { speechSafeSilences } from './highlights';
 import { estimatedMegabytes, videoBitrate } from './export-settings';
@@ -159,6 +160,7 @@ export default function App() {
     [drop, setDrop] = useState(false),
     [selectedSuggestion, setSelectedSuggestion] = useState<string>();
   const [selectedShorts, setSelectedShorts] = useState<string[]>([]);
+  const [autoMode, setAutoMode] = useState<'highlights' | 'parts'>('highlights');
   const [opts, setOpts] = useState<CutOptions>({
     goal: 'Short-form clips',
     count: 3,
@@ -1178,6 +1180,11 @@ export default function App() {
       )}
       {modal === 'auto' && (
         <Modal title="Find your next great clip." onClose={() => setModal(null)} wide>
+          <div className="creator-tabs" role="tablist" aria-label="Cut mode">
+            <button role="tab" aria-selected={autoMode === 'highlights'} onClick={() => setAutoMode('highlights')}>AI highlights</button>
+            <button role="tab" aria-selected={autoMode === 'parts'} onClick={() => setAutoMode('parts')}>Equal parts</button>
+          </div>
+          {autoMode === 'parts' ? <EqualParts onCreated={() => setModal(null)} /> : <>
           <p className="modal-intro">
             A first cut you can make your own. Preview every change before applying.
           </p>
@@ -1334,6 +1341,7 @@ export default function App() {
               Find the good parts <ArrowRight size={16} />
             </button>
           </div>
+          </>}
         </Modal>
       )}
       {suggestionsOpen && (

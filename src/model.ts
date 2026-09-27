@@ -28,6 +28,14 @@ export type CaptionAppearance = {
   animation?: CaptionAnimation;
   shadow?: boolean;
   fontFamily?: CaptionFont;
+  italic?: boolean;
+  underline?: boolean;
+  strikethrough?: boolean;
+  align?: 'left' | 'center' | 'right' | 'justify';
+  /** Spacing is relative to font size, so it scales with preview and export resolution. */
+  letterSpacing?: number;
+  wordSpacing?: number;
+  lineHeight?: number;
 };
 export type CaptionStyle = {
   preset: CaptionPreset;
@@ -634,7 +642,7 @@ export function validateProject(value: unknown): Project {
           v.cues.length > 20000
         )
           fail();
-        for (const c of v.cues)
+        for (const c of v.cues) {
           if (
             !c ||
             !finite(c.start) ||
@@ -645,6 +653,14 @@ export function validateProject(value: unknown): Project {
             !string(c.speakerId)
           )
             fail();
+          if (c.words !== undefined && (
+            !Array.isArray(c.words) || !c.words.length || c.words.length > 2000 ||
+            c.words.some((w, index) => !w || !string(w.text) || !w.text.trim() ||
+              !finite(w.start, c.start, c.end) || !finite(w.end, w.start + 0.000001, c.end) ||
+              (index > 0 && w.start < c.words![index - 1].end)) ||
+            c.words.map((w) => w.text).join(' ') !== c.text
+          )) fail();
+        }
       }
     }
     if (p.beats !== undefined) {
@@ -870,7 +886,7 @@ export function validateProject(value: unknown): Project {
       const a = style.appearance;
       if (
         a !== undefined &&
-        (!finite(a.size, 3, 10) ||
+        (!finite(a.size, 1, 20) ||
           !finite(a.outline, 0, 8) ||
           !finite(a.margin, 5, 35) ||
           typeof a.bold !== 'boolean' ||
@@ -883,6 +899,13 @@ export function validateProject(value: unknown): Project {
           (a.animation !== undefined &&
             !['none', 'pop', 'bounce', 'glow', 'typewriter', 'karaoke'].includes(a.animation)) ||
           (a.shadow !== undefined && typeof a.shadow !== 'boolean') ||
+          (a.italic !== undefined && typeof a.italic !== 'boolean') ||
+          (a.underline !== undefined && typeof a.underline !== 'boolean') ||
+          (a.strikethrough !== undefined && typeof a.strikethrough !== 'boolean') ||
+          (a.align !== undefined && !['left', 'center', 'right', 'justify'].includes(a.align)) ||
+          (a.letterSpacing !== undefined && !finite(a.letterSpacing, -0.05, 0.5)) ||
+          (a.wordSpacing !== undefined && !finite(a.wordSpacing, -0.15, 1)) ||
+          (a.lineHeight !== undefined && !finite(a.lineHeight, 0.8, 3)) ||
           (a.fontFamily !== undefined && !['sans', 'impact', 'serif', 'mono'].includes(a.fontFamily)))
       )
         fail();

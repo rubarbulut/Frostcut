@@ -487,6 +487,7 @@ export function PropertiesPanel() {
               onChange={(e) => captions({ enabled: e.target.checked })}
             />
           </div>
+          <CaptionAppearance />
           <div className="caption-presets">
             {(['Clean', 'Bold', 'Brainrot'] as const).map((preset) => (
               <button
@@ -574,7 +575,6 @@ export function PropertiesPanel() {
             />
             Show caption safe area
           </label>
-          <CaptionAppearance />
           <div className="property-divider" />
           <div className="section-heading">
             <b>Speakers</b>

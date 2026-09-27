@@ -6,6 +6,7 @@ import { PublishTools } from './PublishTools';
 import { BrollTools } from './BrollTools';
 import { DiscoverTools } from './DiscoverTools';
 import { BatchExport } from './BatchExport';
+import { EqualParts } from './EqualParts';
 export default function CreatorTools({
   onClose,
   initialTab = 'Reframe',
@@ -17,13 +18,14 @@ export default function CreatorTools({
   return (
     <Modal title="Creator tools" onClose={onClose} wide>
       <div className="creator-tabs" role="tablist" aria-label="Creator tools">
-        {['Reframe', 'Subtitles', 'B-roll', 'Publish', 'Discover', 'Batch export'].map((name) => (
+        {['Split', 'Reframe', 'Subtitles', 'B-roll', 'Publish', 'Discover', 'Batch export'].map((name) => (
           <button key={name} role="tab" aria-selected={tab === name} onClick={() => setTab(name)}>
             {name}
           </button>
         ))}
       </div>
       <div role="tabpanel">
+        {tab === 'Split' && <EqualParts onCreated={onClose} />}
         {tab === 'Reframe' && <AutoReframe />}
         {tab === 'Subtitles' && <SubtitleTools />}
         {tab === 'B-roll' && <BrollTools />}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, Fragment } from 'react';
 import { Play, Pause } from 'lucide-react';
 import { mediaUrls, useEditor } from './store';
 import { PlaybackSpeed } from './PlaybackSpeed';
@@ -18,6 +18,7 @@ import { transformAt } from './motion';
 import { audioGainAt, audioWindow } from './audio-crossfades';
 import { usePreviewAudio } from './preview-audio';
 import { captionAppearance } from './caption-style';
+import { captionTypography, captionBoxStyle, captionDecoration } from './caption-typography';
 import { captionEmoji, captionLayout } from './caption-layout';
 export function OperationsPreview({
   project,
@@ -132,14 +133,7 @@ export function EditPreview({
             <div
               className={`caption-overlay caption-${p.captions.preset.toLowerCase()} position-${position}`}
               style={{
-                fontFamily:
-                  appearance.fontFamily === 'impact'
-                    ? 'Impact, "Arial Black", sans-serif'
-                    : appearance.fontFamily === 'serif'
-                      ? 'Georgia, "Times New Roman", serif'
-                      : appearance.fontFamily === 'mono'
-                        ? '"JetBrains Mono", Consolas, monospace'
-                        : 'Noto, -apple-system, BlinkMacSystemFont, sans-serif',
+                ...captionTypography(appearance),
                 fontSize: `${appearance.size}cqw`,
                 fontWeight: appearance.bold ? 700 : 400,
                 color: appearance.color,
@@ -166,21 +160,9 @@ export function EditPreview({
             >
               <div
                 className="caption-box"
-                style={{
-                  backgroundColor:
-                    (appearance.boxOpacity ?? 0) > 0
-                      ? `${appearance.boxColor ?? '#000000'}${Math.round((appearance.boxOpacity ?? 0) * 255).toString(16).padStart(2, '0')}`
-                      : undefined,
-                  borderRadius: `${appearance.boxRadius ?? 8}px`,
-                  padding:
-                    (appearance.boxOpacity ?? 0) > 0
-                      ? `${appearance.boxPadding ?? 4}px 12px`
-                      : undefined,
-                  display: 'inline-block',
-                  maxWidth: '96%',
-                }}
+                style={captionBoxStyle(appearance)}
               >
-                {caption.map((w) => {
+                {caption.map((w, index) => {
                   const isSpoken = time >= w.timelineStart && time < w.timelineEnd;
                   const isKeyword = w.important && isSpoken;
                   const anim = appearance.animation ?? 'pop';
@@ -191,10 +173,11 @@ export function EditPreview({
                       ? 'spoken-word'
                       : '';
                   return (
+                    <Fragment key={w.id}>
                     <span
-                      key={w.id}
                       className={`${keywordClass} ${animClass}`.trim()}
                       style={{
+                        textDecorationLine: captionDecoration(appearance),
                         '--speaker': appearance.speakerColors
                           ? (p.speakers.find((s) => s.id === w.speakerId)?.color ??
                             appearance.accent)
@@ -207,11 +190,13 @@ export function EditPreview({
                           : undefined,
                       } as React.CSSProperties}
                     >
-                      {w.text}{' '}
+                      {w.text}
                     </span>
+                    {index < caption.length - 1 ? ' ' : ''}
+                    </Fragment>
                   );
                 })}
-                {captionEmoji(p, caption)}
+                {captionEmoji(p, caption) && <span className="caption-emoji">{' '}{captionEmoji(p, caption)}</span>}
               </div>
             </div>
           )}

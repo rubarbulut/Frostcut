@@ -11,7 +11,19 @@ export const subtitleLanguages = {
   pl: 'Polish',
 } as const;
 export type SubtitleLanguage = keyof typeof subtitleLanguages;
-export type SubtitleCue = { start: number; end: number; text: string; speakerId: string };
+export type SubtitleCue = {
+  start: number; end: number; text: string; speakerId: string;
+  /** Explicit timing preserves translated words when a cue is cut between episodes. */
+  words?: { text: string; start: number; end: number }[];
+};
+export function subtitleCueWords(cue: SubtitleCue) {
+  if (cue.words) return cue.words;
+  const tokens = cue.text.trim().split(/\s+/).filter(Boolean);
+  return tokens.map((text, index) => ({ text,
+    start: cue.start + ((cue.end - cue.start) * index) / tokens.length,
+    end: cue.start + ((cue.end - cue.start) * (index + 1)) / tokens.length,
+  }));
+}
 export type SubtitleVariant = {
   language: SubtitleLanguage;
   sourceFingerprint: string;
@@ -48,10 +60,7 @@ export function translatedWords(p: Project): TimelineWord[] | undefined {
   if (!p.captions.language) return;
   const variant = currentVariant(p);
   return variant?.cues.flatMap((cue, i) => {
-    const tokens = cue.text.trim().split(/\s+/).filter(Boolean);
-    return tokens.map((text, index) => {
-      const start = cue.start + ((cue.end - cue.start) * index) / tokens.length;
-      const end = cue.start + ((cue.end - cue.start) * (index + 1)) / tokens.length;
+    return subtitleCueWords(cue).map(({ text, start, end }, index) => {
       return {
         id: `translated-${i}-${index}`,
         text,
@@ -104,7 +113,7 @@ export async function translateCues(
       if (data.type === 'progress') progress(data.message);
       else if (data.type === 'result') {
         cleanup();
-        resolve(cues.map((c, i) => ({ ...c, text: data.texts[i] })));
+        resolve(cues.map((c, i) => ({ ...c, text: data.texts[i], words: undefined })));
       } else if (data.type === 'error') {
         cleanup();
         reject(new Error(data.message));

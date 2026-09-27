@@ -10,6 +10,7 @@ import {
   type CaptionFont,
 } from './model';
 import { captionAppearance } from './caption-style';
+import { CaptionTextControls } from './CaptionTextControls';
 
 export const CAPTION_PALETTES = [
   {
@@ -166,6 +167,8 @@ export function CaptionAppearance() {
   }
 
   return (
+    <>
+    <CaptionTextControls appearance={a} width={p.settings.width} onChange={change} />
     <details className="caption-customization">
       <summary>Customize & save style</summary>
 
@@ -229,56 +232,6 @@ export function CaptionAppearance() {
           );
         })}
       </div>
-
-      <Range
-        label="Caption size"
-        value={a.size}
-        min={3}
-        max={10}
-        step={0.1}
-        suffix="%"
-        onChange={(size) => change({ size })}
-      />
-      <label className="check-row">
-        <input
-          type="checkbox"
-          checked={a.bold}
-          onChange={(e) => change({ bold: e.target.checked })}
-        />
-        Bold text
-      </label>
-
-      {/* Colors */}
-      <div className="caption-section-title">Colors & Contrast</div>
-      <div className="caption-colors">
-        <Field label="Text color">
-          <input type="color" value={a.color} onChange={(e) => change({ color: e.target.value })} />
-        </Field>
-        <Field label="Accent color">
-          <input
-            type="color"
-            value={a.accent}
-            disabled={a.speakerColors}
-            onChange={(e) => change({ accent: e.target.value })}
-          />
-        </Field>
-        <Field label="Outline color">
-          <input
-            type="color"
-            value={a.outlineColor}
-            onChange={(e) => change({ outlineColor: e.target.value })}
-          />
-        </Field>
-      </div>
-
-      <label className="check-row">
-        <input
-          type="checkbox"
-          checked={a.speakerColors}
-          onChange={(e) => change({ speakerColors: e.target.checked })}
-        />
-        Use speaker colors for accents
-      </label>
 
       <Range
         label="Outline width"
@@ -422,5 +375,6 @@ export function CaptionAppearance() {
         Saved with this project. Appearance is included in MP4 export.
       </small>
     </details>
+    </>
   );
 }

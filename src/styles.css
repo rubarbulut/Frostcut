@@ -3783,8 +3783,26 @@ details > summary {
 
 .caption-box {
   display: inline-block;
-  line-height: 1.25;
+  line-height: inherit;
   transition: background-color 0.2s ease, border-radius 0.2s ease, padding 0.2s ease;
+}
+
+.caption-text-controls { display: grid; gap: 10px; margin: 14px 0; min-width: 0; }
+.caption-type-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.caption-type-grid input, .caption-type-grid select { width: 100%; min-width: 0; }
+.caption-format-toggles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 10px; }
+.caption-format-toggles .check-row { margin: 0; }
+.equal-parts { min-width: 0; }
+.equal-parts-preview { max-height: 260px; overflow: auto; margin: 16px 0; border: 1px solid var(--border); border-radius: 8px; }
+.equal-parts-preview table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+.equal-parts-preview th, .equal-parts-preview td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.equal-parts-preview th { position: sticky; top: 0; background: #10191f; }
+.equal-parts-preview td:first-child { overflow-wrap: anywhere; }
+.equal-parts .modal-footer { gap: 12px; flex-wrap: wrap; }
+.equal-parts .modal-footer > span { flex: 1; min-width: 180px; font-size: 12px; color: var(--muted); }
+@media (max-width: 600px) {
+  .equal-parts .number-grid { grid-template-columns: 1fr; }
+  .equal-parts-preview th, .equal-parts-preview td { padding: 8px 6px; font-size: 10px; }
 }
 
 /* Pop Word Animation */
@@ -3945,5 +3963,4 @@ details > summary {
   min-width: 18px;
   text-align: center;
 }
-
 
