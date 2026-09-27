@@ -131,7 +131,7 @@ export default function App() {
     })),
   );
   const [screen, setScreen] = useState<'landing' | 'editor'>('landing'),
-    [modal, setModal] = useState<'project' | 'auto' | 'export' | 'transcribe' | null>(null),
+    [modal, setModal] = useState<'project' | 'auto' | 'export' | 'transcribe' | 'shortcuts' | null>(null),
     [panel, setPanel] = useState('media'),
     [importerOpen, setImporterOpen] = useState(false),
     [creatorOpen, setCreatorOpen] = useState(false),

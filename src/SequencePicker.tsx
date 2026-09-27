@@ -1,11 +1,28 @@
 import { useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { Layers, Trash2 } from 'lucide-react';
 import { useEditor } from './store';
 import { removeSequence, switchSequence } from './sequences';
 import { Modal } from './components';
 
 export function SequencePicker() {
-  const { project: p, commit, seek, setPlaying, select, selectCaption } = useEditor();
+  const {
+    project: p,
+    commit,
+    seek,
+    setPlaying,
+    select,
+    selectCaption,
+  } = useEditor(
+    useShallow((s) => ({
+      project: s.project,
+      commit: s.commit,
+      seek: s.seek,
+      setPlaying: s.setPlaying,
+      select: s.select,
+      selectCaption: s.selectCaption,
+    })),
+  );
   const [remove, setRemove] = useState(false);
   if (!p.sequences?.length) return null;
   const current = p.sequences.find((s) => s.id === p.activeSequenceId)!;

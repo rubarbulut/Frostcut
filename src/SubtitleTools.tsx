@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useEditor, downloadBlob } from './store';
 import { Field } from './components';
 import {
@@ -13,7 +14,9 @@ import {
 import { createSrt } from './subtitles';
 import { zipFiles, safeFilename } from './zip';
 export function CaptionLanguage() {
-  const { project: p, commit } = useEditor();
+  const { project: p, commit } = useEditor(
+    useShallow((s) => ({ project: s.project, commit: s.commit })),
+  );
   const fingerprint = subtitleFingerprint(p);
   const stale =
     !!p.captions.language &&
@@ -61,7 +64,9 @@ export function CaptionLanguage() {
   );
 }
 export function SubtitleTools() {
-  const { project: p, commit } = useEditor();
+  const { project: p, commit } = useEditor(
+    useShallow((s) => ({ project: s.project, commit: s.commit })),
+  );
   const languageName = p.transcripts[0]?.language ?? p.settings.language;
   const [source, setSource] = useState<SubtitleLanguage>(
     (Object.entries(subtitleLanguages).find(

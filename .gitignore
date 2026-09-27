@@ -1,6 +1,7 @@
 node_modules/
 dist/
 dist-p1/
+performance-results/
 public/runtime/
 test-results/
 playwright-report/

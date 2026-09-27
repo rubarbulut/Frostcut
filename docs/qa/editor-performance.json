@@ -1,0 +1,158 @@
+{
+  "date": "2026-09-27T09:26:38.833Z",
+  "browser": "154.0.4258.37",
+  "scenario": "600s 360x640 video, 1440 imported words, transcript visible, Full preview, 1x speed, 10s playback after 2s warmup",
+  "limitation": "Synthetic local editor workload; not ASR, export, GPU memory or a guarantee for other hardware.",
+  "runs": [
+    {
+      "url": "http://127.0.0.1:5182",
+      "repeat": 0,
+      "wordCount": 1440,
+      "frames": {
+        "elapsedMs": 10012.165000006557,
+        "count": 559,
+        "medianMs": 13.985000000000582,
+        "p95Ms": 27.784999999999854,
+        "gapsOver50Ms": 0,
+        "video": {
+          "width": 360,
+          "height": 640,
+          "totalFrames": 373,
+          "droppedFrames": 0
+        }
+      },
+      "metrics": {
+        "TaskDurationMsPerSecond": 998.0226054997552,
+        "ScriptDurationMsPerSecond": 662.9399335703771,
+        "LayoutDurationMsPerSecond": 28.6164880422778,
+        "RecalcStyleDurationMsPerSecond": 18.899009355107122
+      },
+      "errors": []
+    },
+    {
+      "url": "http://127.0.0.1:5183",
+      "repeat": 0,
+      "wordCount": 1440,
+      "frames": {
+        "elapsedMs": 10001.739999994636,
+        "count": 1321,
+        "medianMs": 6.949999999998909,
+        "p95Ms": 13.8799999999992,
+        "gapsOver50Ms": 0,
+        "video": {
+          "width": 360,
+          "height": 640,
+          "totalFrames": 362,
+          "droppedFrames": 0
+        }
+      },
+      "metrics": {
+        "TaskDurationMsPerSecond": 886.3278789495384,
+        "ScriptDurationMsPerSecond": 150.98602843113397,
+        "LayoutDurationMsPerSecond": 55.958163279619356,
+        "RecalcStyleDurationMsPerSecond": 43.35495623763791
+      },
+      "errors": []
+    },
+    {
+      "url": "http://127.0.0.1:5183",
+      "repeat": 1,
+      "wordCount": 1440,
+      "frames": {
+        "elapsedMs": 10007.405000001192,
+        "count": 1316,
+        "medianMs": 6.944999999999709,
+        "p95Ms": 13.889999999999418,
+        "gapsOver50Ms": 0,
+        "video": {
+          "width": 360,
+          "height": 640,
+          "totalFrames": 362,
+          "droppedFrames": 0
+        }
+      },
+      "metrics": {
+        "TaskDurationMsPerSecond": 904.0644402818635,
+        "ScriptDurationMsPerSecond": 149.5681447887661,
+        "LayoutDurationMsPerSecond": 55.9050023457563,
+        "RecalcStyleDurationMsPerSecond": 43.45452192650824
+      },
+      "errors": []
+    },
+    {
+      "url": "http://127.0.0.1:5182",
+      "repeat": 1,
+      "wordCount": 1440,
+      "frames": {
+        "elapsedMs": 10027.165000006557,
+        "count": 346,
+        "medianMs": 27.67500000000109,
+        "p95Ms": 62.47999999999956,
+        "gapsOver50Ms": 27,
+        "video": {
+          "width": 360,
+          "height": 640,
+          "totalFrames": 374,
+          "droppedFrames": 0
+        }
+      },
+      "metrics": {
+        "TaskDurationMsPerSecond": 1001.7862476575814,
+        "ScriptDurationMsPerSecond": 656.3151199761545,
+        "LayoutDurationMsPerSecond": 28.021778837768828,
+        "RecalcStyleDurationMsPerSecond": 20.033479054136304
+      },
+      "errors": []
+    },
+    {
+      "url": "http://127.0.0.1:5182",
+      "repeat": 2,
+      "wordCount": 1440,
+      "frames": {
+        "elapsedMs": 10038.870000004768,
+        "count": 425,
+        "medianMs": 20.840000000000146,
+        "p95Ms": 41.67000000000007,
+        "gapsOver50Ms": 5,
+        "video": {
+          "width": 360,
+          "height": 640,
+          "totalFrames": 376,
+          "droppedFrames": 0
+        }
+      },
+      "metrics": {
+        "TaskDurationMsPerSecond": 998.4662616405271,
+        "ScriptDurationMsPerSecond": 648.912576813616,
+        "LayoutDurationMsPerSecond": 28.736800058160227,
+        "RecalcStyleDurationMsPerSecond": 19.531779971242468
+      },
+      "errors": []
+    },
+    {
+      "url": "http://127.0.0.1:5183",
+      "repeat": 2,
+      "wordCount": 1440,
+      "frames": {
+        "elapsedMs": 10017.875,
+        "count": 904,
+        "medianMs": 7.139999999999418,
+        "p95Ms": 20.824999999999818,
+        "gapsOver50Ms": 1,
+        "video": {
+          "width": 360,
+          "height": 640,
+          "totalFrames": 372,
+          "droppedFrames": 0
+        }
+      },
+      "metrics": {
+        "TaskDurationMsPerSecond": 971.3802577892018,
+        "ScriptDurationMsPerSecond": 157.27107794816766,
+        "LayoutDurationMsPerSecond": 69.31340229340054,
+        "RecalcStyleDurationMsPerSecond": 49.84879527843979
+      },
+      "errors": []
+    }
+  ]
+}

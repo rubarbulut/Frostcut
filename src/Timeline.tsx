@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import CaptionLane from './CaptionLane';
 import {
   MousePointer2,
@@ -70,7 +71,22 @@ export function splitSelected() {
   s.commit(p, 'Split clips');
 }
 export default function Timeline() {
-  const { project: p, selected, select, seek, playhead, commit } = useEditor(),
+  const {
+      project: p,
+      selected,
+      select,
+      seek,
+      commit,
+    } = useEditor(
+      useShallow((s) => ({
+        project: s.project,
+        selected: s.selected,
+        select: s.select,
+        seek: s.seek,
+        commit: s.commit,
+        mediaRevision: s.mediaRevision,
+      })),
+    ),
     [zoom, setZoom] = useState(26),
     [snap, setSnap] = useState(true),
     [drag, setDrag] = useState<{
@@ -87,6 +103,7 @@ export default function Timeline() {
     step = zoom < 15 ? 10 : zoom < 35 ? 5 : 2;
   const beats = timelineBeats(p);
   function startDrag(e: React.PointerEvent, c: Clip, kind: 'move' | 'in' | 'out') {
+    const playhead = useEditor.getState().playhead;
     if (e.button !== 0) return;
     e.stopPropagation();
     if (isLocked(p, c)) return;
@@ -348,7 +365,7 @@ export default function Timeline() {
         }}
       >
         <div className="track-labels">
-          <div className="ruler-label">{timecode(playhead)}</div>
+          <TimelineClock />
           <div className="track-label caption-track-label">
             <b>C1</b>
             <button
@@ -357,6 +374,7 @@ export default function Timeline() {
               title="Add caption at playhead"
               disabled={!p.clips.length}
               onClick={() => {
+                const playhead = useEditor.getState().playhead;
                 const c =
                   p.clips.find((c) => !isAudioClip(p, c) && selected.includes(c.id)) ??
                   p.clips.find(
@@ -554,9 +572,7 @@ export default function Timeline() {
               )}
             </div>
           ))}
-          <div className="playhead" style={{ left: playhead * zoom }}>
-            <span />
-          </div>
+          <TimelinePlayhead zoom={zoom} />
         </div>
       </div>
       <div className="timeline-footer">
@@ -569,4 +585,22 @@ export default function Timeline() {
       </div>
     </section>
   );
+}
+
+// Only the cursor needs a render on every playback tick. Track geometry stays put.
+function TimelinePlayhead({ zoom }: { zoom: number }) {
+  const playhead = useEditor((s) => s.playhead);
+  return (
+    <div
+      className="playhead"
+      style={{ left: 0, transform: `translateX(${playhead * zoom}px)`, willChange: 'transform' }}
+    >
+      <span />
+    </div>
+  );
+}
+
+function TimelineClock() {
+  const label = useEditor((s) => timecode(s.playhead));
+  return <div className="ruler-label">{label}</div>;
 }

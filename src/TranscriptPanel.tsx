@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import {
   Upload,
   Search,
@@ -23,23 +24,45 @@ export function TranscriptPanel({
   onTranscribe: () => void;
   onSrt: () => void;
 }) {
-  const { project: p, commit, seek, playhead, selected, selectCaption } = useEditor();
+  const {
+    project: p,
+    commit,
+    seek,
+    selected,
+    selectCaption,
+  } = useEditor(
+    useShallow((s) => ({
+      project: s.project,
+      commit: s.commit,
+      seek: s.seek,
+      selected: s.selected,
+      selectCaption: s.selectCaption,
+    })),
+  );
   const [query, setQuery] = useState(''),
     [replacement, setReplacement] = useState(''),
     [scope, setScope] = useState('project'),
     [cleanup, setCleanup] = useState(false),
     [chosen, setChosen] = useState<string[]>([]);
   const anchor = useRef(0),
-    all = timelineWords(p),
+    all = useMemo(() => timelineWords(p), [p]),
     words = scope === 'clip' ? all.filter((w) => selected.includes(w.clipId)) : all;
+  // Keep all overlapping words active, but render only when that membership changes.
+  const currentWords = useEditor(
+    useShallow((s) =>
+      all.filter((w) => s.playhead >= w.timelineStart && s.playhead < w.timelineEnd),
+    ),
+  );
+  const currentKeys = new Set(currentWords.map((w) => w.clipId + ':' + w.id));
   const content = useRef<HTMLDivElement>(null);
   useEffect(() => {
     setChosen([]);
     anchor.current = 0;
     if (content.current) content.current.scrollTop = 0;
   }, [p.id, p.activeSequenceId]);
-  const groups = transcriptGroups(p).filter(
-    (g) => scope !== 'clip' || selected.includes(g[0].clipId),
+  const groups = useMemo(
+    () => transcriptGroups(p).filter((g) => scope !== 'clip' || selected.includes(g[0].clipId)),
+    [p, scope, selected],
   );
   const picked = words.filter((w) => chosen.includes(w.clipId + ':' + w.id));
   function selectWord(index: number, shift: boolean) {
@@ -57,6 +80,7 @@ export function TranscriptPanel({
     }
   }
   function add() {
+    const playhead = useEditor.getState().playhead;
     const clip =
       p.clips.find((c) => !isAudioClip(p, c) && selected.includes(c.id)) ??
       p.clips.find((c) => !isAudioClip(p, c) && playhead >= c.start && playhead < clipEnd(c)) ??
@@ -240,7 +264,7 @@ export function TranscriptPanel({
                           ? 'Estimated word timing — click the time range to adjust'
                           : undefined
                       }
-                      className={`word ${chosen.includes(w.clipId + ':' + w.id) ? 'chosen' : ''} ${playhead >= w.timelineStart && playhead < w.timelineEnd ? 'current' : ''} ${query && w.text.toLowerCase().includes(query.toLowerCase()) ? 'match' : ''}`}
+                      className={`word ${chosen.includes(w.clipId + ':' + w.id) ? 'chosen' : ''} ${currentKeys.has(w.clipId + ':' + w.id) ? 'current' : ''} ${query && w.text.toLowerCase().includes(query.toLowerCase()) ? 'match' : ''}`}
                       onClick={(e) =>
                         selectWord(
                           words.findIndex((item) => item.id === w.id && item.clipId === w.clipId),

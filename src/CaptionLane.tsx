@@ -1,18 +1,52 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useEditor } from './store';
 import { clipEnd, timelineWords, type TimelineWord } from './model';
 import { transcriptGroups, editCaption } from './caption-editing';
 export default function CaptionLane({ zoom, snap }: { zoom: number; snap: boolean }) {
-  const { project: p, playhead, commit, selectCaption, seek, setPlaying, select } = useEditor();
+  const {
+    project: p,
+    commit,
+    selectCaption,
+    seek,
+    setPlaying,
+    select,
+  } = useEditor(
+    useShallow((s) => ({
+      project: s.project,
+      commit: s.commit,
+      selectCaption: s.selectCaption,
+      seek: s.seek,
+      setPlaying: s.setPlaying,
+      select: s.select,
+    })),
+  );
   const [drag, setDrag] = useState<{ key: string; start: number; end: number } | null>(null),
     [error, setError] = useState('');
   const cleanup = useRef<() => void>(() => {});
   useEffect(() => () => cleanup.current(), []);
-  const groups = transcriptGroups(p);
+  const groups = useMemo(() => transcriptGroups(p), [p]);
+  const blocks = useMemo(
+    () =>
+      groups.map((g) => {
+        const key = g[0].clipId + g[0].id;
+        return {
+          g,
+          key,
+          start: drag?.key === key ? drag.start : g[0].timelineStart,
+          end: drag?.key === key ? drag.end : Math.max(...g.map((w) => w.timelineEnd)),
+        };
+      }),
+    [groups, drag],
+  );
+  const currentBlocks = useEditor(
+    useShallow((s) => blocks.filter((b) => s.playhead >= b.start && s.playhead < b.end)),
+  );
   function edit(group: TimelineWord[]) {
     selectCaption({ clipId: group[0].clipId, wordIds: group.map((w) => w.id) });
   }
   function startDrag(e: React.PointerEvent, group: TimelineWord[], kind: 'move' | 'start' | 'end') {
+    const playhead = useEditor.getState().playhead;
     e.preventDefault();
     e.stopPropagation();
     const clip = p.clips.find((c) => c.id === group[0].clipId)!;
@@ -96,17 +130,15 @@ export default function CaptionLane({ zoom, snap }: { zoom: number; snap: boolea
           Transcribe or add a caption · text stays independent of your cuts
         </span>
       )}
-      {groups.map((g, i) => {
-        const key = g[0].clipId + g[0].id,
-          start = drag?.key === key ? drag.start : g[0].timelineStart,
-          end = drag?.key === key ? drag.end : Math.max(...g.map((w) => w.timelineEnd));
+      {blocks.map((block, i) => {
+        const { g, key, start, end } = block;
         return (
           <div
             role="button"
             tabIndex={0}
             key={key}
             aria-label={`Caption ${i + 1}: ${g.map((w) => w.text).join(' ')}`}
-            className={`caption-block ${playhead >= start && playhead < end ? 'current' : ''}`}
+            className={`caption-block ${currentBlocks.includes(block) ? 'current' : ''}`}
             style={{ left: start * zoom, width: Math.max(5, (end - start) * zoom) }}
             title={`${g.map((w) => w.text).join(' ')} · drag to move, edges to resize, click to edit`}
             onPointerDown={(e) => startDrag(e, g, 'move')}

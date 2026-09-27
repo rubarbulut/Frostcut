@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { type Clip, isAudioClip, isLocked, timecode } from './model';
 import { useEditor, mediaFiles, audioWaveforms } from './store';
 import { extractAudio } from './media';
@@ -7,7 +8,19 @@ import { detectBeats } from './audio-tools';
 import { Field } from './components';
 
 export function AudioTools({ clip }: { clip: Clip }) {
-  const { project: p, commit, seek, setPlaying } = useEditor();
+  const {
+    project: p,
+    commit,
+    seek,
+    setPlaying,
+  } = useEditor(
+    useShallow((s) => ({
+      project: s.project,
+      commit: s.commit,
+      seek: s.seek,
+      setPlaying: s.setPlaying,
+    })),
+  );
   const [status, setStatus] = useState(''),
     [busy, setBusy] = useState(false);
   const controller = useRef<AbortController | undefined>(undefined);
