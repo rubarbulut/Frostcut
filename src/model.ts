@@ -11,6 +11,7 @@ import type { Attribution } from './stock';
 import { validVisualEffects, type VisualEffects } from './visual-effects';
 import { validChapterSet, type ChapterSet } from './chapter-data';
 import type { CutOptions } from './ai';
+import { validAdjustments, cutAdjustments, remapAdjustments, speedAdjustments, type AdjustmentLayer } from './adjustments';
 export type Preset = 'YouTube Shorts' | 'TikTok' | 'Instagram Reel' | 'YouTube' | 'Custom';
 export type AspectRatio = '16:9' | '9:16' | '1:1' | '4:5';
 export type AspectFillMode = 'blur-background' | 'fit' | 'crop';
@@ -146,6 +147,7 @@ export type Suggestion = {
   status: 'pending' | 'applied' | 'dismissed';
 };
 export type Project = {
+  adjustments?: AdjustmentLayer[];
   chapters?: ChapterSet;
   publishing?: PublishingMetadata;
   subtitleVariants?: SubtitleVariant[];
@@ -199,6 +201,7 @@ export type Project = {
 export type ProjectSequence = Pick<
   Project,
   | 'clips'
+  | 'adjustments'
   | 'tracks'
   | 'settings'
   | 'captions'
@@ -460,7 +463,9 @@ export function deleteRange(p: Project, start: number, end: number, ripple = tru
   if (end <= start) return p;
   // Ripple editing a locked track would desynchronise it. Keep all tracks unchanged.
   if (ripple && p.clips.some((c) => isLocked(p, c) && clipEnd(c) > start)) return p;
+  if (ripple && p.adjustments?.some((a) => a.locked && a.end > start)) return p;
   const next = structuredClone(p);
+  if (ripple) next.adjustments = cutAdjustments(p.adjustments, start, end);
   next.clips = [];
   for (const c of p.clips) {
     if (isLocked(p, c)) {
@@ -499,8 +504,9 @@ export function applyOperations(project: Project, ops: Operation[], reason?: str
       p = deleteRange(p, op.end, duration(p));
       p = deleteRange(p, 0, op.start);
     }
-    if (op.type === 'assemble' && !p.clips.some((c) => isLocked(p, c))) {
+    if (op.type === 'assemble' && !p.clips.some((c) => isLocked(p, c)) && !p.adjustments?.some((a) => a.locked)) {
       const source = p.clips;
+      p.adjustments = remapAdjustments(p.adjustments, op.ranges);
       p.clips = [];
       let cursor = 0;
       for (const range of op.ranges) {
@@ -520,10 +526,11 @@ export function applyOperations(project: Project, ops: Operation[], reason?: str
         cursor += range.end - range.start;
       }
     }
-    if (op.type === 'speed-range' && !p.clips.some((c) => isLocked(p, c))) {
+    if (op.type === 'speed-range' && !p.clips.some((c) => isLocked(p, c)) && !p.adjustments?.some((a) => a.locked && a.end > op.start)) {
       for (const c of [...p.clips])
         if (c.start < op.start && clipEnd(c) > op.start) p = splitClip(p, c.id, op.start);
       const factor = Math.max(0.25, Math.min(4, op.speed));
+      p.adjustments = speedAdjustments(p.adjustments, op.start, factor);
       for (const c of p.clips) {
         if (c.start >= op.start - 0.001) {
           c.start = op.start + (c.start - op.start) / factor;
@@ -655,6 +662,7 @@ export function validateProject(value: unknown): Project {
       fail();
     if (p.media.length > 500 || p.clips.length > 10000) fail();
     if (p.chapters !== undefined && !validChapterSet(p.chapters)) fail();
+    if (p.adjustments !== undefined && !validAdjustments(p.adjustments)) fail();
     const chapterAttachment = p.publishing?.chapterAttachment;
     if (chapterAttachment !== undefined && (!chapterAttachment ||
       !string(chapterAttachment.sourceFingerprint) || !chapterAttachment.sourceFingerprint.trim() || chapterAttachment.sourceFingerprint.length > 500 ||
@@ -1022,6 +1030,7 @@ export function validateProject(value: unknown): Project {
           subtitleVariants: s.subtitleVariants,
           publishing: s.publishing,
           chapters: s.chapters,
+          adjustments: s.adjustments,
           exportSettings: s.exportSettings,
           suggestions: [],
           sequences: undefined,
@@ -1037,6 +1046,7 @@ export function validateProject(value: unknown): Project {
           subtitleVariants: checked.subtitleVariants,
           publishing: checked.publishing,
           chapters: checked.chapters,
+          adjustments: checked.adjustments,
           exportSettings: checked.exportSettings,
           suggestions: [],
         };

@@ -8,6 +8,7 @@ import { captionEmoji, captionLayout } from './caption-layout';
 import { videoBitrate } from './export-settings';
 import { hasVisualEffects } from './visual-effects';
 import { EffectsRenderer } from './effects-renderer';
+import { drawCanvasAdjustments } from './adjustment-renderer';
 
 function aborted(signal: AbortSignal) {
   if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
@@ -357,6 +358,7 @@ export async function renderCanvasVideo(
         );
         ctx.restore();
       }
+      drawCanvasAdjustments(ctx, p.adjustments, time);
       const caption = groups.find(
         (g) => time >= g[0].timelineStart && time < g.at(-1)!.timelineEnd,
       );

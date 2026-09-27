@@ -18,6 +18,7 @@ import { cancelBackgroundMediaJobs } from './media-runtime';
 import { audioWindow } from './audio-crossfades';
 import { audioEffectsFilter } from './audio-tools';
 import { renderCanvasVideo } from './visual-renderer';
+import { hasAdjustments } from './adjustments';
 import { captionEmoji } from './caption-layout';
 import { videoBitrate } from './export-settings';
 import { hasVisualEffects } from './visual-effects';
@@ -304,6 +305,7 @@ export async function exportMp4(
       );
       const visual =
         animated ||
+        hasAdjustments(p.adjustments, total) ||
         (p.captions.enabled &&
           (p.captions.position === 'custom' || needsTypographyRenderer(captionAppearance(p.captions)) || captionGroups(p).some((g) => captionEmoji(p, g))))
           ? await renderCanvasVideo(p, w, h, fps, ff, files, signal, onProgress)

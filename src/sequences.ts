@@ -18,6 +18,7 @@ export function sequenceSnapshot(p: Project, id: string, name: string): ProjectS
     subtitleVariants: p.subtitleVariants,
     publishing: p.publishing,
     chapters: p.chapters,
+    adjustments: p.adjustments,
     exportSettings: p.exportSettings,
     suggestions: p.suggestions,
   });
@@ -35,10 +36,11 @@ export function sequenceViews(p: Project): ProjectSequence[] {
           subtitleVariants: p.subtitleVariants,
           publishing: p.publishing,
           chapters: p.chapters,
+          adjustments: p.adjustments,
           exportSettings: p.exportSettings,
           suggestions: p.suggestions,
         }
-      : s,
+      : { ...s, adjustments: s.adjustments },
   );
 }
 export function syncSequence(p: Project): Project {
@@ -55,7 +57,7 @@ export function switchSequence(project: Project, id: string): Project {
     target = p.sequences?.find((s) => s.id === id);
   if (!target) throw new Error('This sequence is no longer in the project.');
   const { id: _, name: __, ...timeline } = structuredClone(target);
-  return { ...p, ...timeline, chapters: target.chapters, activeSequenceId: id };
+  return { ...p, ...timeline, chapters: target.chapters, adjustments: target.adjustments, activeSequenceId: id };
 }
 export function createShortSequences(project: Project, suggestions: Suggestion[]): Project {
   if (!suggestions.length) throw new Error('Select at least one highlight.');
@@ -67,6 +69,8 @@ export function createShortSequences(project: Project, suggestions: Suggestion[]
     throw new Error('Only highlights and composite clips can become separate Shorts.');
   if (project.clips.some((c) => isLocked(project, c)))
     throw new Error('Unlock video and linked audio tracks before creating Shorts.');
+  if (project.adjustments?.some((a) => a.locked))
+    throw new Error('Unlock adjustment layers before creating Shorts.');
   let p = syncSequence(project);
   const originalId = p.activeSequenceId ?? uid();
   const sequences = p.sequences ?? [sequenceSnapshot(p, originalId, 'Original edit')];

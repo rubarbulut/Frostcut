@@ -2,6 +2,7 @@ import { clipEnd, duration, isLocked, uid, type Project } from './model';
 import { sequenceSnapshot, syncSequence, switchSequence } from './sequences';
 import { presetKeyframes } from './motion';
 import { subtitleCueWords, subtitleFingerprint } from './translations';
+import { remapAdjustments } from './adjustments';
 
 export type PartOptions = { mode: 'count' | 'seconds'; value: number };
 export type PartRange = { start: number; end: number };
@@ -99,6 +100,7 @@ export function createEqualPartSequences(
     next.suggestions = [];
     next.publishing = undefined;
     next.chapters = undefined;
+    next.adjustments = remapAdjustments(p.adjustments, [{ start, end }]);
     next.subtitleVariants = p.subtitleVariants
       ?.filter((v) => v.sourceFingerprint === fingerprint)
       .map((v) => ({
