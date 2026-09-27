@@ -17,7 +17,7 @@ Paid services, uploads, account connections and cloud compute are not silently e
 | Adjustment layers | Pending | Timeline-wide visual adjustment over a bounded interval, stacking, trimming, persistence and export |
 | Nested sequences | Pending | Reference/insert sequences with timing, audio and captions, cycle protection, edit propagation and export |
 | AI chapters | Pending | Transcript-based boundaries/titles, review/edit, navigation and chapter export, timing invalidation |
-| Brand kit learning | Pending | Learn editable reusable branding from approved project examples; persistent profiles and explicit application |
+| Brand kit learning | Caption profiles implemented; browser review pending | Learn editable reusable branding from approved project examples; persistent profiles and explicit application |
 | AI style memory | Pending | Learn from accepted edits, explain proposed defaults, apply/reject/reset and persist across projects |
 | Analytics learning | Pending | Real imported/connected performance data, traceable feedback suggestions; no invented metrics |
 | AI image/video B-roll generation | Pending | Real generation provider/local model, actual returned media, provenance, timeline import and error/cancel handling; costs/provider requirements explicit |
@@ -60,3 +60,22 @@ they are not considered delivered by placeholders or adapter interfaces alone.
 All status claims above refer to inspected repository state, not the specification's
 embedded agent prompts. Model/schema, editor preview, proposed-edit preview and MP4
 rendering must be updated together for visual features.
+
+## Local caption-branding delivery
+
+- Creator tools → Brand kit captures a reusable caption profile. Profiles persist
+  across projects in this browser and support named JSON export/import, rename,
+  delete and immediate restore.
+- The user approves individual project/sequence examples. Learning selects the
+  most common complete style, with the latest approval winning ties. It shows
+  matching example labels/counts. Recapturing a sequence replaces its vote.
+- A suggestion must be copied into the kit explicitly, and applying the kit to
+  the current sequence is a separate undoable project edit. Typography, colors,
+  layout and spacing remain editable. No models, rendering or uploads are used.
+- Seven focused unit tests passed in 358 ms; the source type-check passed.
+  Covers learning, independent copies, re-approval, settings-only application,
+  bounded/validated imports, persistence and storage failures.
+- Browser interaction, mobile layout and a production build of this final
+  delivery remain pending while the user is gaming. This is caption branding;
+  logo recognition, general edit-style memory and analytics learning are not
+  included. See [brand-kits.md](brand-kits.md) for use and review steps.

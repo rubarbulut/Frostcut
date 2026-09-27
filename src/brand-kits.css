@@ -1,0 +1,28 @@
+.brand-kit-create {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.brand-kit-create .field { flex: 1 1 220px; }
+.brand-kit-preview {
+  container-type: inline-size;
+  display: grid;
+  align-items: center;
+  min-height: 100px;
+  padding: 15px;
+  background: #090d10;
+  border: 1px solid #354454;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+.brand-kit-details { padding-block: 10px; }
+.brand-kit-details > summary { cursor: pointer; margin-bottom: 10px; }
+.brand-kit-examples { padding-left: 0; list-style: none; }
+.brand-kit-examples li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  overflow-wrap: anywhere;
+}

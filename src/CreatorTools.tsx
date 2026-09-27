@@ -8,6 +8,7 @@ import { DiscoverTools } from './DiscoverTools';
 import { BatchExport } from './BatchExport';
 import { EqualParts } from './EqualParts';
 import { SequenceTools } from './SequenceTools';
+import { BrandKitTools } from './BrandKitTools';
 export default function CreatorTools({
   onClose,
   initialTab = 'Reframe',
@@ -22,6 +23,7 @@ export default function CreatorTools({
     'Parts',
     'Reframe',
     'Subtitles',
+    'Brand kit',
     'B-roll',
     'Publish',
     'Discover',
@@ -73,6 +75,7 @@ export default function CreatorTools({
         {tab === 'Parts' && <SequenceTools />}
         {tab === 'Reframe' && <AutoReframe />}
         {tab === 'Subtitles' && <SubtitleTools />}
+        {tab === 'Brand kit' && <BrandKitTools />}
         {tab === 'B-roll' && <BrollTools />}
         {tab === 'Publish' && <PublishTools />}
         {tab === 'Discover' && <DiscoverTools />}

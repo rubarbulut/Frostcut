@@ -67,17 +67,18 @@ export function CaptionTextControls({
   appearance: a,
   width,
   onChange,
+  description = 'Applies to all captions in this sequence. Click a transcript time to edit the words. Number fields: Enter to save, Escape to cancel. Copy this style in Creator tools → Parts.',
 }: {
   appearance: CaptionAppearance;
   width: number;
   onChange: (patch: Partial<CaptionAppearance>) => void;
+  description?: string;
 }) {
   return (
     <section className="caption-text-controls" aria-label="Subtitle text formatting">
       <div className="caption-section-title">Text editor</div>
       <small className="subtle">
-        Applies to all captions in this sequence. Click a transcript time to edit the words. Number
-        fields: Enter to save, Escape to cancel. Copy this style in Creator tools → Parts.
+        {description}
       </small>
       <div className="caption-type-grid">
         <Field label="Font family">
