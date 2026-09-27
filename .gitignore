@@ -8,5 +8,6 @@ playwright-report/
 tests/.speech-browser/
 tests/fixtures/speech-qa/
 tests/fixtures/languages/*.wav
+tests/fixtures/p1-local/
 .env*
 !.env.example

@@ -48,7 +48,7 @@ function VideoLayer({
   const window = audioWindow(p, clip),
     audioActive = time >= window.timelineStart && time < window.timelineStart + window.duration;
   const props = transformAt(clip, time, p.settings.width, p.settings.height);
-  usePreviewAudio(ref, audioGainAt(p, clip, time), playing && audioActive);
+  usePreviewAudio(ref, audioGainAt(p, clip, time), playing && audioActive, clip.voiceEnhance);
   useEffect(() => {
     const v = ref.current;
     if (!v) return;
@@ -144,7 +144,9 @@ export default function Preview({
   const mediaRevision = useEditor((s) => s.mediaRevision);
   useEffect(() => {
     if (processing) return;
-    for (const asset of p.media.filter((m) => p.clips.some((c) => c.mediaId === m.id)))
+    for (const asset of p.media.filter(
+      (m) => !m.type.startsWith('audio/') && p.clips.some((c) => c.mediaId === m.id),
+    ))
       if (proxyStatus.get(asset.id)?.state !== 'error')
         void ensureProxy(asset, quality, degraded.includes(asset.id));
   }, [p.media, quality, degraded, mediaRevision, processing]);

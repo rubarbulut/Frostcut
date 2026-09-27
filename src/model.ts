@@ -1,4 +1,13 @@
 import { animatedProperties, type KeyframeTracks } from './motion';
+import type { SavedAnimation } from './animation-presets';
+import {
+  translatedWords,
+  subtitleLanguages,
+  type SubtitleLanguage,
+  type SubtitleVariant,
+} from './translations';
+import type { PublishingMetadata } from './publishing';
+import type { Attribution } from './stock';
 export type Preset = 'YouTube Shorts' | 'TikTok' | 'Instagram Reel' | 'YouTube' | 'Custom';
 export type CaptionPreset = 'Clean' | 'Bold' | 'Brainrot';
 export type CaptionAppearance = {
@@ -39,6 +48,7 @@ export type Transcript = {
   model?: string;
 };
 export type MediaAsset = {
+  attribution?: Attribution;
   id: string;
   name: string;
   duration: number;
@@ -62,6 +72,9 @@ export type ClipProps = {
   animation: string;
 };
 export type Clip = {
+  audioRole?: 'music' | 'voice';
+  autoDuck?: boolean;
+  voiceEnhance?: boolean;
   audioDetached?: boolean;
   keyframes?: KeyframeTracks;
   id: string;
@@ -107,6 +120,10 @@ export type Suggestion = {
   status: 'pending' | 'applied' | 'dismissed';
 };
 export type Project = {
+  publishing?: PublishingMetadata;
+  subtitleVariants?: SubtitleVariant[];
+  beats?: Record<string, number[]>;
+  animationPresets?: SavedAnimation[];
   appliedEdits?: { label: string; date: string; sequenceId?: string }[];
   activeSequenceId?: string;
   sequences?: ProjectSequence[];
@@ -130,6 +147,7 @@ export type Project = {
   transcripts: Transcript[];
   speakers: { id: string; name: string; color: string }[];
   captions: CaptionStyle & {
+    language?: SubtitleLanguage;
     enabled: boolean;
     preset: CaptionPreset;
     intensity: number;
@@ -151,7 +169,14 @@ export type Project = {
 };
 export type ProjectSequence = Pick<
   Project,
-  'clips' | 'tracks' | 'settings' | 'captions' | 'exportSettings' | 'suggestions'
+  | 'clips'
+  | 'tracks'
+  | 'settings'
+  | 'captions'
+  | 'exportSettings'
+  | 'suggestions'
+  | 'subtitleVariants'
+  | 'publishing'
 > & {
   id: string;
   name: string;
@@ -264,6 +289,7 @@ export function detachAudio(p: Project, id: string): Project {
     trackId: 'A1',
     groupId: undefined,
     audioDetached: undefined,
+    audioRole: 'voice',
     captionWords: [],
     keyframes: undefined,
     properties: {
@@ -288,14 +314,16 @@ export const timecode = (t: number, decimals = false) => {
 };
 export function addMedia(p: Project, asset: MediaAsset): Project {
   const next = structuredClone(p);
+  const audio = asset.type.startsWith('audio/');
   next.media.push(asset);
   next.clips.push({
     id: uid(),
     mediaId: asset.id,
-    trackId: 'V1',
-    start: duration(p),
+    trackId: audio ? 'A2' : 'V1',
+    ...(audio ? { audioRole: 'music' as const } : {}),
+    start: audio ? 0 : duration(p),
     sourceStart: 0,
-    sourceEnd: asset.duration,
+    sourceEnd: audio && duration(p) ? Math.min(asset.duration, duration(p)) : asset.duration,
     properties: { ...defaultProps },
   });
   return next;
@@ -443,7 +471,7 @@ export function timelineWords(p: Project): TimelineWord[] {
     .sort((a, b) => a.timelineStart - b.timelineStart);
 }
 export function captionGroups(p: Project) {
-  const words = timelineWords(p),
+  const words = translatedWords(p) ?? timelineWords(p),
     groups: TimelineWord[][] = [];
   for (const w of words) {
     const g = groups.at(-1);
@@ -503,6 +531,113 @@ export function validateProject(value: unknown): Project {
     )
       fail();
     if (p.media.length > 500 || p.clips.length > 10000) fail();
+    if (
+      p.publishing !== undefined &&
+      (!p.publishing ||
+        !string(p.publishing.title) ||
+        p.publishing.title.length > 100 ||
+        !string(p.publishing.description) ||
+        p.publishing.description.length > 5000 ||
+        !string(p.publishing.hashtags) ||
+        p.publishing.hashtags.length > 1000)
+    )
+      fail();
+    for (const m of p.media)
+      if (m.attribution !== undefined) {
+        const a = m.attribution;
+        if (
+          !a ||
+          [a.title, a.creator, a.license].some((s) => !string(s) || s.length > 600) ||
+          [a.url, a.licenseUrl].some(
+            (s) => !string(s) || s.length > 2000 || !/^https:\/\//i.test(s),
+          )
+        )
+          fail();
+      }
+    if (p.captions.language !== undefined && !Object.hasOwn(subtitleLanguages, p.captions.language))
+      fail();
+    if (p.subtitleVariants !== undefined) {
+      if (
+        !Array.isArray(p.subtitleVariants) ||
+        p.subtitleVariants.length > 7 ||
+        new Set(p.subtitleVariants.map((v) => v.language)).size !== p.subtitleVariants.length
+      )
+        fail();
+      for (const v of p.subtitleVariants) {
+        if (
+          !v ||
+          !Object.hasOwn(subtitleLanguages, v.language) ||
+          !string(v.sourceFingerprint) ||
+          !Array.isArray(v.cues) ||
+          v.cues.length > 20000
+        )
+          fail();
+        for (const c of v.cues)
+          if (
+            !c ||
+            !finite(c.start) ||
+            !finite(c.end, c.start + 0.001) ||
+            !string(c.text) ||
+            !c.text.trim() ||
+            c.text.length > 2000 ||
+            !string(c.speakerId)
+          )
+            fail();
+      }
+    }
+    if (p.beats !== undefined) {
+      if (
+        !p.beats ||
+        typeof p.beats !== 'object' ||
+        Array.isArray(p.beats) ||
+        Object.keys(p.beats).length > 500
+      )
+        fail();
+      for (const [id, beats] of Object.entries(p.beats)) {
+        const asset = p.media.find((m) => m.id === id);
+        if (
+          !asset ||
+          !Array.isArray(beats) ||
+          beats.length > 100000 ||
+          beats.some((t, i) => !finite(t, 0, asset.duration) || (i > 0 && t <= beats[i - 1]))
+        )
+          fail();
+      }
+    }
+    if (p.animationPresets !== undefined) {
+      if (!Array.isArray(p.animationPresets) || p.animationPresets.length > 20) fail();
+      for (const preset of p.animationPresets) {
+        if (
+          !preset ||
+          !string(preset.id) ||
+          !string(preset.name) ||
+          !preset.name.trim() ||
+          preset.name.length > 60 ||
+          !preset.tracks ||
+          typeof preset.tracks !== 'object'
+        )
+          fail();
+        for (const [key, frames] of Object.entries(preset.tracks)) {
+          if (
+            !(animatedProperties as readonly string[]).includes(key) ||
+            !Array.isArray(frames) ||
+            frames.length > 258
+          )
+            fail();
+          for (let i = 0; i < frames.length; i++) {
+            const f = frames[i];
+            if (
+              !f ||
+              !finite(f.time, 0, 1) ||
+              !finite(f.value, -10000, 10000) ||
+              (i > 0 && f.time <= frames[i - 1].time) ||
+              (f.easing !== undefined && !['linear', 'smooth'].includes(f.easing))
+            )
+              fail();
+          }
+        }
+      }
+    }
     if (
       p.appliedEdits !== undefined &&
       (!Array.isArray(p.appliedEdits) ||
@@ -569,6 +704,9 @@ export function validateProject(value: unknown): Project {
         !string(c.id) ||
         !p.tracks.some((t) => t.id === c.trackId) ||
         (c.audioDetached !== undefined && typeof c.audioDetached !== 'boolean') ||
+        (c.audioRole !== undefined && !['voice', 'music'].includes(c.audioRole)) ||
+        (c.autoDuck !== undefined && typeof c.autoDuck !== 'boolean') ||
+        (c.voiceEnhance !== undefined && typeof c.voiceEnhance !== 'boolean') ||
         !finite(c.start) ||
         !finite(c.sourceStart) ||
         !finite(c.sourceEnd, c.sourceStart + 0.001, m.duration + 0.1)
@@ -587,7 +725,7 @@ export function validateProject(value: unknown): Project {
         for (const key of animatedProperties) {
           const frames = c.keyframes[key];
           if (frames === undefined) continue;
-          if (!Array.isArray(frames) || frames.length > 256) fail();
+          if (!Array.isArray(frames) || frames.length > 258) fail();
           frames.forEach((frame, i) => {
             if (
               !finite(frame.time, 0, m!.duration) ||
@@ -727,6 +865,8 @@ export function validateProject(value: unknown): Project {
           clips: s.clips,
           tracks: s.tracks,
           captions: s.captions,
+          subtitleVariants: s.subtitleVariants,
+          publishing: s.publishing,
           exportSettings: s.exportSettings,
           suggestions: [],
           sequences: undefined,
@@ -739,6 +879,8 @@ export function validateProject(value: unknown): Project {
           clips: checked.clips,
           tracks: checked.tracks,
           captions: checked.captions,
+          subtitleVariants: checked.subtitleVariants,
+          publishing: checked.publishing,
           exportSettings: checked.exportSettings,
           suggestions: [],
         };

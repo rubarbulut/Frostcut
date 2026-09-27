@@ -46,7 +46,7 @@ function ProposedLayer({
     track = p.tracks.find((t) => t.id === clip.trackId)!;
   const audible = time >= window.timelineStart && time < window.timelineStart + window.duration;
   const previewRate = useEditor((s) => s.previewRate);
-  usePreviewAudio(ref, audioGainAt(p, clip, time), playing && audible);
+  usePreviewAudio(ref, audioGainAt(p, clip, time), playing && audible, clip.voiceEnhance);
   useEffect(() => {
     const video = ref.current;
     if (!video) return;

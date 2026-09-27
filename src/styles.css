@@ -2132,6 +2132,50 @@ kbd {
   font-size: 11px;
   flex-shrink: 0;
 }
+.audio-tools {
+  border: 0;
+  padding: 0;
+  margin: 12px 0;
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+.beat-list {
+  display: flex;
+  flex-wrap: wrap;
+  max-height: 90px;
+  overflow: auto;
+  gap: 5px;
+}
+.beat-list button {
+  font-size: 10px;
+}
+.beat-marker {
+  position: absolute;
+  top: 28px;
+  bottom: 0;
+  width: 1px;
+  background: #ffd39c;
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 3;
+}
+.beat-marker::before {
+  content: '';
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: #ffd39c;
+  transform: translateX(-2px) rotate(45deg);
+}
+.saved-animations {
+  padding: 8px 0;
+  display: grid;
+}
+.saved-animations > input {
+  width: 100%;
+  margin: 8px 0;
+}
 .timeline-footer {
   display: flex;
   align-items: center;
@@ -3089,4 +3133,158 @@ details > summary {
     animation: none !important;
     transition: none !important;
   }
+}
+.creator-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 16px 0;
+}
+.creator-tabs button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: inherit;
+}
+.creator-tabs [aria-selected='true'] {
+  background: #355b5b;
+  color: #fff;
+}
+.creator-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.creator-section p {
+  margin: 0;
+  line-height: 1.6;
+}
+.creator-section > .primary,
+.creator-section > .secondary {
+  align-self: flex-start;
+}
+.creator-section textarea {
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+}
+.creator-section .edit-preview-stage {
+  max-height: 380px;
+}
+.creator-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.translation-cues {
+  max-height: 320px;
+  overflow-y: auto;
+  display: grid;
+  gap: 12px;
+  padding: 2px;
+}
+@media (max-width: 700px) {
+  .editing-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .editing-actions > div {
+    flex-wrap: wrap;
+  }
+}
+.draft-titles,
+.broll-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.draft-titles button,
+.broll-suggestions button {
+  text-align: left;
+  white-space: normal;
+}
+.stock-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+}
+.stock-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #354454;
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+.stock-card img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  background: #16202a;
+  border-radius: 5px;
+}
+.stock-card a,
+.topic-list a,
+.asset-card a {
+  color: #a6d4e1;
+}
+.topic-list {
+  display: grid;
+  gap: 10px;
+}
+.topic-list article {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid #354454;
+  border-radius: 8px;
+}
+.topic-list button {
+  align-self: flex-start;
+}
+.wrap-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  line-height: 1.6;
+}
+.idea-draft {
+  padding: 14px;
+  border: 1px solid #354454;
+  border-radius: 8px;
+}
+.batch-sequences {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.batch-sequences label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.batch-sequences small {
+  display: block;
+  margin-top: 4px;
+}
+.creator-section .button-row {
+  flex-wrap: wrap;
+}
+.modal:has(.creator-tabs) .modal-head {
+  position: sticky;
+  top: -26px;
+  z-index: 5;
+  background: #192329;
+  padding: 12px 0;
+}
+.stock-results,
+.topic-list {
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 2px;
 }

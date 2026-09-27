@@ -133,7 +133,7 @@ export function TranscriptPanel({
           </button>
           <button
             className="text-button"
-            title="Export the current timeline captions in their existing language"
+            title="Export the current caption language as SRT"
             onClick={() =>
               downloadBlob(
                 new Blob([createSrt(p)], { type: 'text/plain;charset=utf-8' }),

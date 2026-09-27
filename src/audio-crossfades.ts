@@ -1,4 +1,5 @@
 import { clipAudible, clipDuration, clipEnd, isAudioClip, type Clip, type Project } from './model';
+import { duckGain } from './audio-tools';
 export function audioWindow(p: Project, c: Clip) {
   const asset = p.media.find((m) => m.id === c.mediaId)!;
   const audible = (clip: Clip) => clipAudible(p, clip);
@@ -54,6 +55,7 @@ export function audioGainAt(p: Project, c: Clip, time: number) {
   if (local < 0 || local >= window.duration) return 0;
   return (
     c.properties.volume *
+    duckGain(p, c, time) *
     Math.max(
       0,
       Math.min(

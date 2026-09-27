@@ -13,6 +13,7 @@ import {
 } from './motion';
 import { dragClipProperties } from './clip-drag';
 import { Field } from './components';
+import { SavedAnimations } from './SavedAnimations';
 const labels = {
   x: 'Position X',
   y: 'Position Y',
@@ -168,6 +169,7 @@ export function TransformControls({ clip: original }: { clip: Clip }) {
           ))}
         </select>
       </Field>
+      <SavedAnimations clip={original} />
       <Field label="Keyframe property">
         <select value={property} onChange={(e) => setProperty(e.target.value as AnimatedProperty)}>
           {animatedProperties.map((key) => (

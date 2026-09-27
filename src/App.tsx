@@ -81,6 +81,7 @@ import { analyzeSource, measuredSilences } from './analyze-source';
 import { speechSafeSilences } from './highlights';
 import { estimatedMegabytes, videoBitrate } from './export-settings';
 import { EditPreview, OperationsPreview } from './EditPreview';
+import CreatorTools from './CreatorTools';
 type Job = {
   kind: 'transcribe' | 'analysis' | 'export';
   step: number;
@@ -112,6 +113,8 @@ export default function App() {
     [modal, setModal] = useState<'project' | 'auto' | 'export' | 'transcribe' | null>(null),
     [panel, setPanel] = useState('media'),
     [importerOpen, setImporterOpen] = useState(false),
+    [creatorOpen, setCreatorOpen] = useState(false),
+    [creatorTab, setCreatorTab] = useState('Reframe'),
     [resume, setResume] = useState<Project>(),
     [toast, setToast] = useState(''),
     [projectName, setProjectName] = useState('My first cut'),
@@ -388,7 +391,9 @@ export default function App() {
     try {
       const ranges: { start: number; end: number }[] = [];
       for (const media of next.media.filter(
-        (m) => (!mediaId || m.id === mediaId) && next.clips.some((c) => c.mediaId === m.id),
+        (m) =>
+          (!mediaId || m.id === mediaId) &&
+          next.clips.some((c) => c.mediaId === m.id && (!auto || c.audioRole !== 'music')),
       )) {
         if (!mediaFiles.has(media.id)) throw new Error('Relink missing media before processing.');
         const existing = next.transcripts.find((t) => t.mediaId === media.id);
@@ -562,7 +567,7 @@ export default function App() {
       <input
         ref={mediaInput}
         type="file"
-        accept="video/*,.mp4,.mov,.webm"
+        accept="video/*,audio/*,.mp4,.mov,.webm,.mp3,.wav,.m4a,.aac,.ogg"
         hidden
         aria-label="Import video file"
         onChange={(e) => {
@@ -758,6 +763,18 @@ export default function App() {
                   </span>
                 </div>
                 <div>
+                  <button
+                    className="text-button"
+                    disabled={!!job}
+                    onClick={() => {
+                      setPlaying(false);
+                      setCreatorTab('Reframe');
+                      setCreatorOpen(true);
+                    }}
+                  >
+                    <WandSparkles size={15} />
+                    Creator tools
+                  </button>
                   <button
                     className="text-button"
                     disabled={!p.clips.length || !!job}
@@ -1391,9 +1408,25 @@ export default function App() {
           </div>
         </Modal>
       )}
+      {creatorOpen && (
+        <CreatorTools initialTab={creatorTab} onClose={() => setCreatorOpen(false)} />
+      )}
       {modal === 'export' && (
         <Modal title="Ready for the world." onClose={() => setModal(null)}>
           <p className="modal-intro">A polished MP4. Rendered right here on your device.</p>
+          {!!p.sequences?.length && (
+            <button
+              className="secondary"
+              onClick={() => {
+                setModal(null);
+                setPlaying(false);
+                setCreatorTab('Batch export');
+                setCreatorOpen(true);
+              }}
+            >
+              Batch export saved Shorts
+            </button>
+          )}
           <Field label="Platform">
             <select
               value={p.settings.preset}

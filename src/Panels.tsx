@@ -26,6 +26,8 @@ import {
 import { Field, Range } from './components';
 import { CaptionAppearance } from './CaptionAppearance';
 import { TransformControls } from './TransformControls';
+import { AudioTools } from './AudioTools';
+import { CaptionLanguage } from './SubtitleTools';
 export function MediaPanel({
   onImport,
   onRelink,
@@ -73,7 +75,9 @@ export function MediaPanel({
         {p.media.map((m) => (
           <div key={m.id} className="asset-card">
             <div className="asset-thumbnail">
-              {mediaUrls.has(m.id) ? (
+              {m.type.startsWith('audio/') ? (
+                <Volume2 size={28} />
+              ) : mediaUrls.has(m.id) ? (
                 <video src={mediaUrls.get(m.id)} preload="metadata" muted />
               ) : (
                 <FileVideo size={28} />
@@ -82,7 +86,8 @@ export function MediaPanel({
             </div>
             <b title={m.name}>{m.name}</b>
             <small>
-              {m.width} × {m.height} · {(m.size / 1024 / 1024).toFixed(1)} MB
+              {m.type.startsWith('audio/') ? 'Audio' : `${m.width} × ${m.height}`} ·{' '}
+              {(m.size / 1024 / 1024).toFixed(1)} MB
             </small>
             {!mediaUrls.has(m.id) && (
               <button className="relink" onClick={() => onRelink(m.id)}>
@@ -91,6 +96,17 @@ export function MediaPanel({
               </button>
             )}
             {m.demo && <small className="demo-label">Demo · illustrative captions</small>}
+            {m.attribution && (
+              <small>
+                <a href={m.attribution.url} target="_blank" rel="noreferrer">
+                  Source: {m.attribution.creator}
+                </a>{' '}
+                ·{' '}
+                <a href={m.attribution.licenseUrl} target="_blank" rel="noreferrer">
+                  {m.attribution.license}
+                </a>
+              </small>
+            )}
           </div>
         ))}
       </div>
@@ -128,6 +144,7 @@ export function PropertiesPanel() {
       </div>
       {tab === 'Captions' ? (
         <div className="properties-content">
+          <CaptionLanguage />
           <div className="section-heading">
             <Captions size={16} />
             <b>Make your words stand out</b>
@@ -295,6 +312,7 @@ export function PropertiesPanel() {
                     </select>
                   </Field>
                 )}
+                <AudioTools key={clip.id} clip={clip} />
                 <div className="property-divider" />
                 <div className="section-heading">
                   <Volume2 size={16} />

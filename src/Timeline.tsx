@@ -18,6 +18,7 @@ import {
   Hand,
 } from 'lucide-react';
 import { useTimelineNavigation } from './timeline-navigation';
+import { timelineBeats } from './audio-tools';
 import { useEditor, mediaThumbnails, audioWaveforms } from './store';
 import {
   type Clip,
@@ -84,6 +85,7 @@ export default function Timeline() {
   const total = duration(p),
     width = Math.max(900, (total + 8) * zoom),
     step = zoom < 15 ? 10 : zoom < 35 ? 5 : 2;
+  const beats = timelineBeats(p);
   function startDrag(e: React.PointerEvent, c: Clip, kind: 'move' | 'in' | 'out') {
     if (e.button !== 0) return;
     e.stopPropagation();
@@ -115,10 +117,26 @@ export default function Timeline() {
       let start = Math.max(0, c.start + delta),
         sourceStart = c.sourceStart,
         sourceEnd = c.sourceEnd;
+      let trimDelta = delta;
+      if (kind !== 'move' && snap) {
+        const edge = (kind === 'in' ? c.start : clipEnd(c)) + delta;
+        const candidates = [
+          playhead,
+          ...timelineBeats(snapshot, ids),
+          ...snapshot.clips
+            .filter((x) => !ids.includes(x.id))
+            .flatMap((x) => [x.start, clipEnd(x)]),
+        ];
+        const nearest = candidates
+          .filter((point) => Math.abs(point - edge) < 8 / zoom)
+          .sort((a, b) => Math.abs(a - edge) - Math.abs(b - edge))[0];
+        if (nearest !== undefined) trimDelta += nearest - edge;
+      }
       if (kind === 'move' && snap) {
         const points = [
           0,
           playhead,
+          ...timelineBeats(snapshot, ids),
           ...snapshot.clips
             .filter((x) => !ids.includes(x.id))
             .flatMap((x) => [x.start, clipEnd(x)]),
@@ -137,7 +155,7 @@ export default function Timeline() {
       if (kind === 'in') {
         sourceStart = Math.max(
           0,
-          Math.min(c.sourceEnd - 0.1, c.sourceStart + delta * c.properties.speed),
+          Math.min(c.sourceEnd - 0.1, c.sourceStart + trimDelta * c.properties.speed),
         );
         start = c.start + (sourceStart - c.sourceStart) / c.properties.speed;
         if (start < 0) {
@@ -148,7 +166,7 @@ export default function Timeline() {
       if (kind === 'out')
         sourceEnd = Math.max(
           c.sourceStart + 0.1,
-          Math.min(m.duration, c.sourceEnd + delta * c.properties.speed),
+          Math.min(m.duration, c.sourceEnd + trimDelta * c.properties.speed),
         );
       latest = { id: c.id, start, sourceStart, sourceEnd };
       setDrag(latest);
@@ -408,6 +426,14 @@ export default function Timeline() {
           ))}
         </div>
         <div className="timeline-lanes" style={{ width, minWidth: width }}>
+          {beats.map((beat, i) => (
+            <div
+              className="beat-marker"
+              key={`${beat}-${i}`}
+              style={{ left: beat * zoom }}
+              title={`Beat ${timecode(beat, true)}`}
+            />
+          ))}
           <div className="ruler" onPointerDown={scrub}>
             {Array.from({ length: Math.ceil(width / zoom / step) }, (_, i) => (
               <span key={i} style={{ left: i * step * zoom }}>

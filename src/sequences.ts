@@ -15,6 +15,8 @@ export function sequenceSnapshot(p: Project, id: string, name: string): ProjectS
     tracks: p.tracks,
     settings: p.settings,
     captions: p.captions,
+    subtitleVariants: p.subtitleVariants,
+    publishing: p.publishing,
     exportSettings: p.exportSettings,
     suggestions: p.suggestions,
   });

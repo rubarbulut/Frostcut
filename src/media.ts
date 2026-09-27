@@ -15,6 +15,7 @@ import { mediaFiles } from './store';
 import { captionAppearance } from './caption-style';
 import { cancelBackgroundMediaJobs } from './media-runtime';
 import { audioWindow } from './audio-crossfades';
+import { audioEffectsFilter } from './audio-tools';
 import { renderCanvasVideo } from './visual-renderer';
 import { captionEmoji } from './caption-layout';
 import { videoBitrate } from './export-settings';
@@ -50,8 +51,7 @@ export async function inspectMedia(file: File): Promise<MediaAsset> {
   if (file.size > 1_500_000_000)
     throw new Error('For this P0 build, use a source smaller than 1.5 GB.');
   return new Promise((resolve, reject) => {
-    const isAudio =
-      file.type.startsWith('audio/') || /\.(mp3|wav|m4a|aac|ogg)$/i.test(file.name);
+    const isAudio = file.type.startsWith('audio/') || /\.(mp3|wav|m4a|aac|ogg)$/i.test(file.name);
     const mediaEl = isAudio ? document.createElement('audio') : document.createElement('video');
     const url = URL.createObjectURL(file);
     mediaEl.preload = 'metadata';
@@ -391,7 +391,7 @@ export async function exportMp4(
                 ? `atempo=2,atempo=${props.speed / 2}`
                 : `atempo=${props.speed}`;
           filters.push(
-            `[${input}:a]atrim=duration=${number(window.end - window.start)},asetpts=PTS-STARTPTS,${tempo},volume=${props.volume},afade=t=in:d=${window.fadeIn},afade=t=out:st=${Math.max(0, window.duration - window.fadeOut)}:d=${window.fadeOut},adelay=${Math.round(window.timelineStart * 1000)}|${Math.round(window.timelineStart * 1000)}[a${index}]`,
+            `[${input}:a]atrim=duration=${number(window.end - window.start)},asetpts=PTS-STARTPTS,${tempo},${audioEffectsFilter(p, c, window.timelineStart)},afade=t=in:d=${window.fadeIn},afade=t=out:st=${Math.max(0, window.duration - window.fadeOut)}:d=${window.fadeOut},adelay=${Math.round(window.timelineStart * 1000)}|${Math.round(window.timelineStart * 1000)}[a${index}]`,
           );
           audios.push(`[a${index}]`);
         }
