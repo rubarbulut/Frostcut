@@ -93,12 +93,41 @@ export function drawCanvasCaption(
         : p.captions.position === 'center'
           ? (height - blockHeight) / 2
           : height * (1 - appearance.margin / 100) - blockHeight;
+
+  if ((appearance.boxOpacity ?? 0) > 0) {
+    const padX = (appearance.boxPadding ?? 4) * (width / 500) + 12;
+    const padY = (appearance.boxPadding ?? 4) * (width / 500) + 6;
+    const maxRowWidth = Math.max(
+      ...rows.map((row) => row.reduce((n, w) => n + w.width, 0) + space * (row.length - 1)),
+    );
+    const boxX = (width * layout.x) / 100 - maxRowWidth / 2 - padX;
+    const boxY = top - padY;
+    const boxW = maxRowWidth + padX * 2;
+    const boxH = blockHeight + padY * 2;
+    const radius = Math.min((appearance.boxRadius ?? 8) * (width / 500), boxH / 2);
+
+    ctx.save();
+    ctx.globalAlpha = appearance.boxOpacity ?? 0;
+    ctx.fillStyle = appearance.boxColor ?? '#000000';
+    if (typeof ctx.roundRect === 'function') {
+      ctx.beginPath();
+      ctx.roundRect(boxX, boxY, boxW, boxH, radius);
+      ctx.fill();
+    } else {
+      ctx.fillRect(boxX, boxY, boxW, boxH);
+    }
+    ctx.restore();
+  }
+
   for (const [index, row] of rows.entries()) {
     let x =
       (width * layout.x) / 100 -
       (row.reduce((n, w) => n + w.width, 0) + space * (row.length - 1)) / 2;
     for (const { word, width: wordWidth } of row) {
-      const active = word.important && time >= word.timelineStart && time < word.timelineEnd;
+      const isSpoken = time >= word.timelineStart && time < word.timelineEnd;
+      const isKeyword = word.important && isSpoken;
+      const anim = appearance.animation ?? 'pop';
+      const active = isKeyword || (anim !== 'none' && isSpoken);
       ctx.fillStyle = active
         ? appearance.speakerColors
           ? (p.speakers.find((s) => s.id === word.speakerId)?.color ?? appearance.accent)
@@ -106,9 +135,22 @@ export function drawCanvasCaption(
         : appearance.color;
       ctx.strokeStyle = appearance.outlineColor;
       ctx.save();
-      ctx.translate(x + wordWidth / 2, top + index * lineHeight + lineHeight / 2);
-      const scale =
-        active && p.captions.preset === 'Brainrot' ? 1 + p.captions.intensity * 0.002 : 1;
+      let scale = 1;
+      let offsetY = 0;
+      if (active) {
+        if (p.captions.preset === 'Brainrot') {
+          scale = 1 + p.captions.intensity * 0.002;
+        } else if (anim === 'pop') {
+          scale = 1.15;
+        } else if (anim === 'bounce') {
+          offsetY = -lineHeight * 0.12;
+          scale = 1.08;
+        } else if (anim === 'glow') {
+          ctx.shadowColor = ctx.fillStyle as string;
+          ctx.shadowBlur = Math.round(width * 0.02);
+        }
+      }
+      ctx.translate(x + wordWidth / 2, top + index * lineHeight + lineHeight / 2 + offsetY);
       ctx.scale(scale, scale);
       if (appearance.outline > 0) ctx.strokeText(word.text, -wordWidth / 2, -lineHeight / 2);
       ctx.fillText(word.text, -wordWidth / 2, -lineHeight / 2);

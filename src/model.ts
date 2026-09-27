@@ -10,6 +10,7 @@ import type { PublishingMetadata } from './publishing';
 import type { Attribution } from './stock';
 export type Preset = 'YouTube Shorts' | 'TikTok' | 'Instagram Reel' | 'YouTube' | 'Custom';
 export type CaptionPreset = 'Clean' | 'Bold' | 'Brainrot';
+export type CaptionAnimation = 'none' | 'pop' | 'bounce' | 'glow' | 'typewriter' | 'karaoke';
 export type CaptionAppearance = {
   size: number;
   color: string;
@@ -19,6 +20,12 @@ export type CaptionAppearance = {
   outline: number;
   bold: boolean;
   margin: number;
+  boxColor?: string;
+  boxOpacity?: number;
+  boxRadius?: number;
+  boxPadding?: number;
+  animation?: CaptionAnimation;
+  shadow?: boolean;
 };
 export type CaptionStyle = {
   preset: CaptionPreset;
@@ -57,6 +64,8 @@ export type MediaAsset = {
   size: number;
   type: string;
   demo?: boolean;
+  folder?: string;
+  starred?: boolean;
 };
 export type ClipProps = {
   x: number;
@@ -326,6 +335,57 @@ export function addMedia(p: Project, asset: MediaAsset): Project {
     sourceEnd: audio && duration(p) ? Math.min(asset.duration, duration(p)) : asset.duration,
     properties: { ...defaultProps },
   });
+  return next;
+}
+export function removeMedia(p: Project, assetId: string): Project {
+  const next = structuredClone(p);
+  next.media = next.media.filter((m) => m.id !== assetId);
+  next.clips = next.clips.filter((c) => c.mediaId !== assetId);
+  next.transcripts = next.transcripts.filter((t) => t.mediaId !== assetId);
+  if (next.beats) {
+    delete next.beats[assetId];
+  }
+  if (next.sequences) {
+    next.sequences = next.sequences.map((seq) => ({
+      ...seq,
+      clips: seq.clips.filter((c) => c.mediaId !== assetId),
+    }));
+  }
+  return next;
+}
+export function insertMediaClip(
+  p: Project,
+  assetId: string,
+  startTime?: number,
+  trackId?: string,
+): Project {
+  const asset = p.media.find((m) => m.id === assetId);
+  if (!asset) return p;
+  const next = structuredClone(p);
+  const audio = asset.type.startsWith('audio/');
+  const targetTrack = trackId ?? (audio ? 'A2' : 'V1');
+  const at = Number.isFinite(startTime) ? Math.max(0, startTime!) : duration(p);
+  next.clips.push({
+    id: uid(),
+    mediaId: asset.id,
+    trackId: targetTrack,
+    ...(audio ? { audioRole: 'music' as const } : {}),
+    start: at,
+    sourceStart: 0,
+    sourceEnd: asset.duration,
+    properties: { ...defaultProps },
+  });
+  return next;
+}
+export function updateMediaAsset(
+  p: Project,
+  assetId: string,
+  patch: Partial<Pick<MediaAsset, 'name' | 'folder' | 'starred'>>,
+): Project {
+  const next = structuredClone(p);
+  const asset = next.media.find((m) => m.id === assetId);
+  if (!asset) return p;
+  Object.assign(asset, patch);
   return next;
 }
 export function splitClip(p: Project, id: string, time: number): Project {
@@ -685,7 +745,9 @@ export function validateProject(value: unknown): Project {
         !finite(m.width, 1, 16384) ||
         !finite(m.height, 1, 16384) ||
         !finite(m.size, 0, 1e12) ||
-        !string(m.type)
+        !string(m.type) ||
+        (m.folder !== undefined && (!string(m.folder) || m.folder.length > 60)) ||
+        (m.starred !== undefined && typeof m.starred !== 'boolean')
       )
         fail();
     for (const t of p.tracks)
@@ -811,7 +873,14 @@ export function validateProject(value: unknown): Project {
           !finite(a.margin, 5, 35) ||
           typeof a.bold !== 'boolean' ||
           typeof a.speakerColors !== 'boolean' ||
-          [a.color, a.accent, a.outlineColor].some((c) => !/^#[0-9a-f]{6}$/i.test(c)))
+          [a.color, a.accent, a.outlineColor].some((c) => !/^#[0-9a-f]{6}$/i.test(c)) ||
+          (a.boxColor !== undefined && !/^#[0-9a-f]{6}$/i.test(a.boxColor)) ||
+          (a.boxOpacity !== undefined && !finite(a.boxOpacity, 0, 1)) ||
+          (a.boxRadius !== undefined && !finite(a.boxRadius, 0, 50)) ||
+          (a.boxPadding !== undefined && !finite(a.boxPadding, 0, 50)) ||
+          (a.animation !== undefined &&
+            !['none', 'pop', 'bounce', 'glow', 'typewriter', 'karaoke'].includes(a.animation)) ||
+          (a.shadow !== undefined && typeof a.shadow !== 'boolean'))
       )
         fail();
     }

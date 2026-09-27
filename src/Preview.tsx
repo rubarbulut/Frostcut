@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Maximize, Film, Cat } from 'lucide-react';
 import { useEditor, mediaUrls } from './store';
 import {
   type Clip,
-  captionAt,
+  captionGroups,
   duration,
   clipEnd,
   timecode,
@@ -138,7 +138,8 @@ export default function Preview({
     setPlaying = useEditor((s) => s.setPlaying),
     frame = useRef<HTMLDivElement>(null),
     total = duration(p),
-    caption = captionAt(p, time),
+    groups = useMemo(() => p.captions.enabled ? captionGroups(p) : [], [p]),
+    caption = groups.find((g) => time >= g[0].timelineStart && time < g.at(-1)!.timelineEnd),
     appearance = captionAppearance(p.captions);
   const layout = captionLayout(p);
   const mediaRevision = useEditor((s) => s.mediaRevision);
@@ -262,7 +263,10 @@ export default function Preview({
                     fontSize: `${appearance.size}cqw`,
                     fontWeight: appearance.bold ? 700 : 400,
                     color: appearance.color,
-                    textShadow: 'none',
+                    textShadow:
+                      appearance.shadow !== false
+                        ? '0 2px 4px rgba(0,0,0,0.8), 0 1px 2px rgba(0,0,0,0.9)'
+                        : 'none',
                     WebkitTextStroke: `${appearance.outline / 10.8}cqw ${appearance.outlineColor}`,
                     paintOrder: 'stroke',
                     ...(p.captions.position === 'custom'
@@ -282,29 +286,53 @@ export default function Preview({
                   } as React.CSSProperties & { '--intensity': number }
                 }
               >
-                {caption.map((w) => (
-                  <span
-                    key={w.id}
-                    className={
-                      w.important && time >= w.timelineStart && time < w.timelineEnd
-                        ? 'keyword active'
-                        : ''
-                    }
-                    style={
-                      {
-                        '--speaker': appearance.speakerColors
-                          ? (p.speakers.find((s) => s.id === w.speakerId)?.color ??
-                            appearance.accent)
-                          : appearance.accent,
-                      } as React.CSSProperties
-                    }
-                  >
-                    {w.text}{' '}
-                  </span>
-                ))}
-                {captionEmoji(p, caption) && (
-                  <span className="caption-emoji">{captionEmoji(p, caption)}</span>
-                )}
+                <div
+                  className="caption-box"
+                  style={{
+                    backgroundColor:
+                      (appearance.boxOpacity ?? 0) > 0
+                        ? `${appearance.boxColor ?? '#000000'}${Math.round((appearance.boxOpacity ?? 0) * 255).toString(16).padStart(2, '0')}`
+                        : undefined,
+                    borderRadius: `${appearance.boxRadius ?? 8}px`,
+                    padding:
+                      (appearance.boxOpacity ?? 0) > 0
+                        ? `${appearance.boxPadding ?? 4}px 12px`
+                        : undefined,
+                    display: 'inline-block',
+                    maxWidth: '96%',
+                  }}
+                >
+                  {caption.map((w) => {
+                    const isSpoken = time >= w.timelineStart && time < w.timelineEnd;
+                    const isKeyword = w.important && isSpoken;
+                    const anim = appearance.animation ?? 'pop';
+                    const animClass = isSpoken && anim !== 'none' ? `caption-anim-${anim}` : '';
+                    const keywordClass = isKeyword
+                      ? 'keyword active'
+                      : isSpoken
+                        ? 'spoken-word'
+                        : '';
+                    return (
+                      <span
+                        key={w.id}
+                        className={`${keywordClass} ${animClass}`.trim()}
+                        style={
+                          {
+                            '--speaker': appearance.speakerColors
+                              ? (p.speakers.find((s) => s.id === w.speakerId)?.color ??
+                                appearance.accent)
+                              : appearance.accent,
+                          } as React.CSSProperties
+                        }
+                      >
+                        {w.text}{' '}
+                      </span>
+                    );
+                  })}
+                  {captionEmoji(p, caption) && (
+                    <span className="caption-emoji">{captionEmoji(p, caption)}</span>
+                  )}
+                </div>
               </div>
             )}
           </div>

@@ -1,20 +1,134 @@
 import { useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { Field, Range } from './components';
 import { useEditor } from './store';
-import { uid, type CaptionAppearance as Appearance, type CaptionStyle } from './model';
+import {
+  uid,
+  type CaptionAppearance as Appearance,
+  type CaptionStyle,
+  type CaptionAnimation,
+} from './model';
 import { captionAppearance } from './caption-style';
 
+export const CAPTION_PALETTES = [
+  {
+    id: 'frost-glacier',
+    name: 'Glacier',
+    icon: '🧊',
+    color: '#ffffff',
+    accent: '#38bdf8',
+    outlineColor: '#0a141e',
+    outline: 3,
+    boxColor: '#08131d',
+    boxOpacity: 0.65,
+    animation: 'glow' as const,
+  },
+  {
+    id: 'tiktok-viral',
+    name: 'TikTok',
+    icon: '⚡',
+    color: '#ffffff',
+    accent: '#facc15',
+    outlineColor: '#000000',
+    outline: 4,
+    boxColor: '#000000',
+    boxOpacity: 0.5,
+    animation: 'pop' as const,
+  },
+  {
+    id: 'neon-cyber',
+    name: 'Cyber',
+    icon: '🔮',
+    color: '#38bdf8',
+    accent: '#f43f5e',
+    outlineColor: '#1e1b4b',
+    outline: 3,
+    boxColor: '#0f172a',
+    boxOpacity: 0.7,
+    animation: 'bounce' as const,
+  },
+  {
+    id: 'warm-amber',
+    name: 'Amber',
+    icon: '🔥',
+    color: '#fffbeb',
+    accent: '#f59e0b',
+    outlineColor: '#291804',
+    outline: 3,
+    boxColor: '#1a1005',
+    boxOpacity: 0.6,
+    animation: 'pop' as const,
+  },
+  {
+    id: 'gothic-blood',
+    name: 'Gothic',
+    icon: '🦇',
+    color: '#f8fafc',
+    accent: '#ef4444',
+    outlineColor: '#09090b',
+    outline: 3.5,
+    boxColor: '#140507',
+    boxOpacity: 0.75,
+    animation: 'bounce' as const,
+  },
+  {
+    id: 'emerald-mint',
+    name: 'Emerald',
+    icon: '🌿',
+    color: '#ffffff',
+    accent: '#34d399',
+    outlineColor: '#022c22',
+    outline: 3,
+    boxColor: '#031a14',
+    boxOpacity: 0.65,
+    animation: 'glow' as const,
+  },
+] as const;
+
+export const CAPTION_ANIMATIONS = [
+  { id: 'pop', label: 'Pop', desc: 'Punchy' },
+  { id: 'bounce', label: 'Bounce', desc: 'Leap' },
+  { id: 'glow', label: 'Glow', desc: 'Glacial' },
+  { id: 'typewriter', label: 'Typewriter', desc: 'Snap' },
+  { id: 'karaoke', label: 'Karaoke', desc: 'Fill' },
+  { id: 'none', label: 'Static', desc: 'None' },
+] as const;
+
 export function CaptionAppearance() {
-  const { project: p, commit } = useEditor(),
+  const { project: p, commit } = useEditor(useShallow((s) => ({ project: s.project, commit: s.commit }))),
     a = captionAppearance(p.captions);
   const [name, setName] = useState(''),
     [error, setError] = useState('');
+
   function change(patch: Partial<Appearance>) {
     commit(
       { ...p, captions: { ...p.captions, appearance: { ...a, ...patch } } },
       'Customize caption style',
     );
   }
+
+  function applyPalette(palette: (typeof CAPTION_PALETTES)[number]) {
+    commit(
+      {
+        ...p,
+        captions: {
+          ...p.captions,
+          appearance: {
+            ...a,
+            color: palette.color,
+            accent: palette.accent,
+            outlineColor: palette.outlineColor,
+            outline: palette.outline,
+            boxColor: palette.boxColor,
+            boxOpacity: palette.boxOpacity,
+            animation: palette.animation,
+          },
+        },
+      },
+      `Apply palette: ${palette.name}`,
+    );
+  }
+
   function save() {
     const clean = name.trim(),
       saved = p.captions.savedStyles ?? [];
@@ -42,9 +156,52 @@ export function CaptionAppearance() {
     setName('');
     setError('');
   }
+
   return (
     <details className="caption-customization">
       <summary>Customize & save style</summary>
+
+      {/* 1-Click Aesthetic Color Palettes */}
+      <div className="caption-section-title">Color Palettes</div>
+      <div className="caption-palettes-grid">
+        {CAPTION_PALETTES.map((pal) => (
+          <button
+            key={pal.id}
+            type="button"
+            className="caption-palette-chip"
+            onClick={() => applyPalette(pal)}
+            title={`Apply ${pal.name} Palette`}
+          >
+            <span className="palette-chip-icon">{pal.icon}</span>
+            <div className="palette-swatch-duo">
+              <span className="swatch" style={{ background: pal.color }} />
+              <span className="swatch" style={{ background: pal.accent }} />
+            </div>
+            <span className="palette-chip-name">{pal.name}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Subtitle Word Animation Selector */}
+      <div className="caption-section-title">Word Animation</div>
+      <div className="caption-animations-selector">
+        {CAPTION_ANIMATIONS.map((anim) => {
+          const isSelected = (a.animation ?? 'pop') === anim.id;
+          return (
+            <button
+              key={anim.id}
+              type="button"
+              className={`caption-anim-btn ${isSelected ? 'active' : ''}`}
+              onClick={() => change({ animation: anim.id as CaptionAnimation })}
+              title={anim.desc}
+            >
+              <b>{anim.label}</b>
+              <small>{anim.desc}</small>
+            </button>
+          );
+        })}
+      </div>
+
       <Range
         label="Caption size"
         value={a.size}
@@ -62,6 +219,9 @@ export function CaptionAppearance() {
         />
         Bold text
       </label>
+
+      {/* Colors */}
+      <div className="caption-section-title">Colors & Contrast</div>
       <div className="caption-colors">
         <Field label="Text color">
           <input type="color" value={a.color} onChange={(e) => change({ color: e.target.value })} />
@@ -82,6 +242,7 @@ export function CaptionAppearance() {
           />
         </Field>
       </div>
+
       <label className="check-row">
         <input
           type="checkbox"
@@ -90,6 +251,7 @@ export function CaptionAppearance() {
         />
         Use speaker colors for accents
       </label>
+
       <Range
         label="Outline width"
         value={a.outline}
@@ -98,6 +260,61 @@ export function CaptionAppearance() {
         step={0.5}
         onChange={(outline) => change({ outline })}
       />
+
+      {/* Background Box Customization */}
+      <div className="caption-section-title">Background Box</div>
+      <div className="caption-colors">
+        <Field label="Box color">
+          <input
+            type="color"
+            value={a.boxColor ?? '#000000'}
+            onChange={(e) => change({ boxColor: e.target.value })}
+          />
+        </Field>
+      </div>
+
+      <Range
+        label="Box opacity"
+        value={Math.round((a.boxOpacity ?? 0) * 100)}
+        min={0}
+        max={100}
+        step={5}
+        suffix="%"
+        onChange={(val) => change({ boxOpacity: val / 100 })}
+      />
+
+      {(a.boxOpacity ?? 0) > 0 && (
+        <>
+          <Range
+            label="Corner radius"
+            value={a.boxRadius ?? 8}
+            min={0}
+            max={24}
+            step={2}
+            suffix="px"
+            onChange={(boxRadius) => change({ boxRadius })}
+          />
+          <Range
+            label="Box padding"
+            value={a.boxPadding ?? 4}
+            min={0}
+            max={16}
+            step={2}
+            suffix="px"
+            onChange={(boxPadding) => change({ boxPadding })}
+          />
+        </>
+      )}
+
+      <label className="check-row">
+        <input
+          type="checkbox"
+          checked={a.shadow ?? true}
+          onChange={(e) => change({ shadow: e.target.checked })}
+        />
+        Drop shadow for contrast
+      </label>
+
       {['top', 'bottom'].includes(p.captions.position) && (
         <Range
           label="Vertical margin"
@@ -108,6 +325,7 @@ export function CaptionAppearance() {
           onChange={(margin) => change({ margin })}
         />
       )}
+
       <button
         className="text-button"
         onClick={() =>
@@ -119,6 +337,7 @@ export function CaptionAppearance() {
       >
         Reset appearance
       </button>
+
       <div className="save-caption-style">
         <input
           aria-label="New caption style name"
@@ -131,11 +350,13 @@ export function CaptionAppearance() {
           Save style
         </button>
       </div>
+
       {error && (
         <p className="caption-error" role="alert">
           {error}
         </p>
       )}
+
       {(p.captions.savedStyles ?? []).map((saved) => (
         <div className="saved-caption-style" key={saved.id}>
           <button

@@ -136,7 +136,10 @@ export function EditPreview({
                 fontSize: `${appearance.size}cqw`,
                 fontWeight: appearance.bold ? 700 : 400,
                 color: appearance.color,
-                textShadow: 'none',
+                textShadow:
+                  appearance.shadow !== false
+                    ? '0 2px 4px rgba(0,0,0,0.8), 0 1px 2px rgba(0,0,0,0.9)'
+                    : 'none',
                 WebkitTextStroke: `${appearance.outline / 10.8}cqw ${appearance.outlineColor}`,
                 paintOrder: 'stroke',
                 ...(position === 'custom'
@@ -154,23 +157,55 @@ export function EditPreview({
                       : {}),
               }}
             >
-              {caption.map((w) => (
-                <span
-                  key={w.id}
-                  style={{
-                    color:
-                      w.important && time >= w.timelineStart && time < w.timelineEnd
-                        ? appearance.speakerColors
+              <div
+                className="caption-box"
+                style={{
+                  backgroundColor:
+                    (appearance.boxOpacity ?? 0) > 0
+                      ? `${appearance.boxColor ?? '#000000'}${Math.round((appearance.boxOpacity ?? 0) * 255).toString(16).padStart(2, '0')}`
+                      : undefined,
+                  borderRadius: `${appearance.boxRadius ?? 8}px`,
+                  padding:
+                    (appearance.boxOpacity ?? 0) > 0
+                      ? `${appearance.boxPadding ?? 4}px 12px`
+                      : undefined,
+                  display: 'inline-block',
+                  maxWidth: '96%',
+                }}
+              >
+                {caption.map((w) => {
+                  const isSpoken = time >= w.timelineStart && time < w.timelineEnd;
+                  const isKeyword = w.important && isSpoken;
+                  const anim = appearance.animation ?? 'pop';
+                  const animClass = isSpoken && anim !== 'none' ? `caption-anim-${anim}` : '';
+                  const keywordClass = isKeyword
+                    ? 'keyword active'
+                    : isSpoken
+                      ? 'spoken-word'
+                      : '';
+                  return (
+                    <span
+                      key={w.id}
+                      className={`${keywordClass} ${animClass}`.trim()}
+                      style={{
+                        '--speaker': appearance.speakerColors
                           ? (p.speakers.find((s) => s.id === w.speakerId)?.color ??
                             appearance.accent)
-                          : appearance.accent
-                        : undefined,
-                  }}
-                >
-                  {w.text}{' '}
-                </span>
-              ))}
-              {captionEmoji(p, caption)}
+                          : appearance.accent,
+                        color: isKeyword
+                          ? appearance.speakerColors
+                            ? (p.speakers.find((s) => s.id === w.speakerId)?.color ??
+                              appearance.accent)
+                            : appearance.accent
+                          : undefined,
+                      } as React.CSSProperties}
+                    >
+                      {w.text}{' '}
+                    </span>
+                  );
+                })}
+                {captionEmoji(p, caption)}
+              </div>
             </div>
           )}
         </div>

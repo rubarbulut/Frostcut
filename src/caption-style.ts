@@ -1,8 +1,9 @@
 import type { CaptionAppearance, CaptionStyle } from './model';
 
 export function captionAppearance(style: CaptionStyle): CaptionAppearance {
-  return (
-    style.appearance ?? {
+  const base = style.appearance;
+  if (!base) {
+    return {
       size: style.preset === 'Clean' ? 5.2 : 6.7,
       color: '#ffffff',
       accent: '#b9e9ff',
@@ -11,6 +12,28 @@ export function captionAppearance(style: CaptionStyle): CaptionAppearance {
       outline: style.preset === 'Clean' ? 2 : 3,
       bold: style.preset !== 'Clean',
       margin: 15,
-    }
-  );
+      animation: style.preset === 'Brainrot' ? 'bounce' : 'pop',
+      boxColor: '#000000',
+      boxOpacity: 0,
+      boxRadius: 8,
+      boxPadding: 4,
+      shadow: true,
+    };
+  }
+  return {
+    size: base.size,
+    color: base.color,
+    accent: base.accent,
+    speakerColors: base.speakerColors,
+    outlineColor: base.outlineColor,
+    outline: base.outline,
+    bold: base.bold,
+    margin: base.margin,
+    animation: base.animation ?? (style.preset === 'Brainrot' ? 'bounce' : 'pop'),
+    boxColor: base.boxColor ?? '#000000',
+    boxOpacity: base.boxOpacity ?? 0,
+    boxRadius: base.boxRadius ?? 8,
+    boxPadding: base.boxPadding ?? 4,
+    shadow: base.shadow ?? true,
+  };
 }

@@ -46,6 +46,16 @@ export function registerMedia(asset: MediaAsset, file: File) {
     cleanup();
   };
 }
+export function unregisterMedia(assetId: string) {
+  clearProxies(assetId);
+  const old = mediaUrls.get(assetId);
+  if (old) URL.revokeObjectURL(old);
+  mediaUrls.delete(assetId);
+  mediaFiles.delete(assetId);
+  mediaThumbnails.delete(assetId);
+  audioWaveforms.delete(assetId);
+  useEditor.getState().mediaChanged();
+}
 type History = { project: Project; label: string; ai: boolean };
 type State = {
   previewClip?: Clip;
