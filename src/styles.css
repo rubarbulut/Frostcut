@@ -2117,6 +2117,21 @@ kbd {
   left: 28px;
   top: 20px;
 }
+.timeline-scroll.hand-tool .timeline-lanes,
+.timeline-scroll.hand-tool .timeline-lanes * {
+  cursor: grab !important;
+}
+.timeline-scroll.is-panning,
+.timeline-scroll.is-panning * {
+  cursor: grabbing !important;
+  user-select: none;
+}
+.playback-speed {
+  width: 65px;
+  padding: 5px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
 .timeline-footer {
   display: flex;
   align-items: center;

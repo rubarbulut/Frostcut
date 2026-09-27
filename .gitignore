@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-p1/
 public/runtime/
 test-results/
 playwright-report/

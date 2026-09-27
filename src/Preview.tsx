@@ -16,6 +16,7 @@ import { transformAt } from './motion';
 import { audioGainAt, audioWindow } from './audio-crossfades';
 import { usePreviewAudio } from './preview-audio';
 import { TransformHandles } from './TransformHandles';
+import { PlaybackSpeed } from './PlaybackSpeed';
 import { ensureProxy, previewSource, proxyStatus, type PreviewQuality } from './proxies';
 function VideoLayer({
   clip,
@@ -33,6 +34,7 @@ function VideoLayer({
   const ref = useRef<HTMLVideoElement>(null),
     p = useEditor((s) => s.project),
     playing = useEditor((s) => s.playing),
+    previewRate = useEditor((s) => s.previewRate),
     time = useEditor((s) => s.playhead),
     track = p.tracks.find((t) => t.id === clip.trackId)!;
   useEditor((s) => s.mediaRevision);
@@ -72,13 +74,26 @@ function VideoLayer({
         };
       }
     }
-    v.playbackRate = clip.properties.speed;
+    v.playbackRate = clip.properties.speed * previewRate;
+    v.preservesPitch = true;
     if (audioActive) {
       if (Math.abs(v.currentTime - source) > 0.2 || !playing) v.currentTime = Math.max(0, source);
       if (playing) v.play().catch(() => useEditor.getState().setPlaying(false));
       else v.pause();
     } else v.pause();
-  }, [time, playing, source, clip, active, audioActive, url, quality, degraded, onDegrade]);
+  }, [
+    time,
+    playing,
+    source,
+    clip,
+    active,
+    audioActive,
+    url,
+    quality,
+    degraded,
+    onDegrade,
+    previewRate,
+  ]);
   if (!url)
     return active ? (
       <div className="missing-preview">
@@ -145,7 +160,7 @@ export default function Preview({
       last = performance.now();
     const tick = (now: number) => {
       const s = useEditor.getState(),
-        next = s.playhead + (now - last) / 1000;
+        next = s.playhead + ((now - last) / 1000) * s.previewRate;
       last = now;
       if (next >= duration(s.project)) {
         s.seek(duration(s.project));
@@ -304,6 +319,7 @@ export default function Preview({
         )}
       </div>
       <div className="transport">
+        <PlaybackSpeed />
         <span className="timecode">
           {timecode(time, true)} <span>/ {timecode(total, true)}</span>
         </span>

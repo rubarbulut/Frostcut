@@ -15,7 +15,9 @@ import {
   Copy,
   Minus,
   Plus,
+  Hand,
 } from 'lucide-react';
+import { useTimelineNavigation } from './timeline-navigation';
 import { useEditor, mediaThumbnails, audioWaveforms } from './store';
 import {
   type Clip,
@@ -78,10 +80,12 @@ export default function Timeline() {
     } | null>(null),
     [tool, setTool] = useState('select'),
     body = useRef<HTMLDivElement>(null);
+  const { panning, startPan } = useTimelineNavigation(body, zoom, setZoom, tool === 'hand');
   const total = duration(p),
     width = Math.max(900, (total + 8) * zoom),
     step = zoom < 15 ? 10 : zoom < 35 ? 5 : 2;
   function startDrag(e: React.PointerEvent, c: Clip, kind: 'move' | 'in' | 'out') {
+    if (e.button !== 0) return;
     e.stopPropagation();
     if (isLocked(p, c)) return;
     if (tool === 'razor') {
@@ -201,6 +205,7 @@ export default function Timeline() {
     commit(next, 'Track settings');
   }
   function scrub(e: React.PointerEvent) {
+    if (e.button !== 0) return;
     const rect = e.currentTarget.getBoundingClientRect();
     seek(Math.max(0, Math.min(total, (e.clientX - rect.left) / zoom)));
   }
@@ -208,6 +213,15 @@ export default function Timeline() {
     <section className="timeline-panel">
       <div className="timeline-toolbar">
         <div className="tool-group">
+          <button
+            className={`icon ${tool === 'hand' ? 'active' : ''}`}
+            aria-label="Pan tool"
+            title="Pan timeline · drag with middle mouse anytime"
+            aria-pressed={tool === 'hand'}
+            onClick={() => setTool(tool === 'hand' ? 'select' : 'hand')}
+          >
+            <Hand size={17} />
+          </button>
           <button
             className={`icon ${tool === 'select' ? 'active' : ''}`}
             title="Select tool"
@@ -300,7 +314,7 @@ export default function Timeline() {
             aria-label="Timeline zoom"
             type="range"
             min="8"
-            max="100"
+            max="240"
             value={zoom}
             onChange={(e) => setZoom(+e.target.value)}
           />
@@ -308,13 +322,11 @@ export default function Timeline() {
         </div>
       </div>
       <div
-        className="timeline-scroll"
+        className={`timeline-scroll ${tool === 'hand' ? 'hand-tool' : ''} ${panning ? 'is-panning' : ''}`}
         ref={body}
-        onWheel={(e) => {
-          if (e.ctrlKey) {
-            e.preventDefault();
-            setZoom((z) => Math.max(8, Math.min(100, z - e.deltaY * 0.1)));
-          }
+        onPointerDownCapture={startPan}
+        onAuxClick={(e) => {
+          if (e.button === 1) e.preventDefault();
         }}
       >
         <div className="track-labels">
@@ -524,7 +536,8 @@ export default function Timeline() {
       <div className="timeline-footer">
         <span>
           Space <kbd>Play</kbd> &nbsp; Ctrl K <kbd>Split</kbd> &nbsp; Shift <kbd>Multi-select</kbd>{' '}
-          &nbsp; Alt drag <kbd>Duplicate</kbd>
+          &nbsp; Middle drag <kbd>Pan</kbd> &nbsp; Ctrl wheel <kbd>Zoom</kbd> &nbsp; Shift wheel{' '}
+          <kbd>Scroll</kbd>
         </span>
         <span>{timecode(total, true)} total</span>
       </div>

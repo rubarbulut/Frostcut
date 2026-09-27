@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Play, Pause } from 'lucide-react';
-import { mediaUrls } from './store';
+import { mediaUrls, useEditor } from './store';
+import { PlaybackSpeed } from './PlaybackSpeed';
 import {
   applyOperations,
   captionAt,
@@ -44,16 +45,18 @@ function ProposedLayer({
   const window = audioWindow(p, clip),
     track = p.tracks.find((t) => t.id === clip.trackId)!;
   const audible = time >= window.timelineStart && time < window.timelineStart + window.duration;
+  const previewRate = useEditor((s) => s.previewRate);
   usePreviewAudio(ref, audioGainAt(p, clip, time), playing && audible);
   useEffect(() => {
     const video = ref.current;
     if (!video) return;
     const source = Math.max(0, clip.sourceStart + (time - clip.start) * clip.properties.speed);
     if (!playing || Math.abs(video.currentTime - source) > 0.15) video.currentTime = source;
-    video.playbackRate = clip.properties.speed;
+    video.playbackRate = clip.properties.speed * previewRate;
+    video.preservesPitch = true;
     if (playing && audible) void video.play().catch(() => {});
     else video.pause();
-  }, [p, clip, time, playing, audible]);
+  }, [p, clip, time, playing, audible, previewRate]);
   return (
     <video
       ref={ref}
@@ -94,7 +97,7 @@ export function EditPreview({
       last = performance.now(),
       current = time;
     const tick = (now: number) => {
-      current = Math.min(total, current + (now - last) / 1000);
+      current = Math.min(total, current + ((now - last) / 1000) * useEditor.getState().previewRate);
       last = now;
       setTime(current);
       if (current >= total) setPlaying(false);
@@ -173,6 +176,7 @@ export function EditPreview({
         </div>
       </div>
       <div className="edit-preview-transport">
+        <PlaybackSpeed />
         <button
           className="icon"
           aria-label={playing ? 'Pause edited preview' : 'Play edited preview'}

@@ -58,6 +58,8 @@ type State = {
   selected: string[];
   playhead: number;
   playing: boolean;
+  previewRate: number;
+  setPreviewRate: (rate: number) => void;
   saveStatus: string;
   mediaRevision: number;
   commit: (p: Project, label?: string, ai?: boolean) => void;
@@ -92,6 +94,10 @@ export const useEditor = create<State>((setState, getState) => ({
   selected: [],
   playhead: 0,
   playing: false,
+  previewRate: 1,
+  setPreviewRate: (rate) => {
+    if (Number.isFinite(rate)) setState({ previewRate: Math.max(0.5, Math.min(4, rate)) });
+  },
   saveStatus: 'Saved locally',
   mediaRevision: 0,
   commit: (p, label = 'Edit', ai = false) => {
