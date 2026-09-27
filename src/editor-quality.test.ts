@@ -156,4 +156,25 @@ describe('Video Editor Quality & Feature Control', () => {
     expect(ids).toContain('karaoke');
     expect(ids).toContain('none');
   });
+
+  it('customizes subtitle typography and font styles', () => {
+    const fonts: ('sans' | 'impact' | 'serif' | 'mono')[] = ['sans', 'impact', 'serif', 'mono'];
+    for (const font of fonts) {
+      const p = createProject();
+      p.captions.appearance = {
+        ...captionAppearance(p.captions),
+        fontFamily: font,
+      };
+      const validated = validateProject(p);
+      expect(validated.captions.appearance?.fontFamily).toBe(font);
+    }
+
+    // Invalid font should fail validation
+    const invalid = createProject();
+    (invalid.captions as any).appearance = {
+      ...captionAppearance(invalid.captions),
+      fontFamily: 'Comic-Sans-Pro-Ultra',
+    };
+    expect(() => validateProject(invalid)).toThrow();
+  });
 });

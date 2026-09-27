@@ -18,6 +18,7 @@ export function captionAppearance(style: CaptionStyle): CaptionAppearance {
       boxRadius: 8,
       boxPadding: 4,
       shadow: true,
+      fontFamily: 'sans',
     };
   }
   return {
@@ -35,5 +36,6 @@ export function captionAppearance(style: CaptionStyle): CaptionAppearance {
     boxRadius: base.boxRadius ?? 8,
     boxPadding: base.boxPadding ?? 4,
     shadow: base.shadow ?? true,
+    fontFamily: base.fontFamily ?? 'sans',
   };
 }

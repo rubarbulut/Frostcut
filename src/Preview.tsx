@@ -259,7 +259,14 @@ export default function Preview({
                 style={
                   {
                     '--intensity': p.captions.intensity / 100,
-                    fontFamily: 'Noto, sans-serif',
+                    fontFamily:
+                      appearance.fontFamily === 'impact'
+                        ? 'Impact, "Arial Black", sans-serif'
+                        : appearance.fontFamily === 'serif'
+                          ? 'Georgia, "Times New Roman", serif'
+                          : appearance.fontFamily === 'mono'
+                            ? '"JetBrains Mono", Consolas, monospace'
+                            : 'Noto, -apple-system, BlinkMacSystemFont, sans-serif',
                     fontSize: `${appearance.size}cqw`,
                     fontWeight: appearance.bold ? 700 : 400,
                     color: appearance.color,

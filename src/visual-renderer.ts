@@ -62,8 +62,15 @@ export function drawCanvasCaption(
   const appearance = captionAppearance(p.captions),
     font = (width * appearance.size) / 100,
     lineHeight = font * 1.22;
-  ctx.save();
-  ctx.font = `${appearance.bold ? 700 : 400} ${font}px Noto, sans-serif`;
+  const fontFace =
+    appearance.fontFamily === 'impact'
+      ? 'Impact, sans-serif'
+      : appearance.fontFamily === 'serif'
+        ? 'Georgia, serif'
+        : appearance.fontFamily === 'mono'
+          ? 'monospace'
+          : 'Noto, sans-serif';
+  ctx.font = `${appearance.bold ? 700 : 400} ${font}px ${fontFace}`;
   ctx.textBaseline = 'top';
   ctx.lineJoin = 'round';
   ctx.lineWidth = ((appearance.outline * width) / 1080) * 2;

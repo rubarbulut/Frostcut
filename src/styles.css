@@ -3728,6 +3728,55 @@ details > summary {
   color: #bae6fd;
 }
 
+.caption-fonts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.caption-font-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 6px 8px;
+  background: rgba(14, 23, 33, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.14);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.caption-font-btn:hover {
+  background: rgba(25, 42, 60, 0.85);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.caption-font-btn.active {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+}
+
+.caption-font-btn b {
+  font-size: 10px;
+  color: #f1f8fc;
+}
+
+.caption-font-btn.active b {
+  color: #38bdf8;
+}
+
+.caption-font-btn small {
+  font-size: 8.5px;
+  color: #728a9c;
+}
+
+.caption-font-btn.active small {
+  color: #bae6fd;
+}
+
 /* ==========================================================================
    Dynamic Subtitle Word Animations & Box Styling
    ========================================================================== */
@@ -3826,4 +3875,75 @@ details > summary {
   transform: scale(1.06);
   transition: color 0.1s ease, transform 0.1s ease;
 }
+
+/* ==========================================================================
+   Keyboard Shortcuts Cheat Sheet Modal
+   ========================================================================== */
+
+.shortcuts-modal-content {
+  padding: 6px 0 10px;
+}
+
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.shortcuts-section {
+  background: rgba(14, 23, 33, 0.6);
+  border: 1px solid rgba(56, 189, 248, 0.14);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.shortcuts-section h4 {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #7dd3fc;
+  margin: 0 0 10px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.12);
+}
+
+.shortcuts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shortcut-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.shortcut-desc {
+  font-size: 11px;
+  color: #cde0ec;
+}
+
+.shortcut-keys {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.shortcut-key {
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(24, 38, 54, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  box-shadow: 0 2px 0 rgba(10, 16, 24, 0.8);
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: #f1f8fc;
+  min-width: 18px;
+  text-align: center;
+}
+
 

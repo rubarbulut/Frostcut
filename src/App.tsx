@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import {
   Snowflake,
   ArrowUpRight,
@@ -24,8 +25,10 @@ import {
   Settings2,
   Plus,
   Home,
+  Keyboard,
 } from 'lucide-react';
 import { Modal, Field, Range } from './components';
+import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import {
   useEditor,
   registerMedia,
@@ -108,7 +111,25 @@ export default function App() {
     playing,
     mediaChanged,
     captionSelection,
-  } = useEditor();
+  } = useEditor(
+    useShallow((s) => ({
+      project: s.project,
+      commit: s.commit,
+      load: s.load,
+      undo: s.undo,
+      redo: s.redo,
+      past: s.past,
+      future: s.future,
+      saveStatus: s.saveStatus,
+      selected: s.selected,
+      select: s.select,
+      seek: s.seek,
+      setPlaying: s.setPlaying,
+      playing: s.playing,
+      mediaChanged: s.mediaChanged,
+      captionSelection: s.captionSelection,
+    })),
+  );
   const [screen, setScreen] = useState<'landing' | 'editor'>('landing'),
     [modal, setModal] = useState<'project' | 'auto' | 'export' | 'transcribe' | null>(null),
     [panel, setPanel] = useState('media'),
@@ -216,6 +237,10 @@ export default function App() {
       if (e.key === 'j') {
         seek(Math.max(0, useEditor.getState().playhead - 2));
         setPlaying(false);
+      }
+      if (e.key === '?') {
+        e.preventDefault();
+        setModal('shortcuts');
       }
     }
     window.addEventListener('keydown', keys);
@@ -706,6 +731,14 @@ export default function App() {
               </button>
               <button className="icon" aria-label="Redo" disabled={!future.length} onClick={redo}>
                 <Redo2 size={17} />
+              </button>
+              <button
+                className="icon"
+                aria-label="Keyboard shortcuts"
+                title="Keyboard shortcuts · ?"
+                onClick={() => setModal('shortcuts')}
+              >
+                <Keyboard size={17} />
               </button>
               <button
                 className="primary small export-top"
@@ -1410,6 +1443,9 @@ export default function App() {
       )}
       {creatorOpen && (
         <CreatorTools initialTab={creatorTab} onClose={() => setCreatorOpen(false)} />
+      )}
+      {modal === 'shortcuts' && (
+        <KeyboardShortcutsModal onClose={() => setModal(null)} />
       )}
       {modal === 'export' && (
         <Modal title="Ready for the world." onClose={() => setModal(null)}>

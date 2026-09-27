@@ -7,6 +7,7 @@ import {
   type CaptionAppearance as Appearance,
   type CaptionStyle,
   type CaptionAnimation,
+  type CaptionFont,
 } from './model';
 import { captionAppearance } from './caption-style';
 
@@ -92,6 +93,13 @@ export const CAPTION_ANIMATIONS = [
   { id: 'typewriter', label: 'Typewriter', desc: 'Snap' },
   { id: 'karaoke', label: 'Karaoke', desc: 'Fill' },
   { id: 'none', label: 'Static', desc: 'None' },
+] as const;
+
+export const CAPTION_FONTS = [
+  { id: 'sans', name: 'Modern Sans', desc: 'Clean & versatile' },
+  { id: 'impact', name: 'Impact Heavy', desc: 'Viral TikTok style' },
+  { id: 'serif', name: 'Cinematic Serif', desc: 'Gothic & elegant' },
+  { id: 'mono', name: 'Cyber Monospace', desc: 'Tech & terminal' },
 ] as const;
 
 export function CaptionAppearance() {
@@ -197,6 +205,26 @@ export function CaptionAppearance() {
             >
               <b>{anim.label}</b>
               <small>{anim.desc}</small>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Typography / Font Style */}
+      <div className="caption-section-title">Typography</div>
+      <div className="caption-fonts-grid">
+        {CAPTION_FONTS.map((font) => {
+          const isSelected = (a.fontFamily ?? 'sans') === font.id;
+          return (
+            <button
+              key={font.id}
+              type="button"
+              className={`caption-font-btn ${isSelected ? 'active' : ''}`}
+              onClick={() => change({ fontFamily: font.id as CaptionFont })}
+              title={font.desc}
+            >
+              <b>{font.name}</b>
+              <small>{font.desc}</small>
             </button>
           );
         })}

@@ -11,6 +11,7 @@ import type { Attribution } from './stock';
 export type Preset = 'YouTube Shorts' | 'TikTok' | 'Instagram Reel' | 'YouTube' | 'Custom';
 export type CaptionPreset = 'Clean' | 'Bold' | 'Brainrot';
 export type CaptionAnimation = 'none' | 'pop' | 'bounce' | 'glow' | 'typewriter' | 'karaoke';
+export type CaptionFont = 'sans' | 'impact' | 'serif' | 'mono';
 export type CaptionAppearance = {
   size: number;
   color: string;
@@ -26,6 +27,7 @@ export type CaptionAppearance = {
   boxPadding?: number;
   animation?: CaptionAnimation;
   shadow?: boolean;
+  fontFamily?: CaptionFont;
 };
 export type CaptionStyle = {
   preset: CaptionPreset;
@@ -880,7 +882,8 @@ export function validateProject(value: unknown): Project {
           (a.boxPadding !== undefined && !finite(a.boxPadding, 0, 50)) ||
           (a.animation !== undefined &&
             !['none', 'pop', 'bounce', 'glow', 'typewriter', 'karaoke'].includes(a.animation)) ||
-          (a.shadow !== undefined && typeof a.shadow !== 'boolean'))
+          (a.shadow !== undefined && typeof a.shadow !== 'boolean') ||
+          (a.fontFamily !== undefined && !['sans', 'impact', 'serif', 'mono'].includes(a.fontFamily)))
       )
         fail();
     }

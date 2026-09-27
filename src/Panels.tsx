@@ -50,7 +50,9 @@ export function MediaPanel({
   onRelink: (id: string) => void;
   onOpenImporter?: () => void;
 }) {
-  const { project: p, mediaRevision, commit, playhead } = useEditor();
+  const { project: p, mediaRevision, commit } = useEditor(useShallow((s) => ({
+    project: s.project, mediaRevision: s.mediaRevision, commit: s.commit,
+  })));
   void mediaRevision;
 
   const [search, setSearch] = useState('');
@@ -106,7 +108,7 @@ export function MediaPanel({
   function handleAddToTimeline(assetId: string) {
     const asset = p.media.find((m) => m.id === assetId);
     if (!asset) return;
-    commit(insertMediaClip(p, assetId, playhead), `Add ${asset.name} to timeline`);
+    commit(insertMediaClip(p, assetId, useEditor.getState().playhead), `Add ${asset.name} to timeline`);
   }
 
   function handleToggleStar(assetId: string) {
@@ -244,7 +246,12 @@ export function MediaPanel({
         {filteredMedia.map((m) => {
           const usedClipCount = p.clips.filter((c) => c.mediaId === m.id).length;
           return (
-            <div key={m.id} className={`asset-card ${m.starred ? 'is-starred' : ''}`}>
+            <div
+              key={m.id}
+              className={`asset-card ${m.starred ? 'is-starred' : ''}`}
+              onDoubleClick={() => handleAddToTimeline(m.id)}
+              title={`${m.name} · Double-click to insert at playhead`}
+            >
               <div className="asset-thumbnail">
                 {m.type.startsWith('audio/') ? (
                   <Volume2 size={28} />

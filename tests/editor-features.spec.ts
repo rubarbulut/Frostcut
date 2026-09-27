@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('validates media organizer, asset deletion safeguards, viral caption palettes and animations', async ({ page }) => {
+test('validates media organizer, asset deletion safeguards, viral caption palettes, animations, and typography', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Try a sample project' }).click();
   await expect(page.getByLabel('Project name')).toHaveValue('A better story');
@@ -38,9 +38,9 @@ test('validates media organizer, asset deletion safeguards, viral caption palett
   await page.getByRole('button', { name: 'Reset filters' }).click();
   await expect(assetCards).toHaveCount(1);
 
-  // Add duplicate clip to timeline via '+' button
+  // Test double-click on asset card to insert to timeline
   const initialClips = await page.locator('[data-track="V1"] .timeline-clip').count();
-  await page.locator('.asset-btn.add').first().click();
+  await assetCards.first().dblclick();
   await expect(page.locator('[data-track="V1"] .timeline-clip')).toHaveCount(initialClips + 1);
 
   // Test Delete Asset Safeguard Dialog
@@ -74,7 +74,12 @@ test('validates media organizer, asset deletion safeguards, viral caption palett
   await glowAnimBtn.click();
   await expect(glowAnimBtn).toHaveClass(/active/);
 
-  // Take screenshot of the caption palette and animation panel
+  // Select Typography font
+  const impactFontBtn = page.locator('.caption-font-btn', { hasText: 'Impact Heavy' });
+  await impactFontBtn.click();
+  await expect(impactFontBtn).toHaveClass(/active/);
+
+  // Take screenshot of the caption palette, animations, and typography panel
   await page.locator('.properties-panel').screenshot({
     path: 'C:/Users/Arenb/.gemini/antigravity/brain/b6b81b53-0756-4073-8d28-d85e15ee1853/editor_caption_palettes_preview.png',
   });
@@ -89,7 +94,20 @@ test('validates media organizer, asset deletion safeguards, viral caption palett
     path: 'C:/Users/Arenb/.gemini/antigravity/brain/b6b81b53-0756-4073-8d28-d85e15ee1853/editor_styled_subtitles_preview.png',
   });
 
-  // Take screenshot of the full editor workspace showing the harmonious UI
+  // Open Keyboard Shortcuts Modal
+  await page.getByRole('button', { name: 'Keyboard shortcuts', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Keyboard Shortcuts' })).toBeVisible();
+
+  // Take screenshot of Keyboard Shortcuts modal
+  await page.screenshot({
+    path: 'C:/Users/Arenb/.gemini/antigravity/brain/b6b81b53-0756-4073-8d28-d85e15ee1853/editor_keyboard_shortcuts_preview.png',
+  });
+
+  // Close shortcuts modal
+  await page.getByRole('button', { name: 'Close dialog' }).click();
+  await expect(page.getByRole('heading', { name: 'Keyboard Shortcuts' })).not.toBeVisible();
+
+  // Take screenshot of the full editor workspace
   await page.screenshot({
     path: 'C:/Users/Arenb/.gemini/antigravity/brain/b6b81b53-0756-4073-8d28-d85e15ee1853/editor_full_workspace_preview.png',
   });
