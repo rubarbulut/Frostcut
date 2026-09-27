@@ -193,6 +193,7 @@ export async function renderCanvasVideo(
   progress: (message: string, value?: number) => void,
   forceSoftware = false,
 ) {
+  aborted(signal);
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -200,7 +201,9 @@ export async function renderCanvasVideo(
   const videos = new Map<string, HTMLVideoElement>();
   const groups = p.captions.enabled ? captionGroups(p) : [];
   await document.fonts.load(`700 ${width * 0.1}px Noto`);
+  aborted(signal);
   await document.fonts.load(`400 ${width * 0.1}px Noto`);
+  aborted(signal);
   const frames = Math.ceil(duration(p) * fps);
   const chunks: Uint8Array[] = [],
     segments: string[] = [],
@@ -216,7 +219,9 @@ export async function renderCanvasVideo(
   };
   if (!forceSoftware && typeof VideoEncoder !== 'undefined') {
     try {
-      if ((await VideoEncoder.isConfigSupported(config)).supported) {
+      const support = await VideoEncoder.isConfigSupported(config);
+      aborted(signal);
+      if (support.supported) {
         encoder = new VideoEncoder({
           output: (chunk) => {
             const bytes = new Uint8Array(chunk.byteLength);
@@ -229,11 +234,22 @@ export async function renderCanvasVideo(
         });
         encoder.configure(config);
       }
-    } catch {
-      encoder?.close();
+    } catch (error) {
+      if (encoder && encoder.state !== 'closed') encoder.close();
       encoder = undefined;
+      if (signal.aborted) throw error;
     }
   }
+  // Closing the encoder rejects pending flushes instead of draining queued frames on cancel.
+  const releaseRenderer = () => {
+    if (encoder && encoder.state !== 'closed') encoder.close();
+    for (const video of videos.values()) {
+      video.removeAttribute('src');
+      video.load();
+    }
+    videos.clear();
+  };
+  signal.addEventListener('abort', releaseRenderer, { once: true });
   const flushImages = async () => {
     if (!pendingImages.length) return;
     const name = `visual-part-${segments.length}.mp4`;
@@ -262,6 +278,7 @@ export async function renderCanvasVideo(
     pendingImages.length = 0;
   };
   try {
+    aborted(signal);
     for (let frame = 0; frame < frames; frame++) {
       aborted(signal);
       if (encoderError) throw encoderError;
@@ -347,9 +364,12 @@ export async function renderCanvasVideo(
           videoFrame.close();
         }
         if (encoder.encodeQueueSize > 4) await encoder.flush();
+        aborted(signal);
       } else {
         const name = `visual-frame-${String(pendingImages.length).padStart(3, '0')}.png`;
-        await ff.writeFile(name, await canvasPng(canvas));
+        const png = await canvasPng(canvas);
+        aborted(signal);
+        await ff.writeFile(name, png);
         pendingImages.push(name);
         if (pendingImages.length >= 24) await flushImages();
       }
@@ -361,6 +381,7 @@ export async function renderCanvasVideo(
     }
     if (encoder) {
       await encoder.flush();
+      aborted(signal);
       if (encoderError) throw encoderError;
       const length = chunks.reduce((n, c) => n + c.length, 0),
         output = new Uint8Array(length);
@@ -391,23 +412,16 @@ export async function renderCanvasVideo(
     return { path: 'visual.mp4', raw: false };
   } catch (error) {
     if (!signal.aborted && encoder && !forceSoftware) {
-      if (encoder.state !== 'closed') encoder.close();
-      for (const video of videos.values()) {
-        video.removeAttribute('src');
-        video.load();
-      }
-      videos.clear();
+      releaseRenderer();
+      signal.removeEventListener('abort', releaseRenderer);
       chunks.length = 0;
       progress('Using the software renderer for this device…', 0);
       return await renderCanvasVideo(p, width, height, fps, ff, files, signal, progress, true);
     }
     throw error;
   } finally {
-    if (encoder?.state !== 'closed') encoder?.close();
-    for (const video of videos.values()) {
-      video.removeAttribute('src');
-      video.load();
-    }
+    signal.removeEventListener('abort', releaseRenderer);
+    releaseRenderer();
     for (const image of pendingImages) await ff.deleteFile(image).catch(() => {});
   }
 }

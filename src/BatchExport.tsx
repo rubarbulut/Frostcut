@@ -5,21 +5,38 @@ import { exportMp4 } from './media';
 import { zipFiles, safeFilename } from './zip';
 import { duration, timecode } from './model';
 export function BatchExport() {
-  const { project: p, setPlaying } = useEditor();
+  const p = useEditor((state) => state.project);
+  const setPlaying = useEditor((state) => state.setPlaying);
   const sequences = syncSequence(p).sequences ?? [];
   const [selected, setSelected] = useState(
       sequences.filter((s) => s.id !== sequences[0]?.id).map((s) => s.id),
     ),
     [busy, setBusy] = useState(false),
+    [cancelling, setCancelling] = useState(false),
     [status, setStatus] = useState(''),
     [error, setError] = useState(''),
     [blob, setBlob] = useState<Blob>();
   const abort = useRef<AbortController | null>(null);
-  useEffect(() => () => abort.current?.abort(), []);
+  useEffect(
+    () => () => {
+      const controller = abort.current;
+      abort.current = null;
+      controller?.abort();
+    },
+    [],
+  );
+  function cancel() {
+    if (!abort.current || abort.current.signal.aborted) return;
+    setCancelling(true);
+    setStatus('Stopping the current export and clearing this batch…');
+    abort.current.abort();
+  }
   async function run() {
+    if (abort.current) return;
     const c = new AbortController();
     abort.current = c;
     setBusy(true);
+    setCancelling(false);
     setStatus('Preparing batch…');
     setError('');
     setBlob(undefined);
@@ -31,24 +48,36 @@ export function BatchExport() {
         c.signal.throwIfAborted();
         const sequence = chosen[i];
         const project = switchSequence(p, sequence.id);
-        const rendered = await exportMp4(project, c.signal, (message, percent) =>
+        const rendered = await exportMp4(project, c.signal, (message, percent) => {
+          if (c.signal.aborted || abort.current !== c) return;
           setStatus(
             `${i + 1}/${chosen.length} · ${sequence.name} · ${message}${percent === undefined ? '' : ` ${Math.round(percent)}%`}`,
-          ),
-        );
+          );
+        });
+        c.signal.throwIfAborted();
         files.push({
           name: `${String(i + 1).padStart(2, '0')}-${safeFilename(sequence.name)}.mp4`,
           blob: rendered,
         });
       }
+      c.signal.throwIfAborted();
       setStatus('Packing MP4 files…');
-      setBlob(await zipFiles(files, c.signal));
+      const zip = await zipFiles(files, c.signal);
+      c.signal.throwIfAborted();
+      setBlob(zip);
       setStatus(`${chosen.length} videos ready. Your active sequence is unchanged.`);
     } catch (e) {
-      if (!c.signal.aborted) setError((e as Error).message);
-      else setStatus('Batch cancelled. No partial ZIP was created.');
+      if (abort.current !== c) return;
+      if (!c.signal.aborted) {
+        setStatus('Batch stopped before completion.');
+        setError(e instanceof Error ? e.message : String(e));
+      } else setStatus('Batch cancelled. No partial ZIP was created.');
     } finally {
-      setBusy(false);
+      if (abort.current === c) {
+        abort.current = null;
+        setBusy(false);
+        setCancelling(false);
+      }
     }
   }
   return (
@@ -57,7 +86,8 @@ export function BatchExport() {
         Export saved Shorts together. Each sequence uses its own export dimensions and quality.
         Videos render one at a time to limit memory use.
       </p>
-      {!sequences.length && <p>Create separate Shorts from Auto Cut suggestions first.</p>}
+      <p>Closing Creator tools or switching to another tool cancels the batch.</p>
+      {!sequences.length && <p>Create parts with Split or Shorts from Auto Cut first.</p>}
       <div className="batch-sequences">
         {sequences.map((s) => (
           <label key={s.id}>
@@ -87,8 +117,8 @@ export function BatchExport() {
         Export selected Shorts (.zip)
       </button>
       {busy && (
-        <button className="secondary" onClick={() => abort.current?.abort()}>
-          Cancel batch export
+        <button className="secondary" disabled={cancelling} onClick={cancel}>
+          {cancelling ? 'Stopping batch…' : 'Cancel batch export'}
         </button>
       )}
       {status && <p role="status">{status}</p>}
