@@ -523,11 +523,13 @@ export default function App() {
     }
   }
   function applySuggestion(s: Suggestion) {
-    if (p.clips.some((c) => isLocked(p, c))) {
-      setToast('Unlock timeline tracks before applying AI cuts.');
+    if (p.clips.some((c) => isLocked(p, c)) || p.adjustments?.some((a) => a.locked)) {
+      setToast('Unlock timeline tracks and adjustment layers before applying AI cuts.');
       return;
     }
-    let next = applyOperations(p, s.operations, s.reason);
+    let next: Project;
+    try { next = applyOperations(p, s.operations, s.reason); }
+    catch (error) { setToast((error as Error).message); return; }
     next.suggestions = [];
     commit(next, `AI: ${s.title}`, true, s.sourceOptions);
     seek(0);
@@ -1014,6 +1016,7 @@ export default function App() {
                   e.preventDefault();
                   const proposal = promptOperations(p, prompt);
                   if (oneClick && proposal.operations.length) {
+                    try {
                     commit(
                       applyOperations(p, proposal.operations, proposal.description),
                       'AI edit',
@@ -1021,6 +1024,7 @@ export default function App() {
                     );
                     setAiPreview(undefined);
                     setToast('AI edit applied.');
+                    } catch (error) { setToast((error as Error).message); }
                   } else setAiPreview(proposal);
                 }}
               >
@@ -1061,12 +1065,14 @@ export default function App() {
                       <button
                         className="primary small"
                         onClick={() => {
+                          try {
                           commit(
                             applyOperations(p, aiPreview.operations, aiPreview.description),
                             'AI edit',
                             true,
                           );
                           setAiPreview(undefined);
+                          } catch (error) { setToast((error as Error).message); }
                         }}
                       >
                         Apply changes

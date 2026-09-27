@@ -5,6 +5,7 @@ import { syncSequence } from './sequences';
 import { clearProxies } from './proxies';
 import type { CutOptions } from './ai';
 import { rememberAcceptedEdit, rememberHistoryOutcome } from './style-memory-store';
+import type { AdjustmentLayer } from './adjustments';
 export const mediaFiles = new Map<string, File>();
 export const mediaUrls = new Map<string, string>();
 export const mediaThumbnails = new Map<string, string>();
@@ -60,6 +61,10 @@ export function unregisterMedia(assetId: string) {
 }
 type History = { project: Project; label: string; ai: boolean; memoryId?: string };
 type State = {
+  adjustmentSelection?: string;
+  previewAdjustment?: AdjustmentLayer;
+  selectAdjustment: (id?: string) => void;
+  setPreviewAdjustment: (layer?: AdjustmentLayer) => void;
   previewClip?: Clip;
   setPreviewClip: (clip?: Clip) => void;
   captionSelection: { clipId: string; wordIds: string[]; start?: number } | null;
@@ -95,11 +100,13 @@ function persist(project: Project) {
     .catch(() => useEditor.setState({ saveStatus: 'Autosave unavailable — save a project file' }));
 }
 export const useEditor = create<State>((setState, getState) => ({
+  selectAdjustment: (adjustmentSelection) => setState({ adjustmentSelection, previewAdjustment: undefined, previewClip: undefined, selected: [], captionSelection: null, playing: false }),
+  setPreviewAdjustment: (previewAdjustment) => setState({ previewAdjustment }),
   previewClip: undefined,
   setPreviewClip: (previewClip) => setState({ previewClip }),
   captionSelection: null,
   selectCaption: (captionSelection) =>
-    setState({ captionSelection, playing: false, ...(captionSelection ? { selected: [] } : {}) }),
+    setState({ captionSelection, playing: false, ...(captionSelection ? { selected: [], adjustmentSelection: undefined, previewAdjustment: undefined } : {}) }),
   project: createProject(),
   past: [],
   future: [],
@@ -163,6 +170,8 @@ export const useEditor = create<State>((setState, getState) => ({
     const memoryId = ai ? rememberAcceptedEdit(s.project, project, sourceOptions) : undefined;
     setState({
       project,
+      previewAdjustment: undefined,
+      adjustmentSelection: project.adjustments?.some((a) => a.id === s.adjustmentSelection) ? s.adjustmentSelection : undefined,
       previewClip: undefined,
       past: [...s.past.slice(-79), { project: s.project, label, ai, memoryId }],
       future: [],
@@ -175,6 +184,8 @@ export const useEditor = create<State>((setState, getState) => ({
     if (!last) return;
     setState({
       project: last.project,
+      previewAdjustment: undefined,
+      adjustmentSelection: last.project.adjustments?.some((a) => a.id === s.adjustmentSelection) ? s.adjustmentSelection : undefined,
       previewClip: undefined,
       past: s.past.slice(0, -1),
       future: [
@@ -195,6 +206,8 @@ export const useEditor = create<State>((setState, getState) => ({
       project: last.project,
       previewClip: undefined,
       future: s.future.slice(0, -1),
+      previewAdjustment: undefined,
+      adjustmentSelection: last.project.adjustments?.some((a) => a.id === s.adjustmentSelection) ? s.adjustmentSelection : undefined,
       past: [
         ...s.past,
         { project: s.project, label: last.label, ai: last.ai, memoryId: last.memoryId },
@@ -212,6 +225,8 @@ export const useEditor = create<State>((setState, getState) => ({
     const target = s.past[index].project;
     setState({
       project: target,
+      previewAdjustment: undefined,
+      adjustmentSelection: target.adjustments?.some((a) => a.id === s.adjustmentSelection) ? s.adjustmentSelection : undefined,
       previewClip: undefined,
       past: s.past.slice(0, index),
       future: [
@@ -231,7 +246,7 @@ export const useEditor = create<State>((setState, getState) => ({
     persist(target);
   },
   load: (project) => {
-    setState({ previewClip: undefined });
+    setState({ previewClip: undefined, previewAdjustment: undefined, adjustmentSelection: undefined });
     for (const [id, url] of mediaUrls) {
       if (!project.media.some((m) => m.id === id)) {
         clearProxies(id);
@@ -253,7 +268,7 @@ export const useEditor = create<State>((setState, getState) => ({
     });
     persist(project);
   },
-  select: (selected) => setState({ selected }),
+  select: (selected) => setState({ selected, adjustmentSelection: undefined, previewAdjustment: undefined }),
   seek: (playhead) => setState({ playhead: Math.max(0, playhead) }),
   setPlaying: (playing) => setState({ playing }),
   mediaChanged: () => setState((s) => ({ mediaRevision: s.mediaRevision + 1 })),

@@ -500,7 +500,7 @@ export function applyOperations(project: Project, ops: Operation[], reason?: str
   let p = structuredClone(project);
   for (const op of ops) {
     if (op.type === 'delete-range') p = deleteRange(p, op.start, op.end, op.ripple ?? true);
-    if (op.type === 'keep-range') {
+    if (op.type === 'keep-range' && !p.adjustments?.some((a) => a.locked)) {
       p = deleteRange(p, op.end, duration(p));
       p = deleteRange(p, 0, op.start);
     }
@@ -529,7 +529,10 @@ export function applyOperations(project: Project, ops: Operation[], reason?: str
     if (op.type === 'speed-range' && !p.clips.some((c) => isLocked(p, c)) && !p.adjustments?.some((a) => a.locked && a.end > op.start)) {
       for (const c of [...p.clips])
         if (c.start < op.start && clipEnd(c) > op.start) p = splitClip(p, c.id, op.start);
-      const factor = Math.max(0.25, Math.min(4, op.speed));
+      const affected = p.clips.filter((c) => c.start >= op.start - 0.001);
+      const minFactor = Math.max(0.25, ...affected.map((c) => 0.25 / c.properties.speed));
+      const maxFactor = Math.min(4, ...affected.map((c) => 4 / c.properties.speed));
+      const factor = Math.max(minFactor, Math.min(maxFactor, op.speed));
       p.adjustments = speedAdjustments(p.adjustments, op.start, factor);
       for (const c of p.clips) {
         if (c.start >= op.start - 0.001) {

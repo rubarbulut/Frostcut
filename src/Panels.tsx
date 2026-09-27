@@ -1,4 +1,5 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
+import { AdjustmentControls } from './AdjustmentControls';
 import {
   Upload,
   FileVideo,
@@ -498,12 +499,14 @@ export function MediaPanel({
 }
 export { TranscriptPanel } from './TranscriptPanel';
 export function PropertiesPanel() {
+  const adjustmentSelection = useEditor((s) => s.adjustmentSelection);
   const { project: p, commit, selected } = useEditor(useShallow((s) => ({
     project: s.project, commit: s.commit, selected: s.selected,
   }))),
     [tab, setTab] = useState('Captions'),
     clip = p.clips.find((c) => selected.includes(c.id)),
     locked = clip ? isLocked(p, clip) : false;
+  useEffect(() => { if (adjustmentSelection) setTab('Adjustments'); }, [adjustmentSelection]);
   function captions(patch: Partial<Project['captions']>) {
     const cur = useEditor.getState().project;
     commit({ ...cur, captions: { ...cur.captions, ...patch } }, 'Caption style');
@@ -520,13 +523,13 @@ export function PropertiesPanel() {
   return (
     <aside className="properties-panel">
       <div className="panel-tabs">
-        {['Captions', 'Properties'].map((t) => (
+        {['Captions', 'Properties', 'Adjustments'].map((t) => (
           <button key={t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>
             {t}
           </button>
         ))}
       </div>
-      {tab === 'Captions' ? (
+      {tab === 'Adjustments' ? <AdjustmentControls /> : tab === 'Captions' ? (
         <div className="properties-content">
           <CaptionLanguage />
           <div className="section-heading">

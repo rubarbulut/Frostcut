@@ -1,6 +1,9 @@
 import { useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import CaptionLane from './CaptionLane';
+import { AdjustmentLabels, AdjustmentLanes } from './AdjustmentLane';
+import { cutAdjustments } from './adjustments';
+import { removeAdjustment, splitAdjustment } from './AdjustmentControls';
 import { FloatingActionBar } from './FloatingActionBar';
 import { TimelineMinimap } from './TimelineMinimap';
 import {
@@ -35,11 +38,14 @@ import {
   isAudioClip,
 } from './model';
 export function deleteSelected(ripple = false) {
+  const adjustment = useEditor.getState().adjustmentSelection;
+  if (adjustment && !ripple) { removeAdjustment(adjustment); return; }
   const s = useEditor.getState(),
     p = structuredClone(s.project),
     selected = p.clips.filter((c) => s.selected.includes(c.id) && !isLocked(p, c));
   if (!selected.length) return;
   if (ripple && p.clips.some((c) => isLocked(p, c))) return;
+  if (ripple && p.adjustments?.some((a) => a.locked && a.end > Math.min(...selected.map((c) => c.start)))) return;
   p.clips = p.clips.filter((c) => !selected.some((x) => x.id === c.id));
   if (ripple) {
     const ranges = selected
@@ -51,6 +57,7 @@ export function deleteSelected(ripple = false) {
       if (last && r.start <= last.end) last.end = Math.max(last.end, r.end);
       else merged.push({ ...r });
     }
+    for (const range of [...merged].reverse()) p.adjustments = cutAdjustments(p.adjustments, range.start, range.end);
     for (const c of p.clips)
       c.start = Math.max(
         0,
@@ -62,6 +69,7 @@ export function deleteSelected(ripple = false) {
 }
 export function splitSelected() {
   const s = useEditor.getState();
+  if (s.adjustmentSelection) { splitAdjustment(s.adjustmentSelection, s.playhead); return; }
   let p = s.project;
   for (const c of s.project.clips)
     if (
@@ -73,6 +81,7 @@ export function splitSelected() {
   s.commit(p, 'Split clips');
 }
 export default function Timeline() {
+  const adjustmentSelection = useEditor((s) => s.adjustmentSelection);
   const {
       project: p,
       selected,
@@ -101,7 +110,7 @@ export default function Timeline() {
     body = useRef<HTMLDivElement>(null);
   const { panning, startPan } = useTimelineNavigation(body, zoom, setZoom, tool === 'hand');
   const total = duration(p),
-    width = Math.max(900, (total + 8) * zoom),
+    width = Math.max(900, (Math.max(total, ...p.adjustments?.map((a) => a.end) ?? []) + 8) * zoom),
     step = zoom < 15 ? 10 : zoom < 35 ? 5 : 2;
   const beats = timelineBeats(p);
   function startDrag(e: React.PointerEvent, c: Clip, kind: 'move' | 'in' | 'out') {
@@ -287,8 +296,8 @@ export default function Timeline() {
           <button
             className="icon"
             title="Delete selected"
-            aria-label="Delete selected clips"
-            disabled={!selected.length}
+            aria-label={adjustmentSelection ? 'Delete selected adjustment' : 'Delete selected clips'}
+            disabled={!selected.length && !adjustmentSelection}
             onClick={() => deleteSelected()}
           >
             <Trash2 size={16} />
@@ -405,6 +414,7 @@ export default function Timeline() {
               {p.captions.enabled ? <Eye size={14} /> : <EyeOff size={14} />}
             </button>
           </div>
+          <AdjustmentLabels />
           {p.tracks.map((t) => (
             <div className="track-label" key={t.id} style={{ height: t.height }}>
               <b>{t.name}</b>
@@ -463,6 +473,7 @@ export default function Timeline() {
             ))}
           </div>
           <CaptionLane zoom={zoom} snap={snap} />
+          <AdjustmentLanes zoom={zoom} snap={snap} razor={tool === 'razor'} />
           {p.tracks.map((t) => (
             <div
               key={t.id}

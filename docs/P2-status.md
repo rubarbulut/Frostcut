@@ -14,7 +14,7 @@ Paid services, uploads, account connections and cloud compute are not silently e
 | Background removal | Pending | Real local segmentation, editable edge controls, preview/export parity, model license/runtime availability, cancellation and useful failure states |
 | Motion tracking | Pending | Real source-frame tracking, editable results, lost-target handling, timeline/keyframe mapping and exported motion |
 | Stabilization | Pending | Measured source motion and bounded correction/crop, preview/review/apply, export evidence |
-| Adjustment layers | Pending | Timeline-wide visual adjustment over a bounded interval, stacking, trimming, persistence and export |
+| Adjustment layers | Timeline/inspector and shared filter plan implemented; pixel/export review pending | Timeline-wide visual adjustment over a bounded interval, stacking, trimming, persistence and export |
 | Nested sequences | Pending | Reference/insert sequences with timing, audio and captions, cycle protection, edit propagation and export |
 | AI chapters | Editor and local-model path implemented; model/browser verification pending | Transcript-based boundaries/titles, review/edit, navigation and chapter export, timing invalidation |
 | Brand kit learning | Caption profiles implemented; browser review pending | Learn editable reusable branding from approved project examples; persistent profiles and explicit application |
@@ -111,6 +111,22 @@ rendering must be updated together for visual features.
   Real-report reconciliation, browser import/link/apply flows and production build
   remain pending. No model, media render or browser suite was run while gaming.
   See [analytics.md](analytics.md) for exact thresholds, limits and remaining QA.
+
+## Adjustment layers
+
+- The FX timeline lanes and right-side Adjustments inspector support named,
+  bounded exposure/contrast/saturation/hue layers, stack order, move/trim/split,
+  enable/lock, duplicate/delete, snapping and frame nudges. Slider and timeline
+  drafts commit once and can be cancelled.
+- Model edits, toolbar ripple deletion, per-sequence save/open and equal parts
+  preserve/remap the grades. Main preview, proposed preview and canvas export use
+  one ordered filter description below captions; neutral grades bypass processing.
+- 36 focused/regression tests passed in 1.42 seconds with one active worker;
+  source type-check passed. These include 11 new adjustment tests. No browser
+  render, model inference or production build was run while the user was gaming.
+- Actual pixels/export and interaction QA remain pending. Source review also found
+  an existing aspect-fill backdrop preview/export mismatch to resolve before final
+  parity verification. See [adjustment-layers.md](adjustment-layers.md).
 
 ## Transcript chapter delivery
 

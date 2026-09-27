@@ -21,6 +21,7 @@ import { TransformHandles } from './TransformHandles';
 import { PlaybackSpeed } from './PlaybackSpeed';
 import { hasVisualEffects } from './visual-effects';
 import { EffectPreview } from './EffectPreview';
+import { AdjustmentComposite } from './AdjustmentComposite';
 import { ensureProxy, previewSource, proxyStatus, type PreviewQuality } from './proxies';
 function VideoLayer({
   clip,
@@ -146,6 +147,7 @@ export default function Preview({
   onImport: () => void;
   processing?: boolean;
 }) {
+  const previewAdjustment = useEditor((s) => s.previewAdjustment);
   const [quality, setQuality] = useState<PreviewQuality>('Auto'),
     [degraded, setDegraded] = useState<string[]>([]);
   const onDegrade = useCallback(
@@ -282,6 +284,7 @@ export default function Preview({
             className="video-canvas"
             style={{ aspectRatio: `${p.settings.width}/${p.settings.height}` }}
           >
+            <AdjustmentComposite layers={p.adjustments} time={time} draft={previewAdjustment}>
             {/* Blurred background fill when aspect ratio differs from source */}
             {p.settings.fillMode !== 'fit' &&
               activeAsset &&
@@ -328,6 +331,7 @@ export default function Preview({
                   onDegrade={onDegrade}
                 />
               ))}
+            </AdjustmentComposite>
             <TransformHandles />
             {p.captions.safeArea && (
               <div className="safe-area">

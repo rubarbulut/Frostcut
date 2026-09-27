@@ -1,0 +1,85 @@
+.adjustment-composite {
+  position: absolute;
+  inset: 0;
+  background: #090d10;
+  isolation: isolate;
+}
+.adjustment-composite > video,
+.adjustment-composite > canvas.effect-preview {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+  position: absolute;
+  inset: 0;
+}
+.adjustment-lane,
+.adjustment-label {
+  height: 38px;
+  min-height: 38px;
+}
+.adjustment-lane {
+  position: relative;
+  border-bottom: 1px solid #354454;
+  background: #201a2a;
+}
+.adjustment-lane.locked {
+  background: #26232a;
+}
+.adjustment-block {
+  position: absolute;
+  top: 5px;
+  height: 28px;
+  min-height: 0;
+  padding: 4px 10px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  border: 1px solid #8e78b7;
+  border-radius: 4px;
+  background: #493265;
+  color: #eee3ff;
+  cursor: grab;
+  touch-action: none;
+  font-size: 11px;
+  text-align: left;
+}
+.adjustment-block.selected {
+  outline: 2px solid #d7bcff;
+  outline-offset: -2px;
+}
+.adjustment-block.disabled {
+  opacity: 0.45;
+}
+.adjustment-block .adjustment-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 7px;
+  cursor: ew-resize;
+  background: #e7d0ff30;
+}
+.adjustment-edge.start {
+  left: 0;
+}
+.adjustment-edge.end {
+  right: 0;
+}
+.adjustment-controls {
+  display: grid;
+  gap: 12px;
+}
+.adjustment-controls fieldset {
+  display: grid;
+  gap: 12px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.adjustment-controls small {
+  color: var(--muted);
+  line-height: 1.5;
+}
+.adjustment-label b {
+  color: #ccacef;
+}

@@ -4,6 +4,7 @@ import { mediaUrls, useEditor } from './store';
 import { PlaybackSpeed } from './PlaybackSpeed';
 import { hasVisualEffects } from './visual-effects';
 import { EffectPreview } from './EffectPreview';
+import { AdjustmentComposite } from './AdjustmentComposite';
 import {
   applyOperations,
   captionAt,
@@ -29,8 +30,11 @@ export function OperationsPreview({
   project: Project;
   operations: Operation[];
 }) {
-  const proposed = useMemo(() => applyOperations(project, operations), [project, operations]);
-  return <EditPreview project={proposed} />;
+  const proposed = useMemo(() => {
+    try { return { project: applyOperations(project, operations), error: '' }; }
+    catch (error) { return { project: undefined, error: (error as Error).message }; }
+  }, [project, operations]);
+  return proposed.project ? <EditPreview project={proposed.project} /> : <p role="alert">{proposed.error}</p>;
 }
 function ProposedLayer({
   p,
@@ -135,6 +139,7 @@ export function EditPreview({
           className="video-canvas"
           style={{ aspectRatio: `${p.settings.width}/${p.settings.height}` }}
         >
+          <AdjustmentComposite layers={p.adjustments} time={time}>
           {[...p.clips]
             .filter((c) => time >= c.start - 1 && time <= clipEnd(c) + 1)
             .sort(
@@ -145,6 +150,7 @@ export function EditPreview({
             .map((c) => (
               <ProposedLayer key={c.id} p={p} clip={c} time={time} playing={playing} />
             ))}
+          </AdjustmentComposite>
           {caption && (
             <div
               className={`caption-overlay caption-${p.captions.preset.toLowerCase()} position-${position}`}

@@ -16,11 +16,14 @@ status and preserve unrelated edits; do not stage the entire worktree blindly.
   real report and browser review pending.
 - `856a0ec`: Antigravity's editing/UX work. It also captured early versions of
   analytics.ts and analytics-csv.ts while they were being developed here. Preserve it.
-- All above were pushed to `origin/main` at github.com/rubarbulut/Frostcut.
+- `785abe8`: requested checkpoint of adjustment data/export foundation and this note.
+- The latest completed delivery is available through `git log` / `origin/main` at
+  github.com/rubarbulut/Frostcut. Keep saving incremental progress there.
 
 ## In-progress delivery: adjustment layers
 
-Data and export foundation is implemented but not yet exposed in the editor:
+Data/export foundation and editor controls are now implemented; actual visual
+verification is still pending:
 
 - `src/adjustments.ts`: optional per-sequence layers with stable IDs, name, enabled,
   lock, bounded start/end; exposure/contrast/saturation/hue; validation; ordered CSS
@@ -35,36 +38,29 @@ Data and export foundation is implemented but not yet exposed in the editor:
 - `src/media.ts` / `src/visual-renderer.ts`: active non-neutral layers route to the
   visual renderer and grade the video before caption drawing.
 
-These changes have not yet received their focused tests or browser verification.
-The source type-check passed at this checkpoint (about 4.6 seconds).
-Do not describe the adjustment feature as complete or preview/export parity verified.
+The follow-up adds `AdjustmentComposite.tsx`, `AdjustmentControls.tsx`,
+`AdjustmentLane.tsx`, `adjustments.css` and `adjustments.test.ts`; wires both
+previews, the properties panel, timeline, editor draft/selection/history and AI
+error handling. Toolbar ripple deletion is integrated. Speed-range factors are
+bounded consistently across affected clips. See `docs/adjustment-layers.md`.
 
-### Remaining implementation
+36 adjustment/model/sequence/equal-parts tests passed in 1.42 seconds with one
+worker active at a time. Source type-check passed. Actual pixel/export fidelity
+and browser interactions are not yet verified; do not close this feature or P2.
 
-1. Add shared `.adjustment-composite` wrapper around video layers in both
-   `Preview.tsx` and `EditPreview.tsx`; give it the same `adjustmentFilter` string,
-   full-frame `#090d10` background and size. Captions, safe-area and transform handles
-   stay outside the filter. Preserve descendant video/canvas positioning currently
-   defined by `.video-canvas > video` / `.effect-preview` CSS selectors.
-2. Add `adjustmentSelection`, `previewAdjustment`, selection/draft actions to editor
-   store. Clear drafts on commit/undo/redo/revert/load and when changing selection.
-   Expose an Adjustments inspector tab in PropertiesPanel, selected by lane clicks.
-3. Inspector: create, rename, enable/disable, lock, numeric start/end, four grade
-   controls, reset, duplicate/delete, reorder. Sliders should preview during drag
-   and commit once on release; Escape/pointer cancel restores original values.
-4. Timeline: lane/label per adjustment above video and below captions, Add button,
-   select, move/trim, snapping, frame keyboard nudges, lock protection. Use current
-   project snapshots and cancel a drag if another edit or sequence switch intervenes.
-5. Integrate ripple deletion from `Timeline.deleteSelected`, which bypasses
-   `model.deleteRange`. Keep non-ripple removal at absolute adjustment times.
-6. Handle remap overflow errors (128 fragment limit) in OperationsPreview and AI
-   apply UI instead of allowing an unhandled exception. Review speed-range clamping
-   semantics and minimum intervals before asserting preservation.
-7. Focused tests: validation, stacking/order and neutral bypass, frame boundaries,
-   ripple/assemble/speed remapping, locks, sequences/parts, undo/save/reopen, export
-   route and canvas filter context restoration. Brief type-check. Defer actual
-   browser pixel/export runs until user permits heavier work.
-8. Update P2 tracker, document exact semantics and pending evidence, commit/push.
+### Next work
+
+1. Resolve the inspected shared aspect-fill backdrop mismatch described below;
+   this can start with low-resource code work while gaming.
+2. When heavier checks are permitted, perform adjustment pixel/export and timeline
+   interaction QA, including cancellation, locks, overlap order, caption exclusion,
+   exact boundary frames, sequence/part/batch rendering and unsupported filters.
+3. Complete the pending chroma/mask export regressions, chapters real-model review,
+   and branding/memory/analytics browser flows recorded in `docs/P2-status.md`.
+4. Continue remaining full P2 features: background removal, motion tracking,
+   stabilization, nested sequences, real B-roll generation, YouTube upload,
+   collaboration and cloud rendering. External integrations need real configured
+   services/accounts; do not substitute mocks or silently enable costs/uploads.
 
 ### Rendering notes
 
