@@ -19,7 +19,7 @@ Paid services, uploads, account connections and cloud compute are not silently e
 | AI chapters | Editor and local-model path implemented; model/browser verification pending | Transcript-based boundaries/titles, review/edit, navigation and chapter export, timing invalidation |
 | Brand kit learning | Caption profiles implemented; browser review pending | Learn editable reusable branding from approved project examples; persistent profiles and explicit application |
 | AI style memory | Local accepted-edit preferences implemented; browser review pending | Learn from accepted edits, explain proposed defaults, apply/reject/reset and persist across projects |
-| Analytics learning | Pending | Real imported/connected performance data, traceable feedback suggestions; no invented metrics |
+| Analytics learning | CSV import and linked-edit comparisons implemented; real-report/browser review pending | Real imported/connected performance data, traceable feedback suggestions; no invented metrics |
 | AI image/video B-roll generation | Pending | Real generation provider/local model, actual returned media, provenance, timeline import and error/cancel handling; costs/provider requirements explicit |
 | YouTube upload integration | Pending | User-configured OAuth, real upload with editable metadata/privacy, resumable/error handling, explicit publish control |
 | Collaboration | Pending | Real sharing/synchronization, ownership/conflicts and project/media access; no fake participants or chat |
@@ -94,6 +94,23 @@ rendering must be updated together for visual features.
   model inference or media render was started. Browser interaction and production
   build remain pending. This is learned settings preference, not model fine-tuning
   or analytics inference. See [style-memory.md](style-memory.md).
+
+## Imported analytics learning
+
+- Creator tools → Analytics imports actual CSV metrics with manual column mapping,
+  delimiter/decimal controls, row validation, explicit import review and source-file
+  hash/record provenance. Matching video/report imports update instead of duplicating.
+- A user-confirmed link captures the published sequence's settings independently of
+  later edits. Comparisons use actual imported average-percentage-viewed values,
+  separate account/platform/report periods and video formats, expose both groups'
+  evidence, and make no causal or predicted-performance claim.
+- Caption settings can be explicitly tried as an undoable edit; duration and base
+  clip-density observations leave timing unchanged. Dismiss/reset, local persistence
+  and JSON backup/merge are included. No account or remote service is connected.
+- Nine focused tests passed in one worker (333 ms); source type-check passed.
+  Real-report reconciliation, browser import/link/apply flows and production build
+  remain pending. No model, media render or browser suite was run while gaming.
+  See [analytics.md](analytics.md) for exact thresholds, limits and remaining QA.
 
 ## Transcript chapter delivery
 

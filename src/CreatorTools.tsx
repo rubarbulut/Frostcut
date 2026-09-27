@@ -11,6 +11,7 @@ import { SequenceTools } from './SequenceTools';
 import { BrandKitTools } from './BrandKitTools';
 import { ChapterTools } from './ChapterTools';
 import { StyleMemoryTools } from './StyleMemoryTools';
+import { AnalyticsTools } from './AnalyticsTools';
 export default function CreatorTools({
   onClose,
   initialTab = 'Reframe',
@@ -27,6 +28,7 @@ export default function CreatorTools({
     'Subtitles',
     'Brand kit',
     'Style memory',
+    'Analytics',
     'Chapters',
     'B-roll',
     'Publish',
@@ -81,6 +83,7 @@ export default function CreatorTools({
         {tab === 'Subtitles' && <SubtitleTools />}
         {tab === 'Brand kit' && <BrandKitTools />}
         {tab === 'Style memory' && <StyleMemoryTools />}
+        {tab === 'Analytics' && <AnalyticsTools />}
         {tab === 'Chapters' && <ChapterTools onNavigate={onClose} />}
         {tab === 'B-roll' && <BrollTools />}
         {tab === 'Publish' && <PublishTools />}
