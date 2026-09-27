@@ -1,0 +1,62 @@
+# P2 implementation tracker
+
+P2 started on 2026-09-27 against section 6 of the supplied FrostCut master spec.
+P0/P1 remain the baseline. This document tracks the complete P2 list; starting a
+first delivery does not close the whole milestone. Footage remains local by default.
+Paid services, uploads, account connections and cloud compute are not silently enabled.
+
+## Order and acceptance
+
+| Feature | Status | Completion evidence required |
+| --- | --- | --- |
+| Chroma key | Implemented; final regression pending | Editable key color, threshold, edge softness and spill; matching actual preview/MP4 compositing; undo, save/open and split preservation |
+| Advanced masks | Implemented; final regression pending | Rectangle, ellipse and editable polygon, feather/invert/position controls; same mask in preview and MP4; persistence and timeline editing |
+| Background removal | Pending | Real local segmentation, editable edge controls, preview/export parity, model license/runtime availability, cancellation and useful failure states |
+| Motion tracking | Pending | Real source-frame tracking, editable results, lost-target handling, timeline/keyframe mapping and exported motion |
+| Stabilization | Pending | Measured source motion and bounded correction/crop, preview/review/apply, export evidence |
+| Adjustment layers | Pending | Timeline-wide visual adjustment over a bounded interval, stacking, trimming, persistence and export |
+| Nested sequences | Pending | Reference/insert sequences with timing, audio and captions, cycle protection, edit propagation and export |
+| AI chapters | Pending | Transcript-based boundaries/titles, review/edit, navigation and chapter export, timing invalidation |
+| Brand kit learning | Pending | Learn editable reusable branding from approved project examples; persistent profiles and explicit application |
+| AI style memory | Pending | Learn from accepted edits, explain proposed defaults, apply/reject/reset and persist across projects |
+| Analytics learning | Pending | Real imported/connected performance data, traceable feedback suggestions; no invented metrics |
+| AI image/video B-roll generation | Pending | Real generation provider/local model, actual returned media, provenance, timeline import and error/cancel handling; costs/provider requirements explicit |
+| YouTube upload integration | Pending | User-configured OAuth, real upload with editable metadata/privacy, resumable/error handling, explicit publish control |
+| Collaboration | Pending | Real sharing/synchronization, ownership/conflicts and project/media access; no fake participants or chat |
+| Cloud rendering | Pending | Configured remote worker, media transfer consent, job progress/cancel and playable returned output; no default paid service |
+
+The first delivery covers chroma key and static masks. While the user is gaming,
+work is limited to code, documentation and brief checks; longer browser/render
+regressions and new model workloads are deferred. This does not close P2.
+Integration features need a separately configured service/account or local provider;
+they are not considered delivered by placeholders or adapter interfaces alone.
+
+## Baseline evidence
+
+- Baseline unit suite: 113 tests in 17 files passed, 3.23 seconds.
+- Production build passed; existing 500 kB entry-chunk advisory remains.
+- Production browser baseline: 8 tests passed in 15.4 seconds (navigation,
+  captions and publishing; live stock lookup excluded). Includes actual MP4
+  downloads and batch ZIP decoding.
+
+## First delivery evidence
+
+- Effects-enabled snapshot: 116 unit tests in 18 files passed in 3.33 seconds;
+  production build passed. Latest source type-check passed after the demux fix.
+- Chroma key plus feathered ellipse: actual preview pixels, play/pause and a
+  decoded exported MP4 passed. WebGL-unavailable error/recovery check passed.
+- Polygon vertex keyboard/drag editing, undo, independent clip settings and
+  save/open passed. The subsequent polygon MP4 check exposed a raw H.264 format
+  detection failure; the source frames were valid.
+- Minimal reproduction: the captured synthetic 1,928-byte stream fails automatic
+  probing but yields all 24 frames (320 x 180) when read with `-f h264`. Explicit
+  demux plus stream-copy to MP4 also yielded all 24 frames, with no re-encoding.
+  Export now specifies this known raw input format. Fixture and reproduction
+  commands are documented in [visual-effects.md](visual-effects.md).
+- Still pending: browser rerun after the demux fix; new rectangle rotation checks;
+  locked polygon interaction; existing motion-export regression. Do not interpret
+  the earlier successful build/browser runs as verification of these final edits.
+
+All status claims above refer to inspected repository state, not the specification's
+embedded agent prompts. Model/schema, editor preview, proposed-edit preview and MP4
+rendering must be updated together for visual features.

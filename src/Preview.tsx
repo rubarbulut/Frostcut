@@ -18,6 +18,8 @@ import { audioGainAt, audioWindow } from './audio-crossfades';
 import { usePreviewAudio } from './preview-audio';
 import { TransformHandles } from './TransformHandles';
 import { PlaybackSpeed } from './PlaybackSpeed';
+import { hasVisualEffects } from './visual-effects';
+import { EffectPreview } from './EffectPreview';
 import { ensureProxy, previewSource, proxyStatus, type PreviewQuality } from './proxies';
 function VideoLayer({
   clip,
@@ -49,6 +51,12 @@ function VideoLayer({
   const window = audioWindow(p, clip),
     audioActive = time >= window.timelineStart && time < window.timelineStart + window.duration;
   const props = transformAt(clip, time, p.settings.width, p.settings.height);
+  const withEffects = !isAudioClip(p, clip) && hasVisualEffects(clip.effects);
+  const effectStyle = {
+    opacity: props.opacity,
+    transform: `translate(${(props.x / p.settings.width) * 100}%,${(props.y / p.settings.height) * 100}%) rotate(${props.rotation}deg) scale(${props.scale})`,
+    clipPath: `inset(${props.crop}%)`,
+  };
   usePreviewAudio(ref, audioGainAt(p, clip, time), playing && audioActive, clip.voiceEnhance);
   useEffect(() => {
     const v = ref.current;
@@ -104,19 +112,30 @@ function VideoLayer({
       </div>
     ) : null;
   return (
-    <video
-      ref={ref}
-      src={url}
-      playsInline
-      preload="metadata"
-      muted={!audioActive || !clipAudible(p, clip)}
-      style={{
-        visibility: active && !track.hidden && !isAudioClip(p, clip) ? 'visible' : 'hidden',
-        opacity: props.opacity,
-        transform: `translate(${(props.x / p.settings.width) * 100}%,${(props.y / p.settings.height) * 100}%) rotate(${props.rotation}deg) scale(${props.scale})`,
-        clipPath: `inset(${props.crop}%)`,
-      }}
-    />
+    <>
+      <video
+        ref={ref}
+        src={url}
+        playsInline
+        preload="metadata"
+        muted={!audioActive || !clipAudible(p, clip)}
+        style={{
+          ...effectStyle,
+          visibility:
+            active && !track.hidden && !isAudioClip(p, clip) && !withEffects ? 'visible' : 'hidden',
+        }}
+      />
+      {withEffects && (
+        <EffectPreview
+          videoRef={ref}
+          effects={clip.effects!}
+          active={active && !track.hidden}
+          playing={playing}
+          source={url}
+          style={effectStyle}
+        />
+      )}
+    </>
   );
 }
 export default function Preview({

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Field, Range } from './components';
 import type { CaptionAppearance } from './model';
 
-function NumberField({
+export function NumberField({
   label,
   value,
   min,

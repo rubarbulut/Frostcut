@@ -8,6 +8,7 @@ import {
 } from './translations';
 import type { PublishingMetadata } from './publishing';
 import type { Attribution } from './stock';
+import { validVisualEffects, type VisualEffects } from './visual-effects';
 export type Preset = 'YouTube Shorts' | 'TikTok' | 'Instagram Reel' | 'YouTube' | 'Custom';
 export type CaptionPreset = 'Clean' | 'Bold' | 'Brainrot';
 export type CaptionAnimation = 'none' | 'pop' | 'bounce' | 'glow' | 'typewriter' | 'karaoke';
@@ -91,6 +92,7 @@ export type ClipProps = {
   animation: string;
 };
 export type Clip = {
+  effects?: VisualEffects;
   audioRole?: 'music' | 'voice';
   autoDuck?: boolean;
   voiceEnhance?: boolean;
@@ -793,6 +795,7 @@ export function validateProject(value: unknown): Project {
       )
         fail();
       if (c.captionWords !== undefined) validateWords(c.captionWords, m!.duration);
+      if (c.effects !== undefined && !validVisualEffects(c.effects)) fail();
       if (c.keyframes !== undefined) {
         if (
           !c.keyframes ||

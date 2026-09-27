@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState, Fragment } from 'react';
 import { Play, Pause } from 'lucide-react';
 import { mediaUrls, useEditor } from './store';
 import { PlaybackSpeed } from './PlaybackSpeed';
+import { hasVisualEffects } from './visual-effects';
+import { EffectPreview } from './EffectPreview';
 import {
   applyOperations,
   captionAt,
@@ -47,6 +49,13 @@ function ProposedLayer({
     track = p.tracks.find((t) => t.id === clip.trackId)!;
   const audible = time >= window.timelineStart && time < window.timelineStart + window.duration;
   const previewRate = useEditor((s) => s.previewRate);
+  const withEffects = !isAudioClip(p, clip) && hasVisualEffects(clip.effects);
+  const active = time >= clip.start && time < clipEnd(clip) && !track.hidden && !isAudioClip(p, clip);
+  const effectStyle = {
+    opacity: props.opacity,
+    transform: `translate(${(props.x / p.settings.width) * 100}%, ${(props.y / p.settings.height) * 100}%) rotate(${props.rotation}deg) scale(${props.scale})`,
+    clipPath: `inset(${props.crop}%)`,
+  };
   usePreviewAudio(ref, audioGainAt(p, clip, time), playing && audible, clip.voiceEnhance);
   useEffect(() => {
     const video = ref.current;
@@ -59,22 +68,29 @@ function ProposedLayer({
     else video.pause();
   }, [p, clip, time, playing, audible, previewRate]);
   return (
-    <video
-      ref={ref}
-      src={mediaUrls.get(clip.mediaId)}
-      playsInline
-      preload="auto"
-      muted={!audible || !clipAudible(p, clip)}
-      style={{
-        visibility:
-          time >= clip.start && time < clipEnd(clip) && !track.hidden && !isAudioClip(p, clip)
-            ? 'visible'
-            : 'hidden',
-        opacity: props.opacity,
-        transform: `translate(${(props.x / p.settings.width) * 100}%, ${(props.y / p.settings.height) * 100}%) rotate(${props.rotation}deg) scale(${props.scale})`,
-        clipPath: `inset(${props.crop}%)`,
-      }}
-    />
+    <>
+      <video
+        ref={ref}
+        src={mediaUrls.get(clip.mediaId)}
+        playsInline
+        preload="auto"
+        muted={!audible || !clipAudible(p, clip)}
+        style={{
+          ...effectStyle,
+          visibility: active && !withEffects ? 'visible' : 'hidden',
+        }}
+      />
+      {withEffects && (
+        <EffectPreview
+          videoRef={ref}
+          effects={clip.effects!}
+          active={active}
+          playing={playing}
+          source={mediaUrls.get(clip.mediaId)}
+          style={effectStyle}
+        />
+      )}
+    </>
   );
 }
 /** Isolated playback of a proposed project; never changes the editor or its undo history. */

@@ -20,6 +20,7 @@ import { audioEffectsFilter } from './audio-tools';
 import { renderCanvasVideo } from './visual-renderer';
 import { captionEmoji } from './caption-layout';
 import { videoBitrate } from './export-settings';
+import { hasVisualEffects } from './visual-effects';
 let engine: FFmpeg | undefined;
 let busy = false;
 let engineQueue: Promise<unknown> = Promise.resolve();
@@ -297,6 +298,7 @@ export async function exportMp4(
       const animated = p.clips.some(
         (c) =>
           c.properties.animation !== 'None' ||
+          hasVisualEffects(c.effects) ||
           c.properties.crop > 0 ||
           Object.values(c.keyframes ?? {}).some((frames) => frames.length),
       );
@@ -308,7 +310,8 @@ export async function exportMp4(
           : undefined;
       const args: string[] = [
         ...(visual
-          ? [...(visual.raw ? ['-r', String(fps)] : []), '-i', visual.path]
+          // Short Annex B streams can be valid but score too low for format probing.
+          ? [...(visual.raw ? ['-f', 'h264', '-r', String(fps)] : []), '-i', visual.path]
           : ['-f', 'lavfi', '-i', `color=c=0x090d10:s=${w}x${h}:r=${fps}:d=${number(total)}`]),
         '-f',
         'lavfi',

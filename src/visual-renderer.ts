@@ -6,6 +6,8 @@ import { captionFontFamily } from './caption-typography';
 import { mediaUrls } from './store';
 import { captionEmoji, captionLayout } from './caption-layout';
 import { videoBitrate } from './export-settings';
+import { hasVisualEffects } from './visual-effects';
+import { EffectsRenderer } from './effects-renderer';
 
 function aborted(signal: AbortSignal) {
   if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
@@ -209,6 +211,7 @@ export async function renderCanvasVideo(
     segments: string[] = [],
     pendingImages: string[] = [];
   let encoder: VideoEncoder | undefined, encoderError: Error | undefined;
+  let effectRenderer: EffectsRenderer | undefined;
   const config: VideoEncoderConfig = {
     codec: 'avc1.640034',
     width,
@@ -242,6 +245,8 @@ export async function renderCanvasVideo(
   }
   // Closing the encoder rejects pending flushes instead of draining queued frames on cancel.
   const releaseRenderer = () => {
+    effectRenderer?.dispose();
+    effectRenderer = undefined;
     if (encoder && encoder.state !== 'closed') encoder.close();
     for (const video of videos.values()) {
       video.removeAttribute('src');
@@ -340,8 +345,11 @@ export async function renderCanvasVideo(
           height * (1 - crop * 2),
         );
         ctx.clip();
+        const image = hasVisualEffects(clip.effects)
+          ? (effectRenderer ??= new EffectsRenderer()).draw(video, video.videoWidth, video.videoHeight, clip.effects!)
+          : video;
         ctx.drawImage(
-          video,
+          image,
           (-video.videoWidth * fit) / 2,
           (-video.videoHeight * fit) / 2,
           video.videoWidth * fit,

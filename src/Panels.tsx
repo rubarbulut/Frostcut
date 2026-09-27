@@ -37,6 +37,7 @@ import {
 import { Field, Range, Modal } from './components';
 import { CaptionAppearance } from './CaptionAppearance';
 import { TransformControls } from './TransformControls';
+import { VisualEffectsControls } from './VisualEffectsControls';
 import { AudioTools } from './AudioTools';
 import { CaptionLanguage } from './SubtitleTools';
 import { useShallow } from 'zustand/react/shallow';
@@ -618,6 +619,7 @@ export function PropertiesPanel() {
               </div>
               <fieldset disabled={locked}>
                 {!isAudioClip(p, clip) && <TransformControls clip={clip} />}
+                {!isAudioClip(p, clip) && <VisualEffectsControls key={clip.id} clip={clip} />}
                 {isAudioClip(p, clip) && (
                   <Field label="Audio track">
                     <select
