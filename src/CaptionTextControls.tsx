@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Field, Range } from './components';
 import type { CaptionAppearance } from './model';
 
@@ -18,8 +18,13 @@ function NumberField({
   onChange: (value: number) => void;
 }) {
   const [draft, setDraft] = useState(String(+value.toFixed(2)));
+  const cancelled = useRef(false);
   useEffect(() => setDraft(String(+value.toFixed(2))), [value]);
   function apply() {
+    if (cancelled.current) {
+      cancelled.current = false;
+      return;
+    }
     const n = Number(draft);
     if (!draft.trim() || !Number.isFinite(n)) {
       setDraft(String(+value.toFixed(2)));
@@ -27,7 +32,7 @@ function NumberField({
     }
     const next = Math.min(max, Math.max(min, n));
     setDraft(String(+next.toFixed(2)));
-    if (n !== +value.toFixed(2)) onChange(next);
+    if (next !== +value.toFixed(2)) onChange(next);
   }
   return (
     <Field label={label}>
@@ -36,10 +41,18 @@ function NumberField({
         min={min}
         max={max}
         step={step}
+        title="Enter saves; Escape cancels this edit."
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={apply}
         onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopPropagation();
+            cancelled.current = true;
+            setDraft(String(+value.toFixed(2)));
+            e.currentTarget.blur();
+          }
           if (e.key === 'Enter') {
             e.preventDefault();
             e.currentTarget.blur();
@@ -63,7 +76,8 @@ export function CaptionTextControls({
     <section className="caption-text-controls" aria-label="Subtitle text formatting">
       <div className="caption-section-title">Text editor</div>
       <small className="subtle">
-        Applies to all captions in this sequence. Click a transcript time to edit the words.
+        Applies to all captions in this sequence. Click a transcript time to edit the words. Number
+        fields: Enter to save, Escape to cancel. Copy this style in Creator tools → Parts.
       </small>
       <div className="caption-type-grid">
         <Field label="Font family">

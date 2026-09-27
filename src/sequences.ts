@@ -21,6 +21,24 @@ export function sequenceSnapshot(p: Project, id: string, name: string): ProjectS
     suggestions: p.suggestions,
   });
 }
+/** Read-only views for panels: keep the active edit current without cloning its media timeline. */
+export function sequenceViews(p: Project): ProjectSequence[] {
+  return (p.sequences ?? []).map((s) =>
+    s.id === p.activeSequenceId
+      ? {
+          ...s,
+          clips: p.clips,
+          tracks: p.tracks,
+          settings: p.settings,
+          captions: p.captions,
+          subtitleVariants: p.subtitleVariants,
+          publishing: p.publishing,
+          exportSettings: p.exportSettings,
+          suggestions: p.suggestions,
+        }
+      : s,
+  );
+}
 export function syncSequence(p: Project): Project {
   if (!p.activeSequenceId || !p.sequences) return p;
   return {

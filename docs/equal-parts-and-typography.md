@@ -22,6 +22,10 @@ sequence-wide settings; words and cue times remain editable through the transcri
 Existing palettes, animations, background/outline options, reset and saved styles remain
 under **Customize & save style**. Presets and new settings survive project save/open.
 
+**Creator tools → Parts** can now copy these styles between selected parts and preview
+bulk numbered names. Batch and single export also expose filenames and supported
+folder destinations; see [creator workflow controls](creator-workflow-polish.md).
+
 The normal and proposed-edit previews use the same typography helpers. Export uses the
 canvas renderer when the ASS path cannot represent the chosen typography. The current
 browser's [canvas letter-spacing API](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/letterSpacing)

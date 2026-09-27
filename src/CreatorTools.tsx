@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Modal } from './components';
 import { AutoReframe } from './AutoReframe';
 import { SubtitleTools } from './SubtitleTools';
@@ -7,6 +7,7 @@ import { BrollTools } from './BrollTools';
 import { DiscoverTools } from './DiscoverTools';
 import { BatchExport } from './BatchExport';
 import { EqualParts } from './EqualParts';
+import { SequenceTools } from './SequenceTools';
 export default function CreatorTools({
   onClose,
   initialTab = 'Reframe',
@@ -15,17 +16,61 @@ export default function CreatorTools({
   initialTab?: string;
 }) {
   const [tab, setTab] = useState(initialTab);
+  const tabId = useId();
+  const tabs = [
+    'Split',
+    'Parts',
+    'Reframe',
+    'Subtitles',
+    'B-roll',
+    'Publish',
+    'Discover',
+    'Batch export',
+  ];
   return (
     <Modal title="Creator tools" onClose={onClose} wide>
       <div className="creator-tabs" role="tablist" aria-label="Creator tools">
-        {['Split', 'Reframe', 'Subtitles', 'B-roll', 'Publish', 'Discover', 'Batch export'].map((name) => (
-          <button key={name} role="tab" aria-selected={tab === name} onClick={() => setTab(name)}>
+        {tabs.map((name, index) => (
+          <button
+            key={name}
+            role="tab"
+            id={`${tabId}-${index}`}
+            aria-controls={`${tabId}-panel`}
+            aria-selected={tab === name}
+            tabIndex={tab === name ? 0 : -1}
+            onClick={() => setTab(name)}
+            onKeyDown={(e) => {
+              const next =
+                e.key === 'ArrowRight'
+                  ? (index + 1) % tabs.length
+                  : e.key === 'ArrowLeft'
+                    ? (index + tabs.length - 1) % tabs.length
+                    : e.key === 'Home'
+                      ? 0
+                      : e.key === 'End'
+                        ? tabs.length - 1
+                        : -1;
+              if (next < 0) return;
+              e.preventDefault();
+              e.stopPropagation();
+              setTab(tabs[next]);
+              e.currentTarget.parentElement
+                ?.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+                [next]?.focus();
+            }}
+          >
             {name}
           </button>
         ))}
       </div>
-      <div role="tabpanel">
+      <div
+        role="tabpanel"
+        id={`${tabId}-panel`}
+        aria-labelledby={`${tabId}-${tabs.indexOf(tab)}`}
+        tabIndex={0}
+      >
         {tab === 'Split' && <EqualParts onCreated={onClose} />}
+        {tab === 'Parts' && <SequenceTools />}
         {tab === 'Reframe' && <AutoReframe />}
         {tab === 'Subtitles' && <SubtitleTools />}
         {tab === 'B-roll' && <BrollTools />}

@@ -3272,6 +3272,50 @@ details > summary {
   display: block;
   margin-top: 4px;
 }
+.batch-summary {
+  padding: 10px 12px;
+  border: 1px solid #354454;
+  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.batch-sequences label > span:first-of-type {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.batch-state {
+  flex-shrink: 0;
+  font-size: 11px;
+  border: 1px solid #354454;
+  padding: 3px 6px;
+  border-radius: 5px;
+}
+.batch-state[data-state='Rendering'] { color: #9ce7ff; }
+.batch-state[data-state='Rendered'] { color: #b6e8c9; }
+.batch-state[data-state='Failed'] { color: #ffb3ae; }
+.part-tool-box,
+.export-destination {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  margin: 12px 0;
+  padding: 14px;
+  border: 1px solid #354454;
+  border-radius: 8px;
+}
+.part-tool-box legend,
+.export-destination legend { padding: 0 6px; font-weight: 600; }
+.export-destination p,
+.part-tool-box p { margin: 0; }
+.output-path { overflow-wrap: anywhere; }
+.part-name-preview,
+.part-selection { max-height: 240px; overflow-y: auto; }
+.part-name-preview table { width: 100%; border-collapse: collapse; }
+.part-name-preview th,
+.part-name-preview td { text-align: left; padding: 8px; overflow-wrap: anywhere; }
+.part-name-preview tr { border-bottom: 1px solid #354454; }
+.part-name-preview td { max-width: 220px; }
 .creator-section .button-row {
   flex-wrap: wrap;
 }
@@ -3963,4 +4007,3 @@ details > summary {
   min-width: 18px;
   text-align: center;
 }
-

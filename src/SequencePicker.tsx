@@ -1,9 +1,58 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Layers, Trash2 } from 'lucide-react';
 import { useEditor } from './store';
 import { removeSequence, switchSequence } from './sequences';
 import { Modal } from './components';
+
+function SequenceName({ id, name }: { id: string; name: string }) {
+  const [draft, setDraft] = useState(name);
+  const cancelled = useRef(false);
+  useEffect(() => setDraft(name), [name]);
+  function save() {
+    if (cancelled.current) {
+      cancelled.current = false;
+      return;
+    }
+    const clean = draft.trim();
+    if (!clean) {
+      setDraft(name);
+      return;
+    }
+    const { project, commit } = useEditor.getState();
+    if (!project.sequences?.some((s) => s.id === id) || clean === name) return;
+    commit(
+      {
+        ...project,
+        sequences: project.sequences.map((s) => (s.id === id ? { ...s, name: clean } : s)),
+      },
+      'Rename sequence',
+    );
+    setDraft(clean);
+  }
+  return (
+    <input
+      aria-label="Rename sequence"
+      value={draft}
+      maxLength={80}
+      title="Enter saves; Escape cancels this edit."
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={save}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          cancelled.current = true;
+          setDraft(name);
+          e.currentTarget.blur();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          e.currentTarget.blur();
+        }
+      }}
+    />
+  );
+}
 
 export function SequencePicker() {
   const {
@@ -49,23 +98,7 @@ export function SequencePicker() {
           </option>
         ))}
       </select>
-      <input
-        aria-label="Rename sequence"
-        value={current.name}
-        maxLength={80}
-        onChange={(e) => {
-          if (!e.target.value.trim()) return;
-          commit(
-            {
-              ...p,
-              sequences: p.sequences!.map((s) =>
-                s.id === current.id ? { ...s, name: e.target.value } : s,
-              ),
-            },
-            'Rename sequence',
-          );
-        }}
-      />
+      <SequenceName key={current.id} id={current.id} name={current.name} />
       <span>{p.sequences.length} sequences</span>
       <button
         className="icon"

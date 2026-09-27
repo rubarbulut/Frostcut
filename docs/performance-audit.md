@@ -106,3 +106,13 @@ two measured snapshots, not to every subsequent build in the shared workspace.
   coverage is intentionally deferred to manual testing; this is **not** a 34/34 suite claim.
 
 ![Optimized editor during the 10-minute benchmark](qa/editor-performance.png)
+
+## Later lightweight editor work
+
+The follow-up [creator workflow changes](creator-workflow-polish.md) remove active
+timeline cloning from each batch-progress render, memoize part duration/size totals,
+and commit sequence names once on Enter/blur instead of on every character. They
+do not change encoding quality and were not benchmarked. The earlier measurements
+above do not apply to these follow-ups. The user subsequently allowed short checks:
+type checking and 18 targeted data-only tests passed; browser/render checks remain
+deferred while gaming.

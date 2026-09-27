@@ -37,7 +37,6 @@ import {
   audioWaveforms,
   saveProject,
   restoreProject,
-  downloadBlob,
 } from './store';
 import {
   createProject,
@@ -79,6 +78,7 @@ import LandingPage from './LandingPage';
 import { MediaImporterModal } from './importer/MediaImporterModal';
 import './importer/importer.css';
 import { SequencePicker } from './SequencePicker';
+import { ExportDestination } from './ExportDestination';
 import { createShortSequences } from './sequences';
 import { EqualParts } from './EqualParts';
 import { analyzeSource, measuredSilences } from './analyze-source';
@@ -1764,15 +1764,12 @@ export default function App() {
           <p className="modal-intro">
             H.264 MP4 · {((exportBlob?.size ?? 0) / 1024 / 1024).toFixed(1)} MB
           </p>
-          <button
-            className="primary full"
-            onClick={() =>
-              exportBlob && downloadBlob(exportBlob, `${p.name.replace(/[^\w -]/g, '_')}.mp4`)
-            }
-          >
-            <Download size={17} />
-            Download MP4
-          </button>
+          <ExportDestination
+            blob={exportBlob}
+            defaultName={p.name}
+            extension="mp4"
+            downloadLabel="Download MP4"
+          />
         </Modal>
       )}
       {toast && (
