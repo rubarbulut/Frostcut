@@ -153,7 +153,7 @@ export function suggestCuts(
       status: 'pending',
     });
   }
-  return suggestions;
+  return suggestions.map((suggestion) => ({ ...suggestion, sourceOptions: { ...opts } }));
 }
 export function silenceFromSamples(
   samples: Float32Array,

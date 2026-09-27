@@ -10,6 +10,7 @@ import type { PublishingMetadata } from './publishing';
 import type { Attribution } from './stock';
 import { validVisualEffects, type VisualEffects } from './visual-effects';
 import { validChapterSet, type ChapterSet } from './chapter-data';
+import type { CutOptions } from './ai';
 export type Preset = 'YouTube Shorts' | 'TikTok' | 'Instagram Reel' | 'YouTube' | 'Custom';
 export type CaptionPreset = 'Clean' | 'Bold' | 'Brainrot';
 export type CaptionAnimation = 'none' | 'pop' | 'bounce' | 'glow' | 'typewriter' | 'karaoke';
@@ -131,6 +132,7 @@ export type Operation =
   | { type: 'caption-style'; preset: CaptionPreset }
   | { type: 'speed'; clipId: string; speed: number };
 export type Suggestion = {
+  sourceOptions?: CutOptions;
   id: string;
   type: 'highlight' | 'silence' | 'repeat' | 'edit';
   title: string;

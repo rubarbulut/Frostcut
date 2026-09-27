@@ -18,7 +18,7 @@ Paid services, uploads, account connections and cloud compute are not silently e
 | Nested sequences | Pending | Reference/insert sequences with timing, audio and captions, cycle protection, edit propagation and export |
 | AI chapters | Editor and local-model path implemented; model/browser verification pending | Transcript-based boundaries/titles, review/edit, navigation and chapter export, timing invalidation |
 | Brand kit learning | Caption profiles implemented; browser review pending | Learn editable reusable branding from approved project examples; persistent profiles and explicit application |
-| AI style memory | Pending | Learn from accepted edits, explain proposed defaults, apply/reject/reset and persist across projects |
+| AI style memory | Local accepted-edit preferences implemented; browser review pending | Learn from accepted edits, explain proposed defaults, apply/reject/reset and persist across projects |
 | Analytics learning | Pending | Real imported/connected performance data, traceable feedback suggestions; no invented metrics |
 | AI image/video B-roll generation | Pending | Real generation provider/local model, actual returned media, provenance, timeline import and error/cancel handling; costs/provider requirements explicit |
 | YouTube upload integration | Pending | User-configured OAuth, real upload with editable metadata/privacy, resumable/error handling, explicit publish control |
@@ -79,6 +79,21 @@ rendering must be updated together for visual features.
   delivery remain pending while the user is gaming. This is caption branding;
   logo recognition, general edit-style memory and analytics learning are not
   included. See [brand-kits.md](brand-kits.md) for use and review steps.
+
+## Accepted-edit preference memory
+
+- Creator tools → Style memory optionally remembers accepted Auto Cut choices and
+  approved caption styles. Learning is off initially. Recommendations require two
+  agreeing project/sequence votes, match the current video format and Auto Cut goal,
+  show supporting counts, and require explicit application.
+- Actual editor Undo/Redo/Revert AI updates the observation state. Forgotten records
+  are not recreated by history. Manual editing is not automatically recorded.
+- Local persistence, individual forget/reset, dismiss/show and JSON backup/merge
+  are included. Storage errors preserve editing and in-session history outcomes.
+- Ten focused tests passed in one worker (934 ms); source type-check passed. No
+  model inference or media render was started. Browser interaction and production
+  build remain pending. This is learned settings preference, not model fine-tuning
+  or analytics inference. See [style-memory.md](style-memory.md).
 
 ## Transcript chapter delivery
 

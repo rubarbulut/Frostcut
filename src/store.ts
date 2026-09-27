@@ -3,6 +3,8 @@ import { set, get } from 'idb-keyval';
 import { createProject, type Project, type MediaAsset, type Clip, validateProject } from './model';
 import { syncSequence } from './sequences';
 import { clearProxies } from './proxies';
+import type { CutOptions } from './ai';
+import { rememberAcceptedEdit, rememberHistoryOutcome } from './style-memory-store';
 export const mediaFiles = new Map<string, File>();
 export const mediaUrls = new Map<string, string>();
 export const mediaThumbnails = new Map<string, string>();
@@ -56,7 +58,7 @@ export function unregisterMedia(assetId: string) {
   audioWaveforms.delete(assetId);
   useEditor.getState().mediaChanged();
 }
-type History = { project: Project; label: string; ai: boolean };
+type History = { project: Project; label: string; ai: boolean; memoryId?: string };
 type State = {
   previewClip?: Clip;
   setPreviewClip: (clip?: Clip) => void;
@@ -72,7 +74,7 @@ type State = {
   setPreviewRate: (rate: number) => void;
   saveStatus: string;
   mediaRevision: number;
-  commit: (p: Project, label?: string, ai?: boolean) => void;
+  commit: (p: Project, label?: string, ai?: boolean, sourceOptions?: CutOptions) => void;
   undo: () => void;
   redo: () => void;
   revertAI: (all?: boolean) => void;
@@ -110,7 +112,7 @@ export const useEditor = create<State>((setState, getState) => ({
   },
   saveStatus: 'Saved locally',
   mediaRevision: 0,
-  commit: (p, label = 'Edit', ai = false) => {
+  commit: (p, label = 'Edit', ai = false, sourceOptions) => {
     const s = getState();
     if (JSON.stringify(p) === JSON.stringify(s.project)) return;
     const changedTiming =
@@ -158,10 +160,11 @@ export const useEditor = create<State>((setState, getState) => ({
           }
         : {}),
     });
+    const memoryId = ai ? rememberAcceptedEdit(s.project, project, sourceOptions) : undefined;
     setState({
       project,
       previewClip: undefined,
-      past: [...s.past.slice(-79), { project: s.project, label, ai }],
+      past: [...s.past.slice(-79), { project: s.project, label, ai, memoryId }],
       future: [],
     });
     persist(project);
@@ -174,10 +177,14 @@ export const useEditor = create<State>((setState, getState) => ({
       project: last.project,
       previewClip: undefined,
       past: s.past.slice(0, -1),
-      future: [...s.future, { project: s.project, label: last.label, ai: last.ai }],
+      future: [
+        ...s.future,
+        { project: s.project, label: last.label, ai: last.ai, memoryId: last.memoryId },
+      ],
       playing: false,
       selected: [],
     });
+    rememberHistoryOutcome([last.memoryId], 'undone');
     persist(last.project);
   },
   redo: () => {
@@ -188,10 +195,14 @@ export const useEditor = create<State>((setState, getState) => ({
       project: last.project,
       previewClip: undefined,
       future: s.future.slice(0, -1),
-      past: [...s.past, { project: s.project, label: last.label, ai: last.ai }],
+      past: [
+        ...s.past,
+        { project: s.project, label: last.label, ai: last.ai, memoryId: last.memoryId },
+      ],
       playing: false,
       selected: [],
     });
+    rememberHistoryOutcome([last.memoryId], 'accepted');
     persist(last.project);
   },
   revertAI: (all = false) => {
@@ -213,6 +224,10 @@ export const useEditor = create<State>((setState, getState) => ({
       selected: [],
       playing: false,
     });
+    rememberHistoryOutcome(
+      s.past.slice(index).map((h) => h.memoryId),
+      'undone',
+    );
     persist(target);
   },
   load: (project) => {

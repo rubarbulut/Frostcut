@@ -10,6 +10,7 @@ import { EqualParts } from './EqualParts';
 import { SequenceTools } from './SequenceTools';
 import { BrandKitTools } from './BrandKitTools';
 import { ChapterTools } from './ChapterTools';
+import { StyleMemoryTools } from './StyleMemoryTools';
 export default function CreatorTools({
   onClose,
   initialTab = 'Reframe',
@@ -25,6 +26,7 @@ export default function CreatorTools({
     'Reframe',
     'Subtitles',
     'Brand kit',
+    'Style memory',
     'Chapters',
     'B-roll',
     'Publish',
@@ -78,6 +80,7 @@ export default function CreatorTools({
         {tab === 'Reframe' && <AutoReframe />}
         {tab === 'Subtitles' && <SubtitleTools />}
         {tab === 'Brand kit' && <BrandKitTools />}
+        {tab === 'Style memory' && <StyleMemoryTools />}
         {tab === 'Chapters' && <ChapterTools onNavigate={onClose} />}
         {tab === 'B-roll' && <BrollTools />}
         {tab === 'Publish' && <PublishTools />}

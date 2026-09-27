@@ -81,6 +81,7 @@ import { SequencePicker } from './SequencePicker';
 import { ExportDestination } from './ExportDestination';
 import { createShortSequences } from './sequences';
 import { EqualParts } from './EqualParts';
+import { StyleMemoryCutSuggestion } from './StyleMemoryTools';
 import { analyzeSource, measuredSilences } from './analyze-source';
 import { speechSafeSilences } from './highlights';
 import { estimatedMegabytes, videoBitrate } from './export-settings';
@@ -524,7 +525,7 @@ export default function App() {
     }
     let next = applyOperations(p, s.operations, s.reason);
     next.suggestions = [];
-    commit(next, `AI: ${s.title}`, true);
+    commit(next, `AI: ${s.title}`, true, s.sourceOptions);
     seek(0);
     setSuggestionsOpen(false);
     setToast('AI edit applied. Undo is always one click away.');
@@ -535,7 +536,12 @@ export default function App() {
         p,
         p.suggestions.filter((s) => selectedShorts.includes(s.id)),
       );
-      commit(next, `AI: create ${selectedShorts.length} separate Shorts`, true);
+      commit(
+        next,
+        `AI: create ${selectedShorts.length} separate Shorts`,
+        true,
+        p.suggestions.find((s) => selectedShorts.includes(s.id))?.sourceOptions,
+      );
       setPlaying(false);
       select([]);
       seek(0);
@@ -1188,6 +1194,7 @@ export default function App() {
           <p className="modal-intro">
             A first cut you can make your own. Preview every change before applying.
           </p>
+          <StyleMemoryCutSuggestion options={opts} onApply={setOpts} />
           <div className="setup-grid">
             <div>
               <Field label="What do you want to create?">
