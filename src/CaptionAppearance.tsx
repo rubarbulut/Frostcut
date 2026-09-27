@@ -22,12 +22,14 @@ export function CaptionAppearance() {
     if (saved.some((s) => s.name.toLowerCase() === clean.toLowerCase()))
       return setError('Choose a different style name.');
     if (saved.length >= 20) return setError('Remove a saved style before adding another.');
-    const { preset, intensity, wordsPerCaption, position } = p.captions;
+    const { preset, intensity, wordsPerCaption, position, customPosition, emoji } = p.captions;
     const style: CaptionStyle = {
       preset,
       intensity,
       wordsPerCaption,
       position,
+      customPosition,
+      emoji,
       appearance: { ...a },
     };
     commit(
@@ -96,7 +98,7 @@ export function CaptionAppearance() {
         step={0.5}
         onChange={(outline) => change({ outline })}
       />
-      {p.captions.position !== 'center' && (
+      {['top', 'bottom'].includes(p.captions.position) && (
         <Range
           label="Vertical margin"
           value={a.margin}

@@ -1,11 +1,14 @@
 import { create } from 'zustand';
 import { set, get } from 'idb-keyval';
-import { createProject, type Project, type MediaAsset, validateProject } from './model';
+import { createProject, type Project, type MediaAsset, type Clip, validateProject } from './model';
+import { syncSequence } from './sequences';
+import { clearProxies } from './proxies';
 export const mediaFiles = new Map<string, File>();
 export const mediaUrls = new Map<string, string>();
 export const mediaThumbnails = new Map<string, string>();
 export const audioWaveforms = new Map<string, number[]>();
 export function registerMedia(asset: MediaAsset, file: File) {
+  clearProxies(asset.id);
   const old = mediaUrls.get(asset.id);
   if (old) URL.revokeObjectURL(old);
   mediaFiles.set(asset.id, file);
@@ -45,6 +48,8 @@ export function registerMedia(asset: MediaAsset, file: File) {
 }
 type History = { project: Project; label: string; ai: boolean };
 type State = {
+  previewClip?: Clip;
+  setPreviewClip: (clip?: Clip) => void;
   captionSelection: { clipId: string; wordIds: string[]; start?: number } | null;
   selectCaption: (selection: State['captionSelection']) => void;
   project: Project;
@@ -76,6 +81,8 @@ function persist(project: Project) {
     .catch(() => useEditor.setState({ saveStatus: 'Autosave unavailable — save a project file' }));
 }
 export const useEditor = create<State>((setState, getState) => ({
+  previewClip: undefined,
+  setPreviewClip: (previewClip) => setState({ previewClip }),
   captionSelection: null,
   selectCaption: (captionSelection) =>
     setState({ captionSelection, playing: false, ...(captionSelection ? { selected: [] } : {}) }),
@@ -90,9 +97,54 @@ export const useEditor = create<State>((setState, getState) => ({
   commit: (p, label = 'Edit', ai = false) => {
     const s = getState();
     if (JSON.stringify(p) === JSON.stringify(s.project)) return;
-    const project = { ...p, updatedAt: new Date().toISOString() };
+    const changedTiming =
+      JSON.stringify(
+        p.clips.map((c) => [
+          c.id,
+          c.trackId,
+          c.start,
+          c.sourceStart,
+          c.sourceEnd,
+          c.properties.speed,
+        ]),
+      ) !==
+      JSON.stringify(
+        s.project.clips.map((c) => [
+          c.id,
+          c.trackId,
+          c.start,
+          c.sourceStart,
+          c.sourceEnd,
+          c.properties.speed,
+        ]),
+      );
+    const suggestions =
+      changedTiming &&
+      p.activeSequenceId === s.project.activeSequenceId &&
+      JSON.stringify(p.suggestions) === JSON.stringify(s.project.suggestions)
+        ? []
+        : p.suggestions;
+    const updatedAt = new Date().toISOString();
+    const project = syncSequence({
+      ...p,
+      suggestions,
+      updatedAt,
+      ...(ai
+        ? {
+            appliedEdits: [
+              ...(p.appliedEdits ?? []).slice(-199),
+              {
+                label,
+                date: updatedAt,
+                sequenceId: p.activeSequenceId,
+              },
+            ],
+          }
+        : {}),
+    });
     setState({
       project,
+      previewClip: undefined,
       past: [...s.past.slice(-79), { project: s.project, label, ai }],
       future: [],
     });
@@ -104,6 +156,7 @@ export const useEditor = create<State>((setState, getState) => ({
     if (!last) return;
     setState({
       project: last.project,
+      previewClip: undefined,
       past: s.past.slice(0, -1),
       future: [...s.future, { project: s.project, label: last.label, ai: last.ai }],
       playing: false,
@@ -117,6 +170,7 @@ export const useEditor = create<State>((setState, getState) => ({
     if (!last) return;
     setState({
       project: last.project,
+      previewClip: undefined,
       future: s.future.slice(0, -1),
       past: [...s.past, { project: s.project, label: last.label, ai: last.ai }],
       playing: false,
@@ -131,6 +185,7 @@ export const useEditor = create<State>((setState, getState) => ({
     const target = s.past[index].project;
     setState({
       project: target,
+      previewClip: undefined,
       past: s.past.slice(0, index),
       future: [
         ...s.future,
@@ -145,8 +200,10 @@ export const useEditor = create<State>((setState, getState) => ({
     persist(target);
   },
   load: (project) => {
+    setState({ previewClip: undefined });
     for (const [id, url] of mediaUrls) {
       if (!project.media.some((m) => m.id === id)) {
+        clearProxies(id);
         URL.revokeObjectURL(url);
         mediaUrls.delete(id);
         mediaFiles.delete(id);

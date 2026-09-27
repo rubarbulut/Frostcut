@@ -25,6 +25,7 @@ interface LandingPageProps {
   onStartEditing: () => void;
   onOpenProject: () => void;
   onTryDemo: () => void;
+  onTrySpeechDemo?: () => void;
   onResumeProject?: (project: Project) => void;
   resumeProject?: Project;
   onImportFile?: (file: File) => void;
@@ -631,6 +632,7 @@ export default function LandingPage({
   onStartEditing,
   onOpenProject,
   onTryDemo,
+  onTrySpeechDemo,
   onResumeProject,
   resumeProject,
   onImportFile,
@@ -736,6 +738,11 @@ export default function LandingPage({
                 </span>
                 Try a sample project
               </button>
+              {onTrySpeechDemo && (
+                <button className="demo-button gothic-cta-demo" onClick={onTrySpeechDemo}>
+                  Try a spoken demo <Play size={13} />
+                </button>
+              )}
 
               <button
                 className="demo-button gothic-cta-import"

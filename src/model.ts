@@ -1,3 +1,4 @@
+import { animatedProperties, type KeyframeTracks } from './motion';
 export type Preset = 'YouTube Shorts' | 'TikTok' | 'Instagram Reel' | 'YouTube' | 'Custom';
 export type CaptionPreset = 'Clean' | 'Bold' | 'Brainrot';
 export type CaptionAppearance = {
@@ -14,7 +15,9 @@ export type CaptionStyle = {
   preset: CaptionPreset;
   intensity: number;
   wordsPerCaption: number;
-  position: 'bottom' | 'center' | 'top';
+  position: 'bottom' | 'center' | 'top' | 'custom';
+  customPosition?: { x: number; y: number };
+  emoji?: 'None' | 'Low' | 'Medium' | 'High';
   appearance?: CaptionAppearance;
 };
 export type Word = {
@@ -59,6 +62,8 @@ export type ClipProps = {
   animation: string;
 };
 export type Clip = {
+  audioDetached?: boolean;
+  keyframes?: KeyframeTracks;
   id: string;
   mediaId: string;
   trackId: string;
@@ -102,6 +107,9 @@ export type Suggestion = {
   status: 'pending' | 'applied' | 'dismissed';
 };
 export type Project = {
+  appliedEdits?: { label: string; date: string; sequenceId?: string }[];
+  activeSequenceId?: string;
+  sequences?: ProjectSequence[];
   id: string;
   version: 1;
   name: string;
@@ -114,6 +122,7 @@ export type Project = {
     fps: number;
     language: string;
     transcriptionQuality?: 'fast' | 'balanced' | 'detailed';
+    transcriptionDevice?: 'auto' | 'cpu';
   };
   media: MediaAsset[];
   tracks: Track[];
@@ -125,13 +134,27 @@ export type Project = {
     preset: CaptionPreset;
     intensity: number;
     wordsPerCaption: number;
-    position: 'bottom' | 'center' | 'top';
+    position: CaptionStyle['position'];
     emoji: 'None' | 'Low' | 'Medium' | 'High';
     safeArea: boolean;
     savedStyles?: { id: string; name: string; style: CaptionStyle }[];
   };
   suggestions: Suggestion[];
-  exportSettings: { width: number; height: number; fps: number; quality: number };
+  exportSettings: {
+    width: number;
+    height: number;
+    fps: number;
+    quality: number;
+    videoBitrate?: number;
+    audioBitrate?: number;
+  };
+};
+export type ProjectSequence = Pick<
+  Project,
+  'clips' | 'tracks' | 'settings' | 'captions' | 'exportSettings' | 'suggestions'
+> & {
+  id: string;
+  name: string;
 };
 export const uid = () => crypto.randomUUID();
 export const presets: Preset[] = [
@@ -219,8 +242,40 @@ export const clipDuration = (c: Clip) => (c.sourceEnd - c.sourceStart) / c.prope
 export const clipEnd = (c: Clip) => c.start + clipDuration(c);
 export const duration = (p: Project) => Math.max(0, ...p.clips.map(clipEnd));
 export const sortedClips = (p: Project) => [...p.clips].sort((a, b) => a.start - b.start);
+export const isAudioClip = (p: Project, c: Clip) =>
+  p.tracks.find((t) => t.id === c.trackId)?.kind === 'audio';
 export const isLocked = (p: Project, c: Clip) =>
-  p.tracks.some((t) => (t.id === c.trackId || t.id === 'A1') && t.locked);
+  p.tracks.some(
+    (t) =>
+      (t.id === c.trackId || (!isAudioClip(p, c) && !c.audioDetached && t.id === 'A1')) && t.locked,
+  );
+export const clipAudible = (p: Project, c: Clip) =>
+  !p.tracks.find((t) => t.id === c.trackId)?.muted &&
+  (isAudioClip(p, c) || (!c.audioDetached && !p.tracks.find((t) => t.id === 'A1')?.muted));
+export function detachAudio(p: Project, id: string): Project {
+  const clip = p.clips.find((c) => c.id === id);
+  if (!clip || isLocked(p, clip) || isAudioClip(p, clip) || clip.audioDetached) return p;
+  const next = structuredClone(p),
+    original = next.clips.find((c) => c.id === id)!;
+  original.audioDetached = true;
+  next.clips.push({
+    ...structuredClone(clip),
+    id: uid(),
+    trackId: 'A1',
+    groupId: undefined,
+    audioDetached: undefined,
+    captionWords: [],
+    keyframes: undefined,
+    properties: {
+      ...defaultProps,
+      speed: clip.properties.speed,
+      volume: clip.properties.volume,
+      fadeIn: clip.properties.fadeIn,
+      fadeOut: clip.properties.fadeOut,
+    },
+  });
+  return next;
+}
 export const timecode = (t: number, decimals = false) => {
   const seconds = Number.isFinite(t) ? Math.max(0, t) : 0;
   const ticks = decimals ? Math.round(seconds * 100) : Math.floor(seconds) * 100;
@@ -336,7 +391,16 @@ export function applyOperations(project: Project, ops: Operation[], reason?: str
       const c = p.clips.find((c) => c.id === op.clipId);
       if (!c || isLocked(p, c)) continue;
       if (op.type === 'move') {
-        if (op.trackId && p.tracks.some((t) => t.id === op.trackId && t.locked)) continue;
+        if (
+          op.trackId &&
+          !p.tracks.some(
+            (t) =>
+              t.id === op.trackId &&
+              !t.locked &&
+              t.kind === (isAudioClip(p, c) ? 'audio' : 'video'),
+          )
+        )
+          continue;
         c.start = Math.max(0, op.start);
         if (op.trackId) c.trackId = op.trackId;
       }
@@ -362,7 +426,7 @@ export type TimelineWord = Word & {
 };
 export function timelineWords(p: Project): TimelineWord[] {
   return sortedClips(p)
-    .filter((c) => !p.tracks.find((t) => t.id === c.trackId)?.hidden)
+    .filter((c) => !isAudioClip(p, c) && !p.tracks.find((t) => t.id === c.trackId)?.hidden)
     .flatMap((c) =>
       (c.captionWords ?? p.transcripts.find((t) => t.mediaId === c.mediaId)?.words ?? [])
         .filter((w) => w.end > c.sourceStart && w.start < c.sourceEnd)
@@ -440,8 +504,28 @@ export function validateProject(value: unknown): Project {
       fail();
     if (p.media.length > 500 || p.clips.length > 10000) fail();
     if (
+      p.appliedEdits !== undefined &&
+      (!Array.isArray(p.appliedEdits) ||
+        p.appliedEdits.length > 200 ||
+        p.appliedEdits.some(
+          (edit) =>
+            !edit ||
+            !string(edit.label) ||
+            edit.label.length > 500 ||
+            !string(edit.date) ||
+            !Number.isFinite(Date.parse(edit.date)) ||
+            (edit.sequenceId !== undefined && !string(edit.sequenceId)),
+        ))
+    )
+      fail();
+    if (
       p.settings.transcriptionQuality !== undefined &&
       !['fast', 'balanced', 'detailed'].includes(p.settings.transcriptionQuality)
+    )
+      fail();
+    if (
+      p.settings.transcriptionDevice !== undefined &&
+      !['auto', 'cpu'].includes(p.settings.transcriptionDevice)
     )
       fail();
     const validateWords = (words: Word[], maxDuration: number) => {
@@ -483,13 +567,42 @@ export function validateProject(value: unknown): Project {
       if (
         !m ||
         !string(c.id) ||
-        !p.tracks.some((t) => t.id === c.trackId && t.kind === 'video') ||
+        !p.tracks.some((t) => t.id === c.trackId) ||
+        (c.audioDetached !== undefined && typeof c.audioDetached !== 'boolean') ||
         !finite(c.start) ||
         !finite(c.sourceStart) ||
         !finite(c.sourceEnd, c.sourceStart + 0.001, m.duration + 0.1)
       )
         fail();
       if (c.captionWords !== undefined) validateWords(c.captionWords, m!.duration);
+      if (c.keyframes !== undefined) {
+        if (
+          !c.keyframes ||
+          typeof c.keyframes !== 'object' ||
+          Object.keys(c.keyframes).some(
+            (key) => !animatedProperties.includes(key as (typeof animatedProperties)[number]),
+          )
+        )
+          fail();
+        for (const key of animatedProperties) {
+          const frames = c.keyframes[key];
+          if (frames === undefined) continue;
+          if (!Array.isArray(frames) || frames.length > 256) fail();
+          frames.forEach((frame, i) => {
+            if (
+              !finite(frame.time, 0, m!.duration) ||
+              !finite(
+                frame.value,
+                key === 'scale' ? 0.1 : key === 'opacity' ? 0 : -10000,
+                key === 'scale' ? 5 : key === 'opacity' ? 1 : 10000,
+              ) ||
+              (i > 0 && frame.time <= frames[i - 1].time) ||
+              (frame.easing !== undefined && !['linear', 'smooth'].includes(frame.easing))
+            )
+              fail();
+          });
+        }
+      }
       for (const k of [
         'x',
         'y',
@@ -514,6 +627,7 @@ export function validateProject(value: unknown): Project {
         !finite(c.properties.crop, 0, 45) ||
         ![
           'None',
+          'Custom',
           'Punch In',
           'Punch Out',
           'Smooth Zoom',
@@ -545,7 +659,10 @@ export function validateProject(value: unknown): Project {
         !finite(style.intensity, 0, 100) ||
         !Number.isInteger(style.wordsPerCaption) ||
         !finite(style.wordsPerCaption, 1, 8) ||
-        !['bottom', 'center', 'top'].includes(style.position)
+        !['bottom', 'center', 'top', 'custom'].includes(style.position) ||
+        (style.customPosition !== undefined &&
+          (!finite(style.customPosition.x, 5, 95) || !finite(style.customPosition.y, 5, 95))) ||
+        (style.emoji !== undefined && !['None', 'Low', 'Medium', 'High'].includes(style.emoji))
       )
         fail();
       const a = style.appearance;
@@ -586,9 +703,47 @@ export function validateProject(value: unknown): Project {
       !finite(p.exportSettings.width, 16, 3840) ||
       !finite(p.exportSettings.height, 16, 3840) ||
       !finite(p.exportSettings.fps, 1, 60) ||
-      !finite(p.exportSettings.quality, 1, 100)
+      !finite(p.exportSettings.quality, 1, 100) ||
+      (p.exportSettings.videoBitrate !== undefined &&
+        !finite(p.exportSettings.videoBitrate, 100000, 60000000)) ||
+      (p.exportSettings.audioBitrate !== undefined &&
+        ![64, 96, 128, 160, 192, 256, 320].includes(p.exportSettings.audioBitrate))
     )
       fail();
+    if (p.sequences !== undefined) {
+      if (
+        !Array.isArray(p.sequences) ||
+        !p.sequences.length ||
+        p.sequences.length > 30 ||
+        !p.sequences.some((s) => s.id === p.activeSequenceId) ||
+        new Set(p.sequences.map((s) => s.id)).size !== p.sequences.length
+      )
+        fail();
+      p.sequences = p.sequences.map((s) => {
+        if (!string(s.id) || !string(s.name) || !s.name.trim() || s.name.length > 80) fail();
+        const checked = validateProject({
+          ...p,
+          settings: s.settings,
+          clips: s.clips,
+          tracks: s.tracks,
+          captions: s.captions,
+          exportSettings: s.exportSettings,
+          suggestions: [],
+          sequences: undefined,
+          activeSequenceId: undefined,
+        });
+        return {
+          id: s.id,
+          name: s.name,
+          settings: checked.settings,
+          clips: checked.clips,
+          tracks: checked.tracks,
+          captions: checked.captions,
+          exportSettings: checked.exportSettings,
+          suggestions: [],
+        };
+      });
+    } else if (p.activeSequenceId !== undefined) fail();
     // Suggestions are regenerated from the validated timeline; never trust imported operations.
     p.suggestions = [];
     if (

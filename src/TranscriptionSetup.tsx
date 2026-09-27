@@ -5,6 +5,7 @@ import { useEditor } from './store';
 import { languages } from './model';
 import {
   resolveQuality,
+  recommendedQuality,
   transcriptionModels,
   type TranscriptionQuality,
 } from './transcription-config';
@@ -17,10 +18,12 @@ export default function TranscriptionSetup({
 }) {
   const { project: p, selected, commit } = useEditor();
   const [language, setLanguage] = useState(p.settings.language),
+    [device, setDevice] = useState<'auto' | 'cpu'>(p.settings.transcriptionDevice ?? 'auto'),
     [quality, setQuality] = useState<TranscriptionQuality>(
       resolveQuality(p.settings.transcriptionQuality),
     );
   const inUse = p.media.filter((m) => p.clips.some((c) => c.mediaId === m.id));
+  const [qualityChosen, setQualityChosen] = useState(false);
   const [target, setTarget] = useState(
     p.clips.find((c) => selected.includes(c.id))?.mediaId ??
       (inUse.length === 1 ? inUse[0].id : 'all'),
@@ -45,7 +48,14 @@ export default function TranscriptionSetup({
         </select>
       </Field>
       <Field label="Spoken language">
-        <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+        <select
+          value={language}
+          onChange={(e) => {
+            setLanguage(e.target.value);
+            if (!qualityChosen && resolveQuality(p.settings.transcriptionQuality) === 'balanced')
+              setQuality(recommendedQuality(e.target.value));
+          }}
+        >
           {languages.map((l) => (
             <option key={l}>{l}</option>
           ))}
@@ -57,7 +67,10 @@ export default function TranscriptionSetup({
             key={key}
             className={quality === key ? 'selected' : ''}
             aria-pressed={quality === key}
-            onClick={() => setQuality(key as TranscriptionQuality)}
+            onClick={() => {
+              setQuality(key as TranscriptionQuality);
+              setQualityChosen(true);
+            }}
           >
             <div>
               <b>{model.label}</b>
@@ -65,13 +78,25 @@ export default function TranscriptionSetup({
               {quality === key && <Check size={15} />}
             </div>
             <p>{model.description}</p>
+            {key === recommendedQuality(language) && (
+              <small>
+                Recommended for{' '}
+                {language === 'Auto Detect' ? 'automatic language detection' : language}
+              </small>
+            )}
           </button>
         ))}
       </div>
       <p className="transcription-tip">
-        For Turkish or mixed accents, selecting the spoken language can help. Detailed uses a larger
-        download and can take considerably longer on the CPU.
+        Select the spoken language for better results. Detailed is recommended for Turkish, Polish
+        and Portuguese. It uses a larger download and can take considerably longer on the CPU.
       </p>
+      <Field label="Speech processing">
+        <select value={device} onChange={(e) => setDevice(e.target.value as 'auto' | 'cpu')}>
+          <option value="auto">Auto · acceleration when available</option>
+          <option value="cpu">CPU · compatibility mode</option>
+        </select>
+      </Field>
       {replacing && (
         <p className="warning">
           This replaces the existing transcript and caption corrections for the selected footage.
@@ -89,7 +114,15 @@ export default function TranscriptionSetup({
           disabled={!inUse.length}
           onClick={() => {
             commit(
-              { ...p, settings: { ...p.settings, language, transcriptionQuality: quality } },
+              {
+                ...p,
+                settings: {
+                  ...p.settings,
+                  language,
+                  transcriptionQuality: quality,
+                  transcriptionDevice: device,
+                },
+              },
               'Transcription settings',
             );
             onStart(target === 'all' ? undefined : target);

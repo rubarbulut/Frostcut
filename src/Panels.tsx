@@ -19,9 +19,12 @@ import {
   timecode,
   deleteRange,
   isLocked,
+  isAudioClip,
+  detachAudio,
 } from './model';
 import { Field, Range } from './components';
 import { CaptionAppearance } from './CaptionAppearance';
+import { TransformControls } from './TransformControls';
 export function MediaPanel({
   onImport,
   onRelink,
@@ -152,6 +155,42 @@ export function PropertiesPanel() {
               <option value="bottom">Bottom</option>
               <option value="center">Center</option>
               <option value="top">Top</option>
+              <option value="custom">Custom</option>
+            </select>
+          </Field>
+          {p.captions.position === 'custom' && (
+            <div className="number-grid">
+              {(['x', 'y'] as const).map((key) => (
+                <Field key={key} label={`Caption ${key.toUpperCase()} (%)`}>
+                  <input
+                    type="number"
+                    min="5"
+                    max="95"
+                    value={p.captions.customPosition?.[key] ?? (key === 'x' ? 50 : 75)}
+                    onChange={(e) => {
+                      if (e.target.value !== '')
+                        captions({
+                          customPosition: {
+                            x: 50,
+                            y: 75,
+                            ...p.captions.customPosition,
+                            [key]: Math.max(5, Math.min(95, +e.target.value)),
+                          },
+                        });
+                    }}
+                  />
+                </Field>
+              ))}
+            </div>
+          )}
+          <Field label="Emoji frequency">
+            <select
+              value={p.captions.emoji}
+              onChange={(e) => captions({ emoji: e.target.value as Project['captions']['emoji'] })}
+            >
+              {['None', 'Low', 'Medium', 'High'].map((value) => (
+                <option key={value}>{value}</option>
+              ))}
             </select>
           </Field>
           <label className="check-row">
@@ -201,77 +240,53 @@ export function PropertiesPanel() {
           {clip ? (
             <>
               <div className="section-heading">
-                <b>Transform</b>
+                <b>{isAudioClip(p, clip) ? 'Source audio' : 'Transform'}</b>
                 {locked && <span>Track locked</span>}
               </div>
               <fieldset disabled={locked}>
-                <div className="number-grid">
-                  {(['x', 'y', 'scale', 'rotation', 'opacity', 'crop', 'speed'] as const).map(
-                    (key) => (
-                      <Field
-                        key={key}
-                        label={
+                {!isAudioClip(p, clip) && <TransformControls clip={clip} />}
+                {isAudioClip(p, clip) && (
+                  <Field label="Audio track">
+                    <select
+                      value={clip.trackId}
+                      onChange={(e) =>
+                        commit(
                           {
-                            x: 'Position X',
-                            y: 'Position Y',
-                            scale: 'Scale',
-                            rotation: 'Rotation °',
-                            opacity: 'Opacity',
-                            crop: 'Crop %',
-                            speed: 'Speed ×',
-                          }[key]
-                        }
-                      >
-                        <input
-                          type="number"
-                          step={['scale', 'opacity', 'speed'].includes(key) ? 0.05 : 1}
-                          min={
-                            key === 'speed'
-                              ? 0.25
-                              : key === 'scale'
-                                ? 0.1
-                                : ['crop', 'opacity'].includes(key)
-                                  ? 0
-                                  : undefined
-                          }
-                          max={
-                            key === 'speed'
-                              ? 4
-                              : key === 'scale'
-                                ? 5
-                                : key === 'opacity'
-                                  ? 1
-                                  : key === 'crop'
-                                    ? 45
-                                    : undefined
-                          }
-                          value={clip.properties[key]}
-                          onChange={(e) => {
-                            const n = +e.target.value;
-                            if (!Number.isFinite(n)) return;
-                            props({
-                              [key]:
-                                key === 'speed'
-                                  ? Math.min(4, Math.max(0.25, n))
-                                  : key === 'scale'
-                                    ? Math.min(5, Math.max(0.1, n))
-                                    : key === 'opacity'
-                                      ? Math.min(1, Math.max(0, n))
-                                      : key === 'crop'
-                                        ? Math.min(45, Math.max(0, n))
-                                        : n,
-                            });
-                          }}
-                        />
-                      </Field>
-                    ),
-                  )}
-                </div>
+                            ...p,
+                            clips: p.clips.map((c) =>
+                              c.id === clip.id ? { ...c, trackId: e.target.value } : c,
+                            ),
+                          },
+                          'Move audio track',
+                        )
+                      }
+                    >
+                      {p.tracks
+                        .filter((t) => t.kind === 'audio')
+                        .map((t) => (
+                          <option key={t.id} value={t.id} disabled={t.locked}>
+                            {t.name}
+                          </option>
+                        ))}
+                    </select>
+                  </Field>
+                )}
                 <div className="property-divider" />
                 <div className="section-heading">
                   <Volume2 size={16} />
                   <b>Audio</b>
                 </div>
+                {!isAudioClip(p, clip) && (
+                  <button
+                    className="text-button"
+                    disabled={clip.audioDetached}
+                    onClick={() => commit(detachAudio(p, clip.id), 'Detach source audio')}
+                  >
+                    {clip.audioDetached
+                      ? 'Audio detached · edit it on the audio track'
+                      : 'Detach audio for independent editing'}
+                  </button>
+                )}
                 <Range
                   label="Volume"
                   value={Math.round(clip.properties.volume * 100)}
@@ -294,34 +309,7 @@ export function PropertiesPanel() {
                   ))}
                 </div>
                 <div className="property-divider" />
-                <div className="section-heading">
-                  <Diamond size={16} />
-                  <b>Animation preview</b>
-                </div>
-                <Field label="Motion preset">
-                  <select
-                    value={clip.properties.animation}
-                    onChange={(e) => props({ animation: e.target.value })}
-                  >
-                    {[
-                      'None',
-                      'Punch In',
-                      'Punch Out',
-                      'Smooth Zoom',
-                      'Bounce',
-                      'Slide Left',
-                      'Slide Right',
-                      'Shake',
-                    ].map((v) => (
-                      <option key={v}>{v}</option>
-                    ))}
-                  </select>
-                </Field>
-                <small className="subtle">
-                  Motion presets are preview-only in this first P0 build. Export uses your static
-                  transform.
-                </small>
-                <div className="property-divider" />
+
                 <div className="section-heading">
                   <b>Trim</b>
                 </div>

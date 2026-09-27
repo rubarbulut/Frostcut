@@ -10,7 +10,7 @@ export const transcriptionModels = {
     id: 'onnx-community/whisper-base_timestamped',
     label: 'Balanced',
     name: 'Whisper Base',
-    description: 'A stronger model for everyday speech. Recommended.',
+    description: 'A stronger model for everyday speech.',
   },
   detailed: {
     id: 'onnx-community/whisper-small_timestamped',
@@ -21,3 +21,5 @@ export const transcriptionModels = {
 } as const;
 export const resolveQuality = (value?: string): TranscriptionQuality =>
   value && value in transcriptionModels ? (value as TranscriptionQuality) : 'balanced';
+export const recommendedQuality = (language: string): TranscriptionQuality =>
+  ['Turkish', 'Polish', 'Portuguese'].includes(language) ? 'detailed' : 'balanced';

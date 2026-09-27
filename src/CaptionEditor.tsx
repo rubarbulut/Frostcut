@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Plus, Play, Trash2 } from 'lucide-react';
 import { Modal, Field } from './components';
 import { useEditor } from './store';
-import { clipEnd, timecode } from './model';
+import { clipEnd, timecode, isAudioClip } from './model';
 import {
   captionBounds,
   editCaption,
@@ -64,12 +64,14 @@ export default function CaptionEditor() {
                 })
               }
             >
-              {p.clips.map((c) => (
-                <option value={c.id} key={c.id}>
-                  {p.media.find((m) => m.id === c.mediaId)?.name} · {timecode(c.start, true)}–
-                  {timecode(clipEnd(c), true)}
-                </option>
-              ))}
+              {p.clips
+                .filter((c) => !isAudioClip(p, c))
+                .map((c) => (
+                  <option value={c.id} key={c.id}>
+                    {p.media.find((m) => m.id === c.mediaId)?.name} · {timecode(c.start, true)}–
+                    {timecode(clipEnd(c), true)}
+                  </option>
+                ))}
             </select>
           </Field>
         )}

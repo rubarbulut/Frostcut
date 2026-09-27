@@ -1,0 +1,28 @@
+{
+  "date": "2026-09-26T16:52:17.212Z",
+  "browser": "154.0.4258.37",
+  "mobileSimulation": {
+    "viewport": [
+      390,
+      844
+    ],
+    "documentWidth": 390,
+    "previewWidth": 960,
+    "memory": {
+      "usedJSHeapBytes": 7517098,
+      "totalJSHeapBytes": 12011146,
+      "limitJSHeapBytes": 4395630592
+    },
+    "cpuThrottle": 4,
+    "proxyMs": 3080,
+    "source": "3840×2160 synthetic video",
+    "limitation": "Desktop Chromium emulation, not physical mobile hardware. JS heap excludes decoder/GPU/WASM/browser-process memory."
+  },
+  "previewAudio": {
+    "baseRms": 0.0013243775713960135,
+    "boostedRms": 0.0024794981730778876,
+    "ratio": 1.8721988552435789,
+    "resumeAudible": true
+  },
+  "errors": []
+}

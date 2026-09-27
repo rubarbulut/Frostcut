@@ -1,4 +1,4 @@
-import { FFmpeg } from '@ffmpeg/ffmpeg';
+import { FFmpeg, FFFSType } from '@ffmpeg/ffmpeg';
 import {
   type Project,
   type MediaAsset,
@@ -8,11 +8,44 @@ import {
   clipEnd,
   clipDuration,
   captionGroups,
+  isAudioClip,
+  clipAudible,
 } from './model';
 import { mediaFiles } from './store';
 import { captionAppearance } from './caption-style';
+import { cancelBackgroundMediaJobs } from './media-runtime';
+import { audioWindow } from './audio-crossfades';
+import { renderCanvasVideo } from './visual-renderer';
+import { captionEmoji } from './caption-layout';
+import { videoBitrate } from './export-settings';
 let engine: FFmpeg | undefined;
 let busy = false;
+let engineQueue: Promise<unknown> = Promise.resolve();
+function withEngine<T>(
+  signal: AbortSignal,
+  onProgress: (message: string, value?: number) => void,
+  fn: (ff: FFmpeg) => Promise<T>,
+  background = false,
+): Promise<T> {
+  if (!background) cancelBackgroundMediaJobs();
+  const task = engineQueue
+    .catch(() => {})
+    .then(() => {
+      if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
+      return runEngine(signal, onProgress, fn);
+    });
+  engineQueue = task.catch(() => {});
+  return task;
+}
+async function mountSource(ff: FFmpeg, file: File, directory: string) {
+  await ff.createDir(directory);
+  await ff.mount(FFFSType.WORKERFS, { blobs: [{ name: 'media', data: file }] }, directory);
+  return `${directory}/media`;
+}
+async function unmountSource(ff: FFmpeg, directory: string) {
+  await ff.unmount(directory).catch(() => {});
+  await ff.deleteDir(directory).catch(() => {});
+}
 export async function inspectMedia(file: File): Promise<MediaAsset> {
   if (file.size > 1_500_000_000)
     throw new Error('For this P0 build, use a source smaller than 1.5 GB.');
@@ -53,7 +86,7 @@ export async function inspectMedia(file: File): Promise<MediaAsset> {
     video.src = url;
   });
 }
-async function withEngine<T>(
+async function runEngine<T>(
   signal: AbortSignal,
   onProgress: (message: string, value?: number) => void,
   fn: (ff: FFmpeg) => Promise<T>,
@@ -113,14 +146,17 @@ export async function extractAudio(
   file: File,
   signal: AbortSignal,
   onProgress: (message: string, value?: number) => void,
+  range?: { start: number; duration: number },
 ): Promise<Float32Array> {
   return withEngine(signal, onProgress, async (ff) => {
     try {
-      await ff.writeFile('source', new Uint8Array(await file.arrayBuffer()));
+      const source = await mountSource(ff, file, '/speech-source');
       onProgress('Preparing speech audio…');
       const code = await ff.exec([
+        ...(range ? ['-ss', String(range.start)] : []),
         '-i',
-        'source',
+        source,
+        ...(range ? ['-t', String(range.duration)] : []),
         '-vn',
         '-ac',
         '1',
@@ -134,10 +170,58 @@ export async function extractAudio(
       const data = (await ff.readFile('audio.f32')) as Uint8Array;
       return new Float32Array(data.slice().buffer as ArrayBuffer);
     } finally {
-      await ff.deleteFile('source').catch(() => {});
+      await unmountSource(ff, '/speech-source');
       await ff.deleteFile('audio.f32').catch(() => {});
     }
   });
+}
+export async function generatePreviewProxy(
+  file: File,
+  width: number,
+  height: number,
+  signal: AbortSignal,
+  progress: (message: string, value?: number) => void,
+): Promise<Blob> {
+  return withEngine(
+    signal,
+    progress,
+    async (ff) => {
+      try {
+        const source = await mountSource(ff, file, '/proxy-source');
+        const code = await ff.exec([
+          '-i',
+          source,
+          '-vf',
+          `scale=${width}:${height}`,
+          '-r',
+          '30',
+          '-c:v',
+          'libx264',
+          '-preset',
+          'ultrafast',
+          '-crf',
+          '30',
+          '-pix_fmt',
+          'yuv420p',
+          '-c:a',
+          'aac',
+          '-b:a',
+          '96k',
+          '-movflags',
+          '+faststart',
+          'preview.mp4',
+        ]);
+        if (code !== 0)
+          throw new Error('Preview optimization failed. The original file is still available.');
+        const bytes = (await ff.readFile('preview.mp4')) as Uint8Array;
+        return new Blob([bytes.slice().buffer as ArrayBuffer], { type: 'video/mp4' });
+      } finally {
+        await ff.deleteFile('preview.mp4').catch(() => {});
+        await unmountSource(ff, '/proxy-source');
+      }
+    },
+    true,
+  );
 }
 const number = (n: number) => Number(n.toFixed(4)).toString();
 const assTime = (t: number) => {
@@ -193,24 +277,43 @@ export async function exportMp4(
       fps = p.exportSettings.fps,
       total = duration(p);
     try {
+      const animated = p.clips.some(
+        (c) =>
+          c.properties.animation !== 'None' ||
+          c.properties.crop > 0 ||
+          Object.values(c.keyframes ?? {}).some((frames) => frames.length),
+      );
+      const visual =
+        animated ||
+        (p.captions.enabled &&
+          (p.captions.position === 'custom' || captionGroups(p).some((g) => captionEmoji(p, g))))
+          ? await renderCanvasVideo(p, w, h, fps, ff, files, signal, onProgress)
+          : undefined;
       const args: string[] = [
-        '-f',
-        'lavfi',
-        '-i',
-        `color=c=0x090d10:s=${w}x${h}:r=${fps}:d=${number(total)}`,
+        ...(visual
+          ? [...(visual.raw ? ['-r', String(fps)] : []), '-i', visual.path]
+          : ['-f', 'lavfi', '-i', `color=c=0x090d10:s=${w}x${h}:r=${fps}:d=${number(total)}`]),
         '-f',
         'lavfi',
         '-i',
         `anullsrc=r=48000:cl=stereo:d=${number(total)}`,
       ];
       const mediaIds = [...new Set(p.clips.map((c) => c.mediaId))];
-      for (const [i, id] of mediaIds.entries()) {
-        const name = `input${i}`;
-        files.push(name);
-        await ff.writeFile(name, new Uint8Array(await mediaFiles.get(id)!.arrayBuffer()));
-      }
+      const inputPaths = new Map<string, string>();
+      for (const [i, id] of mediaIds.entries())
+        inputPaths.set(id, await mountSource(ff, mediaFiles.get(id)!, `/input${i}`));
       // One input per clip keeps trim timestamps independent, including duplicated clips.
-      for (const c of p.clips) args.push('-i', `input${mediaIds.indexOf(c.mediaId)}`);
+      for (const c of p.clips) {
+        const window = audioWindow(p, c);
+        args.push(
+          '-ss',
+          number(window.start),
+          '-t',
+          number(window.end - window.start),
+          '-i',
+          inputPaths.get(c.mediaId)!,
+        );
+      }
       const filters: string[] = [],
         audios: string[] = ['[1:a]'];
       let base = '0:v';
@@ -233,12 +336,17 @@ export async function exportMp4(
           'stream=codec_type',
           '-of',
           'json',
-          `input${i}`,
+          inputPaths.get(id)!,
           '-o',
           probe,
         ]);
-        const result =
-          code === 0 ? JSON.parse((await ff.readFile(probe, 'utf8')) as string) : { streams: [] };
+        // core 0.12.10 can return -1 after a successful probe (upstream issue #817).
+        // Validate the actual report; never interpret probe failure as silent footage.
+        if (code !== 0 && code !== -1)
+          throw new Error('Could not inspect source audio. Relink the video and retry.');
+        const result = JSON.parse((await ff.readFile(probe, 'utf8')) as string);
+        if (!Array.isArray(result.streams))
+          throw new Error('The source audio report is incomplete. Try relinking this video.');
         hasAudio.set(id, !!result.streams?.length);
       }
       for (const [index, c] of ordered.entries()) {
@@ -247,22 +355,19 @@ export async function exportMp4(
           track = p.tracks.find((t) => t.id === c.trackId)!,
           len = clipDuration(c),
           tag = `v${index}`;
+        const window = audioWindow(p, c);
         const sw = Math.max(2, Math.round((w * props.scale) / 2) * 2),
           sh = Math.max(2, Math.round((h * props.scale) / 2) * 2),
           crop = props.crop / 100;
-        if (!track.hidden) {
-          const transform = `trim=start=${number(c.sourceStart)}:end=${number(c.sourceEnd)},setpts=(PTS-STARTPTS)/${props.speed},crop=iw*${1 - 2 * crop}:ih*${1 - 2 * crop},scale=${sw}:${sh}:force_original_aspect_ratio=decrease,setsar=1,format=rgba,rotate=${number((props.rotation * Math.PI) / 180)}:c=none:ow=rotw(${number((props.rotation * Math.PI) / 180)}):oh=roth(${number((props.rotation * Math.PI) / 180)}),colorchannelmixer=aa=${props.opacity},setpts=PTS+${number(c.start)}/TB`;
+        if (!isAudioClip(p, c) && !track.hidden && !visual) {
+          const transform = `trim=start=${number(c.sourceStart - window.start)}:end=${number(c.sourceEnd - window.start)},setpts=(PTS-STARTPTS)/${props.speed},crop=iw*${1 - 2 * crop}:ih*${1 - 2 * crop},scale=${sw}:${sh}:force_original_aspect_ratio=decrease,setsar=1,format=rgba,rotate=${number((props.rotation * Math.PI) / 180)}:c=none:ow=rotw(${number((props.rotation * Math.PI) / 180)}):oh=roth(${number((props.rotation * Math.PI) / 180)}),colorchannelmixer=aa=${props.opacity},setpts=PTS+${number(c.start)}/TB`;
           filters.push(`[${input}:v]${transform}[${tag}]`);
           filters.push(
             `[${base}][${tag}]overlay=x=(W-w)/2+${number((props.x * w) / p.settings.width)}:y=(H-h)/2+${number((props.y * h) / p.settings.height)}:enable='between(t,${number(c.start)},${number(clipEnd(c))})':eof_action=pass:shortest=0[base${index}]`,
           );
           base = `base${index}`;
         }
-        if (
-          hasAudio.get(c.mediaId) &&
-          !track.muted &&
-          !p.tracks.find((t) => t.id === 'A1')?.muted
-        ) {
+        if (hasAudio.get(c.mediaId) && clipAudible(p, c)) {
           const tempo =
             props.speed < 0.5
               ? `atempo=0.5,atempo=${props.speed * 2}`
@@ -270,7 +375,7 @@ export async function exportMp4(
                 ? `atempo=2,atempo=${props.speed / 2}`
                 : `atempo=${props.speed}`;
           filters.push(
-            `[${input}:a]atrim=start=${number(c.sourceStart)}:end=${number(c.sourceEnd)},asetpts=PTS-STARTPTS,${tempo},volume=${props.volume},afade=t=in:d=${Math.min(props.fadeIn, len / 2)},afade=t=out:st=${Math.max(0, len - props.fadeOut)}:d=${Math.min(props.fadeOut, len / 2)},adelay=${Math.round(c.start * 1000)}|${Math.round(c.start * 1000)}[a${index}]`,
+            `[${input}:a]atrim=duration=${number(window.end - window.start)},asetpts=PTS-STARTPTS,${tempo},volume=${props.volume},afade=t=in:d=${window.fadeIn},afade=t=out:st=${Math.max(0, window.duration - window.fadeOut)}:d=${window.fadeOut},adelay=${Math.round(window.timelineStart * 1000)}|${Math.round(window.timelineStart * 1000)}[a${index}]`,
           );
           audios.push(`[a${index}]`);
         }
@@ -278,14 +383,14 @@ export async function exportMp4(
       filters.push(
         `${audios.join('')}amix=inputs=${audios.length}:normalize=0:duration=longest[audio]`,
       );
-      if (p.captions.enabled && captionGroups(p).length) {
+      if (!visual && p.captions.enabled && captionGroups(p).length) {
         files.push('captions.ass', 'NotoSans.ttf');
         await ff.writeFile('captions.ass', createAss(p, w, h));
         const response = await fetch('/fonts/NotoSans.ttf');
         if (!response.ok) throw new Error('Caption font is unavailable.');
         await ff.writeFile('NotoSans.ttf', new Uint8Array(await response.arrayBuffer()));
         filters.push(`[${base}]subtitles=captions.ass:fontsdir=/[out]`);
-      } else filters.push(`[${base}]null[out]`);
+      } else if (!visual) filters.push(`[${base}]null[out]`);
       onProgress('Rendering your video…', 0);
       files.push('output.mp4');
       const code = await ff.exec([
@@ -295,25 +400,29 @@ export async function exportMp4(
         '-filter_complex',
         filters.join(';'),
         '-map',
-        '[out]',
+        visual ? '0:v' : '[out]',
         '-map',
         '[audio]',
         '-t',
         number(total),
         '-r',
         String(fps),
-        '-c:v',
-        'libx264',
-        '-preset',
-        'ultrafast',
-        '-crf',
-        String(Math.round(38 - p.exportSettings.quality * 0.2)),
-        '-pix_fmt',
-        'yuv420p',
+        ...(visual
+          ? ['-c:v', 'copy']
+          : [
+              '-c:v',
+              'libx264',
+              '-preset',
+              'ultrafast',
+              '-b:v',
+              String(videoBitrate(p)),
+              '-pix_fmt',
+              'yuv420p',
+            ]),
         '-c:a',
         'aac',
         '-b:a',
-        '160k',
+        `${p.exportSettings.audioBitrate ?? 160}k`,
         '-movflags',
         '+faststart',
         'output.mp4',
@@ -324,6 +433,8 @@ export async function exportMp4(
       return new Blob([data.slice().buffer as ArrayBuffer], { type: 'video/mp4' });
     } finally {
       for (const file of files) await ff.deleteFile(file).catch(() => {});
+      for (const [i] of [...new Set(p.clips.map((c) => c.mediaId))].entries())
+        await unmountSource(ff, `/input${i}`);
     }
   });
 }

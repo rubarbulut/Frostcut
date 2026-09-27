@@ -18,8 +18,9 @@
 - YouTube title, description and hashtag suggestions.
 - Custom animation presets with export rendering.
 - Discover screen with current topics and ideas.
+- Batch export of saved Shorts as a ZIP. Individual MP4 exports are available in P0.
 
-Existing P0 gaps are tracked separately in [P0 status](P0-status.md). Starting this P1 package does not imply full P0 sign-off.
+P0 was closed separately after its implementation and runtime checks; see [P0 closure](P0-closure.md). This first package does not complete the remaining P1 scope above.
 
 ## Validation
 

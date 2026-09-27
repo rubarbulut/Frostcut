@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Upload,
   Search,
@@ -9,9 +9,10 @@ import {
   Clock3,
   Download,
   Scissors,
+  Trash2,
 } from 'lucide-react';
 import { downloadBlob, useEditor } from './store';
-import { timelineWords, timecode, deleteRange, clipEnd, type Word } from './model';
+import { timelineWords, timecode, deleteRange, clipEnd, type Word, isAudioClip } from './model';
 import { transcriptGroups } from './caption-editing';
 import { createSrt } from './subtitles';
 import { SpeechCleanup } from './SpeechCleanup';
@@ -31,6 +32,12 @@ export function TranscriptPanel({
   const anchor = useRef(0),
     all = timelineWords(p),
     words = scope === 'clip' ? all.filter((w) => selected.includes(w.clipId)) : all;
+  const content = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    setChosen([]);
+    anchor.current = 0;
+    if (content.current) content.current.scrollTop = 0;
+  }, [p.id, p.activeSequenceId]);
   const groups = transcriptGroups(p).filter(
     (g) => scope !== 'clip' || selected.includes(g[0].clipId),
   );
@@ -51,9 +58,9 @@ export function TranscriptPanel({
   }
   function add() {
     const clip =
-      p.clips.find((c) => selected.includes(c.id)) ??
-      p.clips.find((c) => playhead >= c.start && playhead < clipEnd(c)) ??
-      p.clips[0];
+      p.clips.find((c) => !isAudioClip(p, c) && selected.includes(c.id)) ??
+      p.clips.find((c) => !isAudioClip(p, c) && playhead >= c.start && playhead < clipEnd(c)) ??
+      p.clips.find((c) => !isAudioClip(p, c));
     if (clip) selectCaption({ clipId: clip.id, wordIds: [], start: playhead });
   }
   function removeFromVideo() {
@@ -203,7 +210,7 @@ export function TranscriptPanel({
               Click a time range to edit text and timing
             </span>
           </div>
-          <div className="transcript-content">
+          <div className="transcript-content" ref={content}>
             {groups.map((group, i) => (
               <div className="transcript-paragraph" key={group[0].clipId + group[0].id}>
                 <div className="transcript-speaker">
@@ -249,21 +256,27 @@ export function TranscriptPanel({
               </div>
             ))}
           </div>
-          {picked.length > 0 && (
+          {
             <div className="transcript-actions">
-              <span>{picked.length} words selected</span>
+              <span>
+                {picked.length
+                  ? `${picked.length} words selected`
+                  : 'Select words · Shift-click for a range'}
+              </span>
               <button
                 className="primary small"
+                aria-label="Edit words & timing"
                 disabled={new Set(picked.map((w) => w.clipId)).size !== 1}
                 onClick={() =>
                   selectCaption({ clipId: picked[0].clipId, wordIds: picked.map((w) => w.id) })
                 }
               >
                 <Clock3 size={13} />
-                Edit words & timing
+                Edit
               </button>
               <select
                 aria-label="Assign speaker"
+                disabled={!picked.length}
                 defaultValue=""
                 onChange={(e) => {
                   const next = structuredClone(p);
@@ -289,11 +302,17 @@ export function TranscriptPanel({
                   </option>
                 ))}
               </select>
-              <button className="danger small" onClick={removeFromVideo}>
-                Delete from video
+              <button
+                className="danger small"
+                aria-label="Delete from video"
+                title="Delete selected words from video"
+                onClick={removeFromVideo}
+                disabled={!picked.length}
+              >
+                <Trash2 size={14} />
               </button>
             </div>
-          )}
+          }
         </>
       )}
     </div>

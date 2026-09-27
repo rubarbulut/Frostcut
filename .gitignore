@@ -4,5 +4,8 @@ public/runtime/
 test-results/
 playwright-report/
 *.tsbuildinfo
+tests/.speech-browser/
+tests/fixtures/speech-qa/
+tests/fixtures/languages/*.wav
 .env*
 !.env.example

@@ -1,35 +1,31 @@
 # P0 implementation status
 
-## Working first slice
+P0 implementation and acceptance checks completed on 2026-09-26. See the [closure audit](P0-closure.md) and measured [runtime evidence](P0-runtime-evidence.md). This is a local browser MVP; the practical limits below still apply.
 
-- Winter landing with Start Editing, sample project, and resume from autosave.
-- Shorts, TikTok, Reel, YouTube, and custom project presets.
-- Local video import and playback; missing-media relink.
-- Serializable source-aware multi-track timeline with split, trim, move, delete, ripple delete, duplicate, snapping, grouping, lock/hide/mute, zoom, and track-height controls.
-- Snapshot undo/redo, AI apply/cancel, and restoration to the state before AI edits. AI restoration explicitly includes later manual edits.
-- IndexedDB autosave after changes, validated metadata-only project save/open.
-- Local speech-model worker, manual language selection and auto-detection, progress/cancel/error states. No upload-triggered transcription.
-- Transcript word seeking, range selection, text correction, find/replace, and timeline deletion. SRT import fallback.
-- Editable caption start/end times, full phrase text, and manual caption insertion. C1 timeline blocks move/resize with collision and clip-bound checks. Caption-only deletion leaves the footage intact. Per-clip overrides are undoable and included in save/open/export.
-- Fast (Tiny), Balanced (Base, default), and Detailed (Small) local transcription options; source/language selection; explicit undoable retranscription. Balanced was smoke-tested with a spoken fixture. Broader language/noise accuracy comparisons remain outstanding.
-- Clean/Bold/Brainrot captions; keyword accents, grouping, position, safe area, editable speaker labels/colors, manual speaker assignment.
-- Transcript-scored highlights, sentence boundaries, RMS silence removal, review-only repeated-take suggestions, composite assembly, optional strongest-first ordering, undoable AI edits.
-- Floating local command assistant for speed changes, captions, and guided Auto Cut. It is a bounded command parser, not a general-purpose LLM.
-- Real MP4 export: H.264, AAC, trim/speed/static transforms, multi-track composition, captions, progress, cancellation, download, and playback of the result.
-- Mobile upload/edit/clips/trim/reorder/transcript/caption/export workflow, without the desktop timeline.
+## Delivered
 
-## Still needed before full master-spec P0 sign-off
+- Landing, five project presets, local import/playback, metadata autosave, validated save/open and missing-media relink.
+- Source-aware V3/V2/V1/A1/A2 timeline: split, trim, move, delete/ripple, duplicate, group, snapping, lock/mute/hide, zoom and height controls; bounded undo/redo.
+- Independent source-audio clips on A1/A2, volume/fades and short overlapping audio crossfades where source handles exist.
+- Local Whisper Tiny/Base/Small, Auto Detect/seven selectable languages, word timestamps, WebGPU acceleration and CPU fallback. Long sources use 90-second analysis windows with context, progress and an early proposed-edit preview. Transcription starts only on request; canceled/failed replacement preserves corrections.
+- Transcript seeking, selection, text correction, scoped find/replace, deletion from video, basic manual speaker assignment/names/colors and SRT import.
+- Exact caption start/end fields, phrase editing, insertion and draggable/resizable C1 blocks. Caption-only edits preserve video; per-clip overrides survive save/open and export.
+- Clean/Bold/Brainrot, important-word accents, intensity, emoji frequency, word grouping, custom position and safe area. Estimated timing is labeled; model confidence is never invented.
+- Guided Auto Cut with count/length/pacing controls, sentence-aware transcript scoring, speech-safe silence removal, repeat review, composite edits and optional strongest-first order. Select several highlights to create independent saved Shorts while retaining the original edit.
+- Bounded local command assistant, isolated proposed-edit playback, explicit apply/dismiss/cancel, undo/redo, last/all-AI restoration, reason markers and bounded applied-edit metadata. Full chat text is not saved.
+- Position/scale/rotation/opacity/crop/speed, draggable numeric controls, preview handles, editable keyframes and seven motion presets. Motion renders into exported video.
+- Automatic heavy-input preview proxies, Auto/Full/Half/Quarter, dropped-frame adaptation, cached proxies and a preview/export resolution indicator.
+- H.264/AAC MP4 with real audio, composition, captions and motion; platform sizing, quality/size estimate, advanced bitrate/resolution/FPS/audio settings, progress, cancellation and retry. Browser video encoding falls back to software encoding.
+- Simplified mobile clips/trim/reorder/transcript/style/export flow and a spoken demonstration with a labeled correction exercise.
 
-- Automatic preview proxies and dropped-frame adaptive quality.
-- General keyframe editing, preview resize handles, draggable numeric values, and motion preset rendering in export. Current motion presets are explicitly preview-only.
-- True short overlapping audio crossfades. Current cuts have short per-clip fade-in/out ramps.
-- Emoji-frequency styling and custom caption position.
-- Independent audio clip editing. A1 represents linked source audio; A2 is reserved. Music remains outside P0.
-- Multiple independent highlight outputs in one project and selecting multiple candidate shorts at once. Current suggestions create a single edited sequence; composite mode assembles moments into one sequence.
-- Model confidence calibration and automated speaker separation. Labels/colors and manual speaker assignment work; model confidence is not invented.
-- WebGPU acceleration and long/high-resolution/mobile memory benchmarking. The initial recognizer uses CPU WASM for compatibility.
-- Wider multilingual transcription QA and noisy/long creator footage QA. The initial English fixture is only a smoke test.
+## Validation and practical limits
 
-## Practical behavior
+The production build, 75 unit tests and 23 browser tests passed. Runtime checks cover decoded MP4s, audio at edited times, motion/caption pixels, Shorts save/relink, 4K proxies, all seven speech languages, GPU failure fallback, long speech across analysis windows and mobile layout under CPU throttling. Reports distinguish synthetic performance fixtures from recognition-quality samples.
 
-Source files are never modified. Refreshing retains project metadata but requires media relinking. There is one autosaved project on the device; manually save a project file before creating another if you want to retain both. Processing errors preserve the current project and allow retry. Source files over 1.5 GB are rejected in this first browser build. Exports and decoded audio use browser memory, so large inputs may need shorter cuts or lower export resolution.
+Recognition and highlight scoring need editorial review. Basic speakers are manually assigned, without automated diarization. Detailed is suggested for Turkish, Portuguese and Polish based on the small fixed QA samples. First use downloads the model; inference stays on the device.
+
+Source files are never modified. Project files contain metadata, not media; refresh/open requires relinking. There is one autosaved project, at most 30 sequences and 80 in-session undo snapshots. Manually save before replacing a project. Source files above 1.5 GB are rejected. Model weights, decoders and exports still consume browser memory; software animation export can be slow. Measurements cover one Windows/Edge machine and mobile emulation, not physical phones or every codec/browser.
+
+## P1 boundary
+
+Filler cleanup, improved repeated-take review, saved caption styles and SRT export are available. Auto Reframe, voice enhancement, music/beat/ducking, B-roll, translation, publishing suggestions, custom animation preset saving, discovery and batch ZIP remain [P1 work](P1-status.md).

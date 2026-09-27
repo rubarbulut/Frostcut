@@ -1,0 +1,23 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+const directory = 'tests/fixtures/languages';
+await mkdir(directory, { recursive: true });
+const configurations = ['en_us', 'es_419', 'pt_br', 'fr_fr', 'de_de', 'tr_tr', 'pl_pl'];
+const records = await Promise.all(configurations.map(async config => {
+  const spanish = config === 'es_419', dataset = spanish ? 'PolyAI/minds14' : 'google/fleurs', split = spanish ? 'train' : 'validation', subset = spanish ? 'es-ES' : config;
+  const response = await fetch(`https://datasets-server.huggingface.co/first-rows?dataset=${encodeURIComponent(dataset)}&config=${subset}&split=${split}`);
+  if (!response.ok) throw new Error(`${config}: ${await response.text()}`);
+  const data = await response.json(), row = data.rows[0].row;
+  const audio = await fetch(row.audio[0].src);
+  if (!audio.ok) throw new Error(`Audio unavailable: ${config}`);
+  const wave = `${directory}/${config}.wav`, video = `${directory}/${config}.mp4`;
+  await writeFile(wave, new Uint8Array(await audio.arrayBuffer()));
+  const mux = spawnSync('ffmpeg', ['-v', 'error', '-y', '-stream_loop', '-1', '-i', 'public/demo.mp4', '-i', wave, '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-shortest', video], { encoding: 'utf8' });
+  if (mux.status !== 0) throw new Error(mux.stderr);
+  const probe = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=nw=1:nk=1', wave], { encoding: 'utf8' });
+  console.log(`${row.language ?? 'Spanish'}: prepared ${Number(probe.stdout)}s`);
+  return { config, language: row.language ?? 'Spanish', reference: row.raw_transcription ?? row.transcription, normalizedReference: row.transcription, id: row.id ?? row.path, row: 0, split, duration: Number(probe.stdout), file: video, source: `https://huggingface.co/datasets/${dataset}/viewer/${subset}/${split}`, license: 'CC-BY-4.0', attribution: `${spanish ? 'PolyAI MINDS-14, Gerz et al., 2021' : 'Google FLEURS, Conneau et al., 2022'}. Audio converted to AAC and combined with local typography for QA.` };
+}));
+await writeFile(`${directory}/manifest.json`, JSON.stringify(records, null, 2));
+const noise = spawnSync('ffmpeg', ['-v', 'error', '-y', '-i', `${directory}/tr_tr.mp4`, '-f', 'lavfi', '-i', 'anoisesrc=color=pink:amplitude=0.025:sample_rate=16000', '-filter_complex', '[0:a][1:a]amix=inputs=2:duration=first:normalize=0[a]', '-map', '0:v', '-map', '[a]', '-c:v', 'copy', '-c:a', 'aac', `${directory}/tr_tr-noisy.mp4`], { encoding: 'utf8' });
+if (noise.status !== 0) throw new Error(noise.stderr);

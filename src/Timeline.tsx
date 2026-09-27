@@ -26,6 +26,7 @@ import {
   splitClip,
   uid,
   timecode,
+  isAudioClip,
 } from './model';
 export function deleteSelected(ripple = false) {
   const s = useEditor.getState(),
@@ -160,7 +161,9 @@ export default function Timeline() {
         const target = document
           .elementFromPoint(event.clientX, event.clientY)
           ?.closest<HTMLElement>('[data-track]')?.dataset.track;
-        const track = next.tracks.find((t) => t.id === target && t.kind === 'video' && !t.locked);
+        const track = next.tracks.find(
+          (t) => t.id === target && t.kind === (isAudioClip(p, c) ? 'audio' : 'video') && !t.locked,
+        );
         const delta = Math.max(
           change.start - c.start,
           -Math.min(...next.clips.filter((x) => ids.includes(x.id)).map((x) => x.start)),
@@ -171,7 +174,7 @@ export default function Timeline() {
             ...structuredClone(clip),
             id: duplicate ? uid() : clip.id,
             start: clip.start + delta,
-            trackId: track?.id ?? clip.trackId,
+            trackId: track && isAudioClip(p, c) === isAudioClip(p, clip) ? track.id : clip.trackId,
           };
           if (duplicate) {
             next.clips.push(updated);
@@ -325,9 +328,11 @@ export default function Timeline() {
               disabled={!p.clips.length}
               onClick={() => {
                 const c =
-                  p.clips.find((c) => selected.includes(c.id)) ??
-                  p.clips.find((c) => playhead >= c.start && playhead < clipEnd(c)) ??
-                  p.clips[0];
+                  p.clips.find((c) => !isAudioClip(p, c) && selected.includes(c.id)) ??
+                  p.clips.find(
+                    (c) => !isAudioClip(p, c) && playhead >= c.start && playhead < clipEnd(c),
+                  ) ??
+                  p.clips.find((c) => !isAudioClip(p, c));
                 if (c)
                   useEditor
                     .getState()
@@ -410,84 +415,102 @@ export default function Timeline() {
                 select([]);
               }}
             >
-              {(t.kind === 'video'
-                ? p.clips.filter((c) => c.trackId === t.id)
-                : t.id === 'A1'
-                  ? p.clips
-                  : []
-              ).map((original) => {
-                const c = drag?.id === original.id ? { ...original, ...drag } : original,
-                  m = p.media.find((m) => m.id === c.mediaId)!;
-                return (
-                  <div
-                    role="button"
-                    tabIndex={t.kind === 'video' ? 0 : -1}
-                    aria-label={`${m.name} clip at ${timecode(c.start)}`}
-                    key={c.id}
-                    className={`timeline-clip ${t.kind === 'audio' ? 'audio' : ''} ${selected.includes(c.id) ? 'selected' : ''} ${c.aiReason ? 'ai-clip' : ''}`}
-                    style={{ left: c.start * zoom, width: Math.max(4, clipDuration(c) * zoom) }}
-                    onPointerDown={(e) =>
-                      t.kind === 'video' ? startDrag(e, original, 'move') : e.stopPropagation()
-                    }
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') select([c.id]);
-                    }}
-                  >
-                    {t.kind === 'video' ? (
-                      <>
-                        <span className="clip-name">
-                          {c.aiReason && '✦ '}
-                          {m.name}
-                        </span>
-                        <div className="filmstrip">
-                          {Array.from(
-                            { length: Math.min(20, Math.ceil((clipDuration(c) * zoom) / 70)) },
-                            (_, i) => (
+              {p.clips
+                .filter(
+                  (c) =>
+                    c.trackId === t.id || (t.id === 'A1' && !isAudioClip(p, c) && !c.audioDetached),
+                )
+                .map((original) => {
+                  const c = drag?.id === original.id ? { ...original, ...drag } : original,
+                    m = p.media.find((m) => m.id === c.mediaId)!;
+                  return (
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${m.name} clip at ${timecode(c.start)}`}
+                      key={c.id}
+                      className={`timeline-clip ${t.kind === 'audio' ? 'audio' : ''} ${selected.includes(c.id) ? 'selected' : ''} ${c.aiReason ? 'ai-clip' : ''}`}
+                      style={{ left: c.start * zoom, width: Math.max(4, clipDuration(c) * zoom) }}
+                      onPointerDown={(e) =>
+                        t.id === original.trackId
+                          ? startDrag(e, original, 'move')
+                          : (e.stopPropagation(), select([original.id]))
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') select([c.id]);
+                      }}
+                    >
+                      {t.kind === 'video' ? (
+                        <>
+                          <span className="clip-name">
+                            {c.aiReason && '✦ '}
+                            {m.name}
+                          </span>
+                          <div className="filmstrip">
+                            {Array.from(
+                              { length: Math.min(20, Math.ceil((clipDuration(c) * zoom) / 70)) },
+                              (_, i) => (
+                                <span
+                                  key={i}
+                                  style={{
+                                    backgroundImage: mediaThumbnails.has(c.mediaId)
+                                      ? `url("${mediaThumbnails.get(c.mediaId)}")`
+                                      : undefined,
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: 'center',
+                                  }}
+                                />
+                              ),
+                            )}
+                          </div>
+                          <span
+                            className="trim-handle left"
+                            aria-label="Trim start"
+                            onPointerDown={(e) => startDrag(e, original, 'in')}
+                          />
+                          <span
+                            className="trim-handle right"
+                            aria-label="Trim end"
+                            onPointerDown={(e) => startDrag(e, original, 'out')}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <span className="clip-name">
+                            {isAudioClip(p, c) ? m.name : 'Linked audio'}
+                          </span>
+                          {isAudioClip(p, c) && (
+                            <>
                               <span
-                                key={i}
-                                style={{
-                                  backgroundImage: mediaThumbnails.has(c.mediaId)
-                                    ? `url("${mediaThumbnails.get(c.mediaId)}")`
-                                    : undefined,
-                                  backgroundSize: 'cover',
-                                  backgroundPosition: 'center',
-                                }}
+                                className="trim-handle left"
+                                aria-label="Trim audio start"
+                                onPointerDown={(e) => startDrag(e, original, 'in')}
                               />
-                            ),
-                          )}
-                        </div>
-                        <span
-                          className="trim-handle left"
-                          aria-label="Trim start"
-                          onPointerDown={(e) => startDrag(e, original, 'in')}
-                        />
-                        <span
-                          className="trim-handle right"
-                          aria-label="Trim end"
-                          onPointerDown={(e) => startDrag(e, original, 'out')}
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <span className="clip-name">Linked audio</span>
-                        <div className="waveform" aria-hidden="true">
-                          {Array.from(
-                            { length: Math.min(150, Math.floor((clipDuration(c) * zoom) / 4)) },
-                            (_, i) => (
-                              <i
-                                key={i}
-                                style={{
-                                  height: `${(audioWaveforms.get(c.mediaId)?.[Math.floor((c.sourceStart + (i / ((clipDuration(c) * zoom) / 4)) * (c.sourceEnd - c.sourceStart)) * 10)] ?? 0) * 90 + 4}%`,
-                                }}
+                              <span
+                                className="trim-handle right"
+                                aria-label="Trim audio end"
+                                onPointerDown={(e) => startDrag(e, original, 'out')}
                               />
-                            ),
+                            </>
                           )}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
+                          <div className="waveform" aria-hidden="true">
+                            {Array.from(
+                              { length: Math.min(150, Math.floor((clipDuration(c) * zoom) / 4)) },
+                              (_, i) => (
+                                <i
+                                  key={i}
+                                  style={{
+                                    height: `${(audioWaveforms.get(c.mediaId)?.[Math.floor((c.sourceStart + (i / ((clipDuration(c) * zoom) / 4)) * (c.sourceEnd - c.sourceStart)) * 10)] ?? 0) * 90 + 4}%`,
+                                  }}
+                                />
+                              ),
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
               {!p.clips.length && t.id === 'V1' && (
                 <span className="lane-hint">Your story, one good moment at a time.</span>
               )}

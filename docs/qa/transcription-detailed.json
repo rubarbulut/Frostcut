@@ -1,0 +1,68 @@
+{
+  "date": "2026-09-26T16:40:14.406Z",
+  "browser": "154.0.4258.37",
+  "description": "One fixed sample per language. Small smoke test, not a population accuracy estimate. WER ignores case and punctuation.",
+  "errors": [],
+  "results": [
+    {
+      "language": "Portuguese",
+      "variant": "clean",
+      "requestedDevice": "auto",
+      "model": "Whisper Small · GPU",
+      "duration": 11.82,
+      "elapsedSeconds": 20.11,
+      "reference": "O objetivo principal da ciência é entender como o mundo funciona através do método científico. É esse método que orienta as pesquisas científicas.",
+      "actual": "O objetivo principal da ciência é entender como o mundo funciona através do método científico, esse método que orienta e pesquisa científicas.",
+      "wordErrorRate": 0.13,
+      "wordCount": 22,
+      "invalidTiming": false,
+      "source": "https://huggingface.co/datasets/google/fleurs/viewer/pt_br/validation",
+      "license": "CC-BY-4.0"
+    },
+    {
+      "language": "Turkish",
+      "variant": "clean",
+      "requestedDevice": "auto",
+      "model": "Whisper Small · GPU",
+      "duration": 16.8,
+      "elapsedSeconds": 25.17,
+      "reference": "Teknoloji, çözümü sanal bir tur sunarak getirir. Öğrenciler müzedeki yapıları inceleyebilir, bir akvaryumu ziyaret edebilir veya sınıfta otururken güzel sanat eserlerinin büyüsüne kapılabilir.",
+      "actual": "Teknoloji çözümü sanal bir tur sunarak getirir. Öğrenciler müzedeki yapıları inceleyebilir. Bir akvaryum ziyaret edebilir veya sınıfta otururken güzel sanat esadelerinin büyüsüne kapılabilir.",
+      "wordErrorRate": 0.087,
+      "wordCount": 23,
+      "invalidTiming": false,
+      "source": "https://huggingface.co/datasets/google/fleurs/viewer/tr_tr/validation",
+      "license": "CC-BY-4.0"
+    },
+    {
+      "language": "Polish",
+      "variant": "clean",
+      "requestedDevice": "auto",
+      "model": "Whisper Small · GPU",
+      "duration": 22.62,
+      "elapsedSeconds": 35.13,
+      "reference": "Szerokie bulwary, przeszklone fronty budynków i nowoczesne galerie handlowe współistnieją z tradycyjnymi dachami krytymi czerwonymi dachówkami, rynkiem z XVIII wieku i starymi meczetami i kościołami, choć w mieście panuje atmosfera przywołująca bardziej śródziemnomorską Europę niż tradycyjną Turcję.",
+      "actual": "W szerokie bulwary przeszklone fronty budynków i nowoczesne galerie handlowe współstnieją z tradycyjnymi dachami krytymi czerwonymi dachówkami. Rynkiem z XVIII wieku i starymi meczetami i kościołami, choć w mieście panuje atmosfera przywołująca bardziej śródnieciemnomorską Europę niż tradycyjną Turcją.",
+      "wordErrorRate": 0.108,
+      "wordCount": 38,
+      "invalidTiming": false,
+      "source": "https://huggingface.co/datasets/google/fleurs/viewer/pl_pl/validation",
+      "license": "CC-BY-4.0"
+    },
+    {
+      "language": "Turkish",
+      "variant": "pink-noise",
+      "requestedDevice": "auto",
+      "model": "Whisper Small · GPU",
+      "duration": 16.8,
+      "elapsedSeconds": 25.12,
+      "reference": "Teknoloji, çözümü sanal bir tur sunarak getirir. Öğrenciler müzedeki yapıları inceleyebilir, bir akvaryumu ziyaret edebilir veya sınıfta otururken güzel sanat eserlerinin büyüsüne kapılabilir.",
+      "actual": "Teknoloji çözümü sanal bir tursunarak getirir. Öhrenciler müzedeki yapıları inceleyebilir, bir akvarlı muziyaret edebilir veya sınıfta otururken güzel sanat hesaferinin büyüsüne kapılabilir.",
+      "wordErrorRate": 0.261,
+      "wordCount": 22,
+      "invalidTiming": false,
+      "source": "https://huggingface.co/datasets/google/fleurs/viewer/tr_tr/validation",
+      "license": "CC-BY-4.0"
+    }
+  ]
+}

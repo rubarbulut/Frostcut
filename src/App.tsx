@@ -53,6 +53,8 @@ import {
   uid,
   clipEnd,
   clipDuration,
+  isLocked,
+  isAudioClip,
 } from './model';
 import { inspectMedia, extractAudio, exportMp4 } from './media';
 import {
@@ -69,16 +71,23 @@ import Timeline, { deleteSelected, splitSelected } from './Timeline';
 import { MediaPanel, TranscriptPanel, PropertiesPanel } from './Panels';
 import CaptionEditor from './CaptionEditor';
 import TranscriptionSetup from './TranscriptionSetup';
-import { resolveQuality } from './transcription-config';
+import { resolveQuality, recommendedQuality, transcriptionModels } from './transcription-config';
 import LandingPage from './LandingPage';
+import { SequencePicker } from './SequencePicker';
+import { createShortSequences } from './sequences';
+import { analyzeSource, measuredSilences } from './analyze-source';
+import { speechSafeSilences } from './highlights';
+import { estimatedMegabytes, videoBitrate } from './export-settings';
+import { EditPreview, OperationsPreview } from './EditPreview';
 type Job = {
   kind: 'transcribe' | 'analysis' | 'export';
   step: number;
   message: string;
   progress?: number;
   error?: string;
+  discovery?: string;
+  preview?: Project;
 };
-const audioCache = new Map<string, Float32Array>();
 export default function App() {
   const {
     project: p,
@@ -122,10 +131,11 @@ export default function App() {
     [mobileTab, setMobileTab] = useState('Clips'),
     [drop, setDrop] = useState(false),
     [selectedSuggestion, setSelectedSuggestion] = useState<string>();
+  const [selectedShorts, setSelectedShorts] = useState<string[]>([]);
   const [opts, setOpts] = useState<CutOptions>({
     goal: 'Short-form clips',
     count: 3,
-    length: 30,
+    length: 25,
     pacing: 'Fast',
     reorder: true,
     composite: false,
@@ -139,6 +149,12 @@ export default function App() {
   useEffect(() => {
     restoreProject().then(setResume);
   }, []);
+  useEffect(() => {
+    // Proposals are tied to the exact timeline they were generated against.
+    setAiPreview(undefined);
+    setSelectedSuggestion(undefined);
+    setSelectedShorts([]);
+  }, [p]);
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(''), 5500);
@@ -157,6 +173,7 @@ export default function App() {
         modal ||
         job ||
         document.querySelector('dialog[open]') ||
+        useEditor.getState().previewClip ||
         useEditor.getState().captionSelection
       )
         return;
@@ -211,19 +228,27 @@ export default function App() {
       if (id) {
         const old = useEditor.getState().project.media.find((m) => m.id === id);
         if (!old) return;
+        const currentProject = useEditor.getState().project;
         const required = Math.max(
-          ...useEditor
-            .getState()
-            .project.clips.filter((c) => c.mediaId === id)
-            .map((c) => c.sourceEnd),
           0,
+          ...[...currentProject.clips, ...(currentProject.sequences ?? []).flatMap((s) => s.clips)]
+            .filter((c) => c.mediaId === id)
+            .map((c) => c.sourceEnd),
         );
         if (asset.duration + 0.1 < required)
           throw new Error(
             'This file is shorter than the media used in the timeline. Choose the original source.',
           );
         registerMedia({ ...asset, id }, file);
-        audioCache.delete(id);
+        commit(
+          {
+            ...currentProject,
+            media: currentProject.media.map((m) =>
+              m.id === id ? { ...asset, id, demo: m.demo } : m,
+            ),
+          },
+          'Relink source media',
+        );
         mediaChanged();
         setToast('Media relinked.');
       } else {
@@ -263,6 +288,41 @@ export default function App() {
       notify(e);
     }
   }
+  async function speechDemo() {
+    try {
+      setToast('Opening the spoken demo…');
+      const [video, captions] = await Promise.all([
+        fetch('/spoken-demo.mp4'),
+        fetch('/spoken-demo.srt'),
+      ]);
+      if (!video.ok || !captions.ok)
+        throw new Error('The spoken demo is unavailable. Import your footage to start.');
+      const file = new File([await video.blob()], 'A spoken story — synthetic narration.mp4', {
+        type: 'video/mp4',
+      });
+      const asset = await inspectMedia(file);
+      registerMedia(asset, file);
+      const next = addMedia(createProject('Speech demo · practice edit', 'YouTube Shorts'), asset);
+      next.transcripts = [
+        parseSrt(
+          (await captions.text()).replace('readable captions', 'readable captains'),
+          asset.id,
+        ),
+      ];
+      next.transcripts[0].language = 'English';
+      next.settings.language = 'English';
+      next.captions.safeArea = true;
+      load(next);
+      mediaChanged();
+      setScreen('editor');
+      setPanel('transcript');
+      setToast(
+        'Synthetic narration · estimated caption times. “captains” is an intentional typo for editing practice.',
+      );
+    } catch (error) {
+      notify(error);
+    }
+  }
   function newProject() {
     const next = createProject(
       projectName.trim() || 'Untitled project',
@@ -289,23 +349,26 @@ export default function App() {
     }
   }
   function jobProgress(message: string, progress?: number) {
-    setJob((current) => (current ? { ...current, message, progress } : current));
-  }
-  async function getAudio(id: string, signal: AbortSignal) {
-    if (audioCache.has(id)) return audioCache.get(id)!;
-    const file = mediaFiles.get(id);
-    if (!file) throw new Error('Relink missing media before processing.');
-    const audio = await extractAudio(file, signal, jobProgress);
-    audioCache.set(id, audio);
-    const peaks: number[] = [];
-    for (let i = 0; i < audio.length; i += 1600) {
-      let sum = 0;
-      for (let j = i; j < Math.min(i + 1600, audio.length); j++) sum += audio[j] * audio[j];
-      peaks.push(Math.min(1, Math.sqrt(sum / 1600) * 5));
-    }
-    audioWaveforms.set(id, peaks);
-    mediaChanged();
-    return audio;
+    setJob((current) =>
+      current
+        ? {
+            ...current,
+            message,
+            progress,
+            step:
+              current.kind === 'export'
+                ? Math.max(
+                    current.step,
+                    /Encoding|Rendering your video/.test(message)
+                      ? 2
+                      : /Drawing/.test(message)
+                        ? 1
+                        : 0,
+                  )
+                : current.step,
+          }
+        : current,
+    );
   }
   async function runAnalysis(auto: boolean, mediaId?: string) {
     if (job) return;
@@ -344,32 +407,53 @@ export default function App() {
           );
           continue;
         }
-        const audio = await getAudio(media.id, controller.signal);
-        ranges.push(
-          ...mapSilences(next, media.id, silenceFromSamples(audio, 16000, opts.sensitivity)),
+        const needTranscript = !auto || (!existing && opts.goal !== 'Remove silences');
+        setJob((j) => (j ? { ...j, step: needTranscript ? 1 : 0 } : j));
+        const analyzed = await analyzeSource(
+          media,
+          next.settings,
+          needTranscript,
+          opts.sensitivity,
+          controller.signal,
+          (message, progress) => {
+            if (abortRef.current === controller && !controller.signal.aborted)
+              jobProgress(message, progress);
+          },
+          (partial, elapsed) => {
+            const draft = partial
+              ? {
+                  ...next,
+                  transcripts: [...next.transcripts.filter((t) => t.mediaId !== media.id), partial],
+                }
+              : next;
+            const found = auto
+              ? suggestCuts(draft, opts, ranges).filter((s) => s.type === 'highlight')
+              : [];
+            setJob((j) =>
+              j
+                ? {
+                    ...j,
+                    discovery: `${timecode(elapsed)} analyzed · ${partial?.words.length ?? existing?.words.length ?? 0} words${auto ? ` · ${found.length} potential clips so far` : ''}`,
+                    preview:
+                      j.preview ??
+                      (found[0] ? applyOperations(draft, found[0].operations) : undefined),
+                  }
+                : j,
+            );
+          },
         );
-        if (!auto || (!existing && opts.goal !== 'Remove silences')) {
-          setJob((j) =>
-            j
-              ? { ...j, step: 1, message: 'Starting local transcription…', progress: undefined }
-              : j,
-          );
-          const transcript = await transcribe(
-            audio.slice(),
-            media.id,
-            next.settings.language,
-            jobProgress,
-            controller.signal,
-            resolveQuality(next.settings.transcriptionQuality),
-          );
-          next.transcripts = next.transcripts.filter((t) => t.mediaId !== media.id);
-          next.transcripts.push(transcript);
-          // Caption overrides are intentionally reset only after successful retranscription.
+        ranges.push(...mapSilences(next, media.id, analyzed.silences));
+        if (analyzed.transcript) {
+          next.transcripts = [
+            ...next.transcripts.filter((t) => t.mediaId !== media.id),
+            analyzed.transcript,
+          ];
+          // Keep corrections until the entire processing job succeeds.
           if (!auto)
             next.clips.filter((c) => c.mediaId === media.id).forEach((c) => delete c.captionWords);
         }
       }
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted || abortRef.current !== controller) return;
       if (auto) {
         setJob((j) =>
           j
@@ -377,6 +461,7 @@ export default function App() {
             : j,
         );
         next.suggestions = suggestCuts(next, opts, ranges);
+        setSelectedShorts([]);
         commit(next, 'Analyze footage');
         setSuggestionsOpen(true);
         if (!next.suggestions.length)
@@ -389,6 +474,7 @@ export default function App() {
       }
       setJob(null);
     } catch (e) {
+      if (abortRef.current !== controller) return;
       if (controller.signal.aborted) {
         setJob(null);
         return;
@@ -397,7 +483,7 @@ export default function App() {
     }
   }
   function applySuggestion(s: Suggestion) {
-    if (p.clips.some((c) => p.tracks.find((t) => t.id === c.trackId)?.locked)) {
+    if (p.clips.some((c) => isLocked(p, c))) {
       setToast('Unlock timeline tracks before applying AI cuts.');
       return;
     }
@@ -408,6 +494,25 @@ export default function App() {
     setSuggestionsOpen(false);
     setToast('AI edit applied. Undo is always one click away.');
   }
+  function makeShorts() {
+    try {
+      const next = createShortSequences(
+        p,
+        p.suggestions.filter((s) => selectedShorts.includes(s.id)),
+      );
+      commit(next, `AI: create ${selectedShorts.length} separate Shorts`, true);
+      setPlaying(false);
+      select([]);
+      seek(0);
+      setSuggestionsOpen(false);
+      setMobileTab('Clips');
+      setToast(
+        'Shorts created. Switch sequences to edit and export each one. Your original edit is saved.',
+      );
+    } catch (e) {
+      notify(e);
+    }
+  }
   async function doExport() {
     setPlaying(false);
     setModal(null);
@@ -415,11 +520,16 @@ export default function App() {
     abortRef.current = controller;
     setJob({ kind: 'export', step: 0, message: 'Preparing your export…' });
     try {
-      const blob = await exportMp4(structuredClone(p), controller.signal, jobProgress);
+      const blob = await exportMp4(structuredClone(p), controller.signal, (message, progress) => {
+        if (abortRef.current === controller && !controller.signal.aborted)
+          jobProgress(message, progress);
+      });
+      if (controller.signal.aborted || abortRef.current !== controller) return;
       setExportBlob(blob);
       setExportUrl(URL.createObjectURL(blob));
       setJob(null);
     } catch (e) {
+      if (abortRef.current !== controller) return;
       if (controller.signal.aborted) {
         setJob(null);
         return;
@@ -427,9 +537,21 @@ export default function App() {
       setJob((j) => (j ? { ...j, error: e instanceof Error ? e.message : String(e) } : j));
     }
   }
-  const estimatedSilence = p.suggestions
-    .find((s) => s.type === 'silence')
-    ?.operations.reduce((n, o) => n + (o.type === 'delete-range' ? o.end - o.start : 0), 0);
+  const measuredRanges = speechSafeSilences(
+    p,
+    p.media.flatMap((m) => mapSilences(p, m.id, measuredSilences(m.id, opts.sensitivity) ?? [])),
+  );
+  const estimatedSilence = measuredRanges.length
+    ? measuredRanges
+        .filter(
+          (r) =>
+            r.end - r.start >
+            (opts.pacing === 'Natural' ? 0.55 : opts.pacing === 'Hyper' ? 0.18 : 0.3),
+        )
+        .reduce((n, r) => n + r.end - r.start, 0)
+    : p.suggestions
+        .find((s) => s.type === 'silence')
+        ?.operations.reduce((n, o) => n + (o.type === 'delete-range' ? o.end - o.start : 0), 0);
   const pending = p.suggestions.filter((s) => s.status === 'pending');
   const selectedClip = p.clips.find((c) => selected.includes(c.id));
   return (
@@ -486,6 +608,7 @@ export default function App() {
           onStartEditing={() => setModal('project')}
           onOpenProject={() => projectInput.current?.click()}
           onTryDemo={() => void demo()}
+          onTrySpeechDemo={() => void speechDemo()}
           onResumeProject={(res) => {
             load(res);
             setScreen('editor');
@@ -582,6 +705,7 @@ export default function App() {
               </button>
             </div>
           </header>
+          <SequencePicker />
           <div className="editor-workspace">
             <aside className="left-panel">
               <div className="panel-tabs">
@@ -641,7 +765,7 @@ export default function App() {
                   </button>
                 </div>
               </div>
-              <Preview onImport={() => importClick()} />
+              <Preview onImport={() => importClick()} processing={!!job} />
               {pending.length > 0 && (
                 <button className="suggestion-banner" onClick={() => setSuggestionsOpen(true)}>
                   <Sparkles size={15} />
@@ -686,16 +810,23 @@ export default function App() {
                       </button>
                       <button
                         aria-label="Move clip earlier"
-                        disabled={i === 0}
+                        disabled={
+                          !p.clips.some(
+                            (other) => other.trackId === c.trackId && other.start < c.start,
+                          ) || p.clips.some((c) => isLocked(p, c))
+                        }
                         onClick={() => {
-                          const ordered = [...p.clips].sort((a, b) => a.start - b.start);
-                          [ordered[i - 1], ordered[i]] = [ordered[i], ordered[i - 1]];
-                          let cursor = 0;
+                          const prior = [...p.clips]
+                            .filter((other) => other.trackId === c.trackId && other.start < c.start)
+                            .sort((a, b) => a.start - b.start)
+                            .at(-1);
+                          if (!prior) return;
                           const next = structuredClone(p);
-                          for (const c of ordered) {
-                            next.clips.find((x) => x.id === c.id)!.start = cursor;
-                            cursor += clipDuration(c);
-                          }
+                          next.clips.find((x) => x.id === c.id)!.start = prior.start;
+                          next.clips.find((x) => x.id === prior.id)!.start = Math.max(
+                            prior.start + clipDuration(c),
+                            clipEnd(c) - clipDuration(prior),
+                          );
                           commit(next, 'Reorder clips');
                         }}
                       >
@@ -703,7 +834,7 @@ export default function App() {
                       </button>
                     </div>
                   ))}
-                {selectedClip && (
+                {selectedClip && !isLocked(p, selectedClip) && (
                   <div className="mobile-trim">
                     <Range
                       label="Trim beginning"
@@ -788,7 +919,11 @@ export default function App() {
                   e.preventDefault();
                   const proposal = promptOperations(p, prompt);
                   if (oneClick && proposal.operations.length) {
-                    commit(applyOperations(p, proposal.operations), 'AI edit', true);
+                    commit(
+                      applyOperations(p, proposal.operations, proposal.description),
+                      'AI edit',
+                      true,
+                    );
                     setAiPreview(undefined);
                     setToast('AI edit applied.');
                   } else setAiPreview(proposal);
@@ -823,12 +958,19 @@ export default function App() {
                       : 'Let’s shape this edit'}
                   </b>
                   <p>{aiPreview.description}</p>
+                  {aiPreview.operations.length > 0 && (
+                    <OperationsPreview project={p} operations={aiPreview.operations} />
+                  )}
                   {aiPreview.operations.length > 0 ? (
                     <div className="button-row">
                       <button
                         className="primary small"
                         onClick={() => {
-                          commit(applyOperations(p, aiPreview.operations), 'AI edit', true);
+                          commit(
+                            applyOperations(p, aiPreview.operations, aiPreview.description),
+                            'AI edit',
+                            true,
+                          );
                           setAiPreview(undefined);
                         }}
                       >
@@ -1005,7 +1147,7 @@ export default function App() {
                     <option value="3">3 clips</option>
                     <option value="5">5 clips</option>
                     <option value="10">10 clips</option>
-                    <option value="6">Auto</option>
+                    <option value="0">Auto</option>
                   </select>
                 </Field>
                 <Field label="Target length">
@@ -1026,13 +1168,46 @@ export default function App() {
                   value={p.settings.language}
                   onChange={(e) =>
                     commit(
-                      { ...p, settings: { ...p.settings, language: e.target.value } },
+                      {
+                        ...p,
+                        settings: {
+                          ...p.settings,
+                          language: e.target.value,
+                          transcriptionQuality:
+                            resolveQuality(p.settings.transcriptionQuality) === 'balanced'
+                              ? recommendedQuality(e.target.value)
+                              : p.settings.transcriptionQuality,
+                        },
+                      },
                       'Language',
                     )
                   }
                 >
                   {languages.map((v) => (
                     <option key={v}>{v}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Speech quality">
+                <select
+                  value={resolveQuality(p.settings.transcriptionQuality)}
+                  onChange={(e) =>
+                    commit(
+                      {
+                        ...p,
+                        settings: {
+                          ...p.settings,
+                          transcriptionQuality: resolveQuality(e.target.value),
+                        },
+                      },
+                      'Speech quality',
+                    )
+                  }
+                >
+                  {Object.entries(transcriptionModels).map(([key, model]) => (
+                    <option key={key} value={key}>
+                      {model.label} · {model.name}
+                    </option>
                   ))}
                 </select>
               </Field>
@@ -1103,8 +1278,8 @@ export default function App() {
       {suggestionsOpen && (
         <Modal title="The good parts, found." onClose={() => setSuggestionsOpen(false)} wide>
           <p className="modal-intro">
-            Preview a suggestion, then apply it to your timeline. Highlights replace the current
-            sequence.
+            Select highlights to create separate Shorts while keeping your original edit. Or apply a
+            single suggestion to the current sequence.
           </p>
           <div className="suggestion-list">
             {pending.length ? (
@@ -1129,16 +1304,48 @@ export default function App() {
                   </div>
                   <h3>{s.title}</h3>
                   <p>{s.reason}</p>
+                  {s.operations.some((o) => o.type === 'assemble') && (
+                    <label className="check-row">
+                      <input
+                        type="checkbox"
+                        aria-label={`Create Short: ${s.title}`}
+                        checked={selectedShorts.includes(s.id)}
+                        onChange={(e) =>
+                          setSelectedShorts(
+                            e.target.checked
+                              ? [...selectedShorts, s.id]
+                              : selectedShorts.filter((id) => id !== s.id),
+                          )
+                        }
+                      />
+                      Create a separate Short
+                    </label>
+                  )}
                   <div className="suggestion-bottom">
                     <small>{s.operations.length} proposed operations</small>
                     <div>
                       <button
                         className="text-button"
+                        aria-label={`Dismiss suggestion: ${s.title}`}
+                        onClick={() =>
+                          commit(
+                            {
+                              ...p,
+                              suggestions: p.suggestions.map((item) =>
+                                item.id === s.id ? { ...item, status: 'dismissed' } : item,
+                              ),
+                            },
+                            'Dismiss AI suggestion',
+                          )
+                        }
+                      >
+                        Dismiss
+                      </button>
+                      <button
+                        className="text-button"
                         onClick={() => {
-                          seek(s.start);
                           setSelectedSuggestion(s.id);
-                          setSuggestionsOpen(false);
-                          setPlaying(true);
+                          setPlaying(false);
                         }}
                       >
                         <Play size={14} />
@@ -1149,16 +1356,24 @@ export default function App() {
                       </button>
                     </div>
                   </div>
+                  {selectedSuggestion === s.id && (
+                    <OperationsPreview project={p} operations={s.operations} />
+                  )}
                 </article>
               ))
             ) : (
               <div className="empty-panel">
-                <p>No confident suggestions yet. Try another language or sensitivity.</p>
+                <p>No suggestions left to review. Keep editing or run Auto Cut again.</p>
               </div>
             )}
           </div>
           <div className="modal-footer">
             <span>AI changes enter your normal undo history.</span>
+            {selectedShorts.length > 0 && (
+              <button className="primary" onClick={makeShorts}>
+                Create {selectedShorts.length} Shorts
+              </button>
+            )}
             <button className="text-button" onClick={() => setSuggestionsOpen(false)}>
               Keep editing
             </button>
@@ -1177,11 +1392,22 @@ export default function App() {
                 commit(
                   {
                     ...p,
-                    settings: { ...p.settings, preset },
+                    settings: {
+                      ...p.settings,
+                      preset,
+                      ...(preset === 'Custom'
+                        ? {}
+                        : { width: wide ? 1920 : 1080, height: wide ? 1080 : 1920, fps: 30 }),
+                    },
+                    captions: {
+                      ...p.captions,
+                      safeArea: preset !== 'YouTube' && preset !== 'Custom',
+                    },
                     exportSettings: {
                       ...p.exportSettings,
-                      width: wide ? 1920 : 1080,
-                      height: wide ? 1080 : 1920,
+                      ...(preset === 'Custom'
+                        ? {}
+                        : { width: wide ? 1920 : 1080, height: wide ? 1080 : 1920, fps: 30 }),
                     },
                   },
                   'Export platform',
@@ -1224,7 +1450,10 @@ export default function App() {
             value={p.exportSettings.quality}
             min={1}
             onChange={(quality) =>
-              commit({ ...p, exportSettings: { ...p.exportSettings, quality } }, 'Export quality')
+              commit(
+                { ...p, exportSettings: { ...p.exportSettings, quality, videoBitrate: undefined } },
+                'Export quality',
+              )
             }
           />
           <div className="quality-labels">
@@ -1257,29 +1486,93 @@ export default function App() {
                 </select>
               </Field>
             </div>
-            <small className="subtle">AAC audio · 160 kbps · captions burned in</small>
+            <div className="number-grid">
+              <Field label="Video bitrate (Mbps)">
+                <input
+                  type="number"
+                  min="0.1"
+                  max="60"
+                  step="0.1"
+                  value={+(videoBitrate(p) / 1000000).toFixed(2)}
+                  onChange={(e) => {
+                    if (e.target.value !== '')
+                      commit(
+                        {
+                          ...p,
+                          exportSettings: {
+                            ...p.exportSettings,
+                            videoBitrate: Math.max(
+                              100000,
+                              Math.min(60000000, +e.target.value * 1000000),
+                            ),
+                          },
+                        },
+                        'Export bitrate',
+                      );
+                  }}
+                />
+              </Field>
+              <Field label="Audio bitrate">
+                <select
+                  value={p.exportSettings.audioBitrate ?? 160}
+                  onChange={(e) =>
+                    commit(
+                      {
+                        ...p,
+                        exportSettings: { ...p.exportSettings, audioBitrate: +e.target.value },
+                      },
+                      'Audio bitrate',
+                    )
+                  }
+                >
+                  {[64, 96, 128, 160, 192, 256, 320].map((n) => (
+                    <option value={n} key={n}>
+                      {n} kbps
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              {(['width', 'height'] as const).map((key) => (
+                <Field key={key} label={`Export ${key}`}>
+                  <input
+                    type="number"
+                    min="16"
+                    max="3840"
+                    step="2"
+                    value={p.exportSettings[key]}
+                    onChange={(e) => {
+                      if (e.target.value !== '')
+                        commit(
+                          {
+                            ...p,
+                            exportSettings: {
+                              ...p.exportSettings,
+                              [key]: Math.max(
+                                16,
+                                Math.min(3840, Math.round(+e.target.value / 2) * 2),
+                              ),
+                            },
+                          },
+                          'Custom export dimensions',
+                        );
+                    }}
+                  />
+                </Field>
+              ))}
+            </div>
+            <small className="subtle">
+              AAC audio · captions burned in · adjust quality to return to automatic bitrate
+            </small>
           </details>
           <div className="export-estimate">
             <FileVideo size={27} />
             <div>
               <b>{p.name}.mp4</b>
               <small>
-                {timecode(duration(p))} · Estimated{' '}
-                {(
-                  (duration(p) *
-                    ((p.exportSettings.width * p.exportSettings.height) / 1000000) *
-                    (1 + p.exportSettings.quality / 15)) /
-                  8
-                ).toFixed(1)}{' '}
-                MB
+                {timecode(duration(p))} · Estimated {estimatedMegabytes(p).toFixed(1)} MB
               </small>
             </div>
           </div>
-          {p.clips.some((c) => c.properties.animation !== 'None') && (
-            <p className="warning">
-              Motion presets are preview-only. Static transforms and captions will be exported.
-            </p>
-          )}
           <div className="modal-footer">
             <span>Long videos may take a few minutes.</span>
             <button className="primary" onClick={() => void doExport()}>
@@ -1322,6 +1615,13 @@ export default function App() {
                   <i style={{ width: `${job.progress ?? 35}%` }} />
                 </div>
                 {job.progress !== undefined && <b>{Math.round(job.progress)}%</b>}
+                {job.discovery && <p className="processing-discovery">{job.discovery}</p>}
+                {job.preview && (
+                  <details className="early-preview">
+                    <summary>Preview the first clip while processing continues</summary>
+                    <EditPreview project={job.preview} label="First clip preview" />
+                  </details>
+                )}
                 <div className="processing-steps">
                   {(job.kind === 'export'
                     ? ['Preparing timeline', 'Rendering video and captions', 'Encoding H.264 MP4']

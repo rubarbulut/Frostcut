@@ -9,6 +9,7 @@ import {
   clipEnd,
 } from './model';
 import { repeatedTakes } from './speech-cleanup';
+import { highlightRanges, keywordPattern, speechSafeSilences } from './highlights';
 export type CutOptions = {
   goal: string;
   count: number;
@@ -18,8 +19,7 @@ export type CutOptions = {
   composite: boolean;
   sensitivity: number;
 };
-const important =
-  /\b(secret|best|never|always|stop|start|mistake|simple|powerful|perfect|hook|story|create|attention|seconds|better|free|fast)\b/i;
+const important = keywordPattern;
 export function markKeywords(words: Word[]) {
   return words.map((w, i) => ({
     ...w,
@@ -55,7 +55,7 @@ export function suggestCuts(
   const words = timelineWords(p),
     total = duration(p),
     suggestions: Suggestion[] = [];
-  const pauses = silenceRanges.filter(
+  const pauses = speechSafeSilences(p, silenceRanges).filter(
     (r) =>
       r.end - r.start > (opts.pacing === 'Natural' ? 0.55 : opts.pacing === 'Hyper' ? 0.18 : 0.3),
   );
@@ -73,62 +73,14 @@ export function suggestCuts(
     }
     return pieces;
   }
-  const sentenceGroups: (typeof words)[] = [];
-  for (const w of words) {
-    let group = sentenceGroups.at(-1);
-    if (
-      !group ||
-      group[0].clipId !== w.clipId ||
-      group[0].speakerId !== w.speakerId ||
-      /[.!?]$/.test(group.at(-1)!.text) ||
-      w.timelineStart - group.at(-1)!.timelineEnd > 0.8
-    ) {
-      group = [];
-      sentenceGroups.push(group);
-    }
-    group.push(w);
-  }
-  const candidates = sentenceGroups
-    .map((group, i) => {
-      const start = Math.max(0, group[0].timelineStart - 0.1);
-      let end = group.at(-1)!.timelineEnd + 0.15;
-      const desired = opts.length || 30;
-      for (let j = i + 1; j < sentenceGroups.length && end - start < desired * 0.65; j++) {
-        const proposed = sentenceGroups[j].at(-1)!.timelineEnd + 0.15;
-        if (proposed - start > desired * 1.2) break;
-        end = proposed;
-      }
-      const text = group.map((w) => w.text).join(' '),
-        score = Math.min(
-          98,
-          62 +
-            (important.test(text) ? 20 : 0) +
-            (/[?!]/.test(text) ? 9 : 0) +
-            Math.min(7, group.length),
-        );
-      return { start, end: Math.min(total, end), text, score };
-    })
-    .sort((a, b) => b.score - a.score);
-  const chosen: typeof candidates = [];
-  for (const c of candidates) {
-    if (chosen.length >= opts.count) break;
-    if (
-      chosen.some(
-        (x) =>
-          Math.min(c.end, x.end) - Math.max(c.start, x.start) >
-          Math.min(c.end - c.start, x.end - x.start) * 0.6,
-      )
-    )
-      continue;
-    chosen.push(c);
-  }
+  const chosen = highlightRanges(p, opts);
   if (opts.goal !== 'Remove silences') {
     for (const c of chosen)
       suggestions.push({
         id: uid(),
         type: 'highlight',
         title: c.text,
-        reason: important.test(c.text) ? 'Strong hook' : 'Clear statement',
+        reason: c.reason,
         start: c.start,
         end: c.end,
         score: c.score,
@@ -157,7 +109,7 @@ export function suggestCuts(
       });
     }
   }
-  const silenceOps = silenceRanges
+  const silenceOps = pauses
     .filter(
       (r) =>
         r.end - r.start > (opts.pacing === 'Natural' ? 0.55 : opts.pacing === 'Hyper' ? 0.18 : 0.3),
