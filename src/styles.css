@@ -4053,3 +4053,698 @@ details > summary {
   min-width: 18px;
   text-align: center;
 }
+
+/* ==========================================================================
+   Aspect Ratio Switcher & Blur Backdrop
+   ========================================================================== */
+.aspect-ratio-selector {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(14, 21, 28, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.aspect-btn {
+  background: transparent;
+  border: none;
+  color: #8b98a5;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.2;
+}
+
+.aspect-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.aspect-btn.active {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+}
+
+.blur-backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Timeline Minimap
+   ========================================================================== */
+.timeline-minimap-container {
+  height: 22px;
+  background: #090d12;
+  border-bottom: 1px solid #1a232c;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+
+.timeline-minimap-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ==========================================================================
+   Floating Contextual Action Bar
+   ========================================================================== */
+.floating-action-bar-container {
+  position: absolute;
+  bottom: 38px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  pointer-events: none;
+  animation: floatSlideUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes floatSlideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+.floating-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(13, 19, 26, 0.94);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(0, 0, 0, 0.8);
+  border-radius: 9999px;
+  padding: 4px 8px;
+  pointer-events: auto;
+}
+
+.floating-selection-count {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #38bdf8;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+.floating-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 0 2px;
+}
+
+.floating-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 9px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.floating-action-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.floating-action-btn.active {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+}
+
+.floating-action-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.floating-action-btn.delete-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.floating-action-btn.close-btn {
+  padding: 5px;
+  color: #94a3b8;
+}
+
+.floating-action-btn.close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.floating-kbd {
+  font-family: inherit;
+  font-size: 9px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: #94a3b8;
+  margin-left: 2px;
+}
+
+.floating-dropdown-wrapper {
+  position: relative;
+}
+
+.floating-dropdown-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f1620;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 90px;
+  z-index: 60;
+}
+
+.floating-menu-item {
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 10px;
+  text-align: left;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.floating-menu-item:hover {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+/* ==========================================================================
+   Media Hover-Scrubbing
+   ========================================================================== */
+.asset-hover-thumbnail {
+  position: relative;
+  width: 100%;
+  height: 60px;
+  background: #0c1014;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: crosshair;
+}
+
+.asset-hover-thumbnail video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.asset-hover-thumbnail .duration-pill {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 3px;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s ease;
+}
+
+.asset-hover-thumbnail .duration-pill.hovering {
+  background: #38bdf8;
+  color: #0c1014;
+  font-weight: 700;
+}
+
+.hover-scrub-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2.5px;
+  background: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Long-Form to Shorts Studio & Magic Presets
+   ========================================================================== */
+.magic-shorts-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-flex(to right, #ea580c, #f59e0b);
+  background: linear-gradient(135deg, #f97316 0%, #eab308 100%);
+  color: #0c1014;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 10px rgba(249, 115, 22, 0.25);
+}
+
+.magic-shorts-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.4);
+  filter: brightness(1.08);
+}
+
+.magic-shorts-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+.magic-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 16px 0;
+}
+
+@media (max-width: 640px) {
+  .magic-presets-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.magic-preset-card {
+  background: rgba(14, 23, 33, 0.6);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  border-radius: 10px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.magic-preset-card:hover {
+  background: rgba(18, 30, 44, 0.85);
+  border-color: rgba(56, 189, 248, 0.4);
+  transform: translateY(-2px);
+}
+
+.magic-preset-card.selected {
+  background: rgba(16, 36, 56, 0.95);
+  border-color: #38bdf8;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.25);
+}
+
+.preset-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.preset-badge {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.18);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.preset-check {
+  color: #38bdf8;
+}
+
+.preset-icon-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.preset-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  color: #38bdf8;
+}
+
+.preset-icon-box.hormozi {
+  background: rgba(249, 115, 22, 0.2);
+  color: #f97316;
+}
+
+.preset-icon-box.aesthetic {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+}
+
+.preset-icon-box.podcast {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.preset-icon-box.gaming {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+}
+
+.preset-icon-row h3 {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #f1f8fc;
+  margin: 0;
+}
+
+.preset-desc {
+  font-size: 11.5px;
+  color: #94a3b8;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.preset-features-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.preset-feature-pill {
+  font-size: 9.5px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.long-to-shorts-options {
+  background: rgba(14, 21, 28, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 14px 0;
+}
+
+.options-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.options-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.count-selector-group {
+  display: flex;
+  gap: 6px;
+}
+
+.count-pill {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.count-pill:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.count-pill.active {
+  background: #38bdf8;
+  border-color: #38bdf8;
+  color: #0c1014;
+  font-weight: 700;
+}
+
+.generate-shorts-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   Master My Audio & Speed Ramping
+   ========================================================================== */
+.audio-master-box {
+  margin-bottom: 12px;
+}
+
+.master-audio-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.18) 0%, rgba(168, 85, 247, 0.18) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #f1f8fc;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: left;
+}
+
+.master-audio-btn:hover {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.28) 0%, rgba(168, 85, 247, 0.28) 100%);
+  border-color: #38bdf8;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.2);
+  transform: translateY(-1px);
+}
+
+.master-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.master-text b {
+  font-size: 12px;
+  color: #7dd3fc;
+}
+
+.master-text span {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.speed-ramping-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.speed-ramp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.speed-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.speed-curves-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.speed-curve-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(14, 21, 28, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.speed-curve-card:hover {
+  background: rgba(20, 32, 44, 0.85);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.speed-curve-card.active {
+  background: rgba(16, 36, 56, 0.95);
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+}
+
+.speed-curve-graph {
+  width: 100%;
+  height: 28px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.speed-curve-graph svg {
+  width: 100%;
+  height: 100%;
+}
+
+.speed-curve-info b {
+  font-size: 10.5px;
+  color: #f1f8fc;
+  display: block;
+}
+
+.speed-curve-info small {
+  font-size: 9px;
+  color: #8b98a5;
+  display: block;
+}
+
+/* 2-Tier Advanced Settings Accordion */
+.advanced-pro-settings {
+  background: rgba(12, 18, 25, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.advanced-pro-settings summary {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.advanced-pro-settings summary:hover {
+  color: #38bdf8;
+}
+
+.advanced-pro-content {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.advanced-action-row {
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   Visual Animated Hover Cards in Captions
+   ========================================================================== */
+.anim-preview-box {
+  width: 100%;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+  overflow: hidden;
+}
+
+.anim-preview-box span {
+  font-size: 10px;
+  font-weight: 700;
+  color: #f1f8fc;
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.caption-anim-btn:hover .anim-preview-box.anim-pop span {
+  animation: popWord 0.5s infinite alternate;
+}
+
+.caption-anim-btn:hover .anim-preview-box.anim-bounce span {
+  animation: bounceWord 0.5s infinite alternate;
+}
+
+.caption-anim-btn:hover .anim-preview-box.anim-glow span {
+  color: #38bdf8;
+  text-shadow: 0 0 8px #38bdf8;
+}
+
+@keyframes popWord {
+  from {
+    transform: scale(0.9);
+  }
+  to {
+    transform: scale(1.25);
+  }
+}
+
+@keyframes bounceWord {
+  from {
+    transform: translateY(2px);
+  }
+  to {
+    transform: translateY(-4px);
+  }
+}
+

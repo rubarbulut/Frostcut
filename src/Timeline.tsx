@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import CaptionLane from './CaptionLane';
+import { FloatingActionBar } from './FloatingActionBar';
+import { TimelineMinimap } from './TimelineMinimap';
 import {
   MousePointer2,
   Scissors,
@@ -356,6 +358,7 @@ export default function Timeline() {
           <Plus size={13} />
         </div>
       </div>
+      <TimelineMinimap scrollRef={body} zoom={zoom} />
       <div
         className={`timeline-scroll ${tool === 'hand' ? 'hand-tool' : ''} ${panning ? 'is-panning' : ''}`}
         ref={body}
@@ -583,6 +586,7 @@ export default function Timeline() {
         </span>
         <span>{timecode(total, true)} total</span>
       </div>
+      <FloatingActionBar />
     </section>
   );
 }

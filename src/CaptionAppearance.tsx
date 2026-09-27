@@ -204,8 +204,11 @@ export function CaptionAppearance() {
               type="button"
               className={`caption-anim-btn ${isSelected ? 'active' : ''}`}
               onClick={() => change({ animation: anim.id as CaptionAnimation })}
-              title={anim.desc}
+              title={`Animation: ${anim.label} · ${anim.desc}`}
             >
+              <div className={`anim-preview-box anim-${anim.id}`}>
+                <span>{anim.id === 'none' ? 'Abc' : 'Pop!'}</span>
+              </div>
               <b>{anim.label}</b>
               <small>{anim.desc}</small>
             </button>

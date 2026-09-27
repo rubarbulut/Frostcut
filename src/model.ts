@@ -12,6 +12,8 @@ import { validVisualEffects, type VisualEffects } from './visual-effects';
 import { validChapterSet, type ChapterSet } from './chapter-data';
 import type { CutOptions } from './ai';
 export type Preset = 'YouTube Shorts' | 'TikTok' | 'Instagram Reel' | 'YouTube' | 'Custom';
+export type AspectRatio = '16:9' | '9:16' | '1:1' | '4:5';
+export type AspectFillMode = 'blur-background' | 'fit' | 'crop';
 export type CaptionPreset = 'Clean' | 'Bold' | 'Brainrot';
 export type CaptionAnimation = 'none' | 'pop' | 'bounce' | 'glow' | 'typewriter' | 'karaoke';
 export type CaptionFont = 'sans' | 'impact' | 'serif' | 'mono';
@@ -165,6 +167,8 @@ export type Project = {
     language: string;
     transcriptionQuality?: 'fast' | 'balanced' | 'detailed';
     transcriptionDevice?: 'auto' | 'cpu';
+    aspectRatio?: AspectRatio;
+    fillMode?: AspectFillMode;
   };
   media: MediaAsset[];
   tracks: Track[];
@@ -259,6 +263,8 @@ export function createProject(
       fps: 30,
       language: 'Auto Detect',
       transcriptionQuality: 'balanced',
+      aspectRatio: w === 1920 && h === 1080 ? '16:9' : '9:16',
+      fillMode: 'blur-background',
     },
     media: [],
     clips: [],
@@ -288,6 +294,42 @@ export function createProject(
     suggestions: [],
     exportSettings: { width: w, height: h, fps: 30, quality: 75 },
   };
+}
+export function changeAspectRatio(
+  p: Project,
+  ratio: AspectRatio,
+  fillMode: AspectFillMode = p.settings.fillMode || 'blur-background',
+): Project {
+  let width = 1080,
+    height = 1920,
+    preset: Preset = 'YouTube Shorts';
+  if (ratio === '16:9') {
+    width = 1920;
+    height = 1080;
+    preset = 'YouTube';
+  } else if (ratio === '9:16') {
+    width = 1080;
+    height = 1920;
+    preset = 'YouTube Shorts';
+  } else if (ratio === '1:1') {
+    width = 1080;
+    height = 1080;
+    preset = 'Custom';
+  } else if (ratio === '4:5') {
+    width = 1080;
+    height = 1350;
+    preset = 'Instagram Reel';
+  }
+
+  const next = structuredClone(p);
+  next.settings.width = width;
+  next.settings.height = height;
+  next.settings.preset = preset;
+  next.settings.aspectRatio = ratio;
+  next.settings.fillMode = fillMode;
+  next.exportSettings.width = width;
+  next.exportSettings.height = height;
+  return next;
 }
 export const clipDuration = (c: Clip) => (c.sourceEnd - c.sourceStart) / c.properties.speed;
 export const clipEnd = (c: Clip) => c.start + clipDuration(c);
@@ -595,7 +637,11 @@ export function validateProject(value: unknown): Project {
       !finite(p.settings.width, 16, 7680) ||
       !finite(p.settings.height, 16, 7680) ||
       !finite(p.settings.fps, 1, 60) ||
-      !string(p.settings.language)
+      !string(p.settings.language) ||
+      (p.settings.aspectRatio !== undefined &&
+        !['16:9', '9:16', '1:1', '4:5'].includes(p.settings.aspectRatio)) ||
+      (p.settings.fillMode !== undefined &&
+        !['blur-background', 'fit', 'crop'].includes(p.settings.fillMode))
     )
       fail();
     if (

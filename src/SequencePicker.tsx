@@ -9,12 +9,12 @@ function SequenceName({ id, name }: { id: string; name: string }) {
   const [draft, setDraft] = useState(name);
   const cancelled = useRef(false);
   useEffect(() => setDraft(name), [name]);
-  function save() {
+  function save(override?: string) {
     if (cancelled.current) {
       cancelled.current = false;
       return;
     }
-    const clean = draft.trim();
+    const clean = (override ?? draft).trim();
     if (!clean) {
       setDraft(name);
       return;
@@ -36,8 +36,24 @@ function SequenceName({ id, name }: { id: string; name: string }) {
       value={draft}
       maxLength={80}
       title="Enter saves; Escape cancels this edit."
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={save}
+      onChange={(e) => {
+        const val = e.target.value;
+        setDraft(val);
+        const clean = val.trim();
+        if (clean && clean !== name) {
+          const { project, commit } = useEditor.getState();
+          if (project.sequences?.some((s) => s.id === id)) {
+            commit(
+              {
+                ...project,
+                sequences: project.sequences.map((s) => (s.id === id ? { ...s, name: clean } : s)),
+              },
+              'Rename sequence',
+            );
+          }
+        }
+      }}
+      onBlur={() => save()}
       onKeyDown={(e) => {
         if (e.key === 'Escape') {
           e.preventDefault();
@@ -47,6 +63,7 @@ function SequenceName({ id, name }: { id: string; name: string }) {
           e.currentTarget.blur();
         } else if (e.key === 'Enter') {
           e.preventDefault();
+          save();
           e.currentTarget.blur();
         }
       }}
@@ -88,7 +105,8 @@ export function SequencePicker() {
         aria-label="Current sequence"
         value={p.activeSequenceId}
         onChange={(e) => {
-          commit(switchSequence(p, e.target.value), 'Switch sequence');
+          const cur = useEditor.getState().project;
+          commit(switchSequence(cur, e.target.value), 'Switch sequence');
           reset();
         }}
       >

@@ -9,6 +9,7 @@ import {
   timecode,
   isAudioClip,
   clipAudible,
+  changeAspectRatio,
 } from './model';
 import { captionEmoji, captionLayout } from './caption-layout';
 import { captionAppearance } from './caption-style';
@@ -152,6 +153,7 @@ export default function Preview({
     [],
   );
   const p = useEditor((s) => s.project),
+    commit = useEditor((s) => s.commit),
     time = useEditor((s) => s.playhead),
     playing = useEditor((s) => s.playing),
     seek = useEditor((s) => s.seek),
@@ -207,6 +209,35 @@ export default function Preview({
     <section className="preview-panel">
       <div className="panel-title">
         <span>Preview</span>
+        <div className="aspect-ratio-selector" role="group" aria-label="Aspect ratio">
+          {[
+            { label: '16:9', ratio: '16:9' as const, title: '16:9 Landscape (YouTube)' },
+            { label: '9:16', ratio: '9:16' as const, title: '9:16 Portrait (Shorts/TikTok)' },
+            { label: '1:1', ratio: '1:1' as const, title: '1:1 Square (Instagram)' },
+            { label: '4:5', ratio: '4:5' as const, title: '4:5 Social Portrait' },
+          ].map((item) => {
+            const currentRatio =
+              p.settings.aspectRatio ||
+              (p.settings.width === 1920 && p.settings.height === 1080
+                ? '16:9'
+                : p.settings.width === 1080 && p.settings.height === 1080
+                  ? '1:1'
+                  : p.settings.width === 1080 && p.settings.height === 1350
+                    ? '4:5'
+                    : '9:16');
+            return (
+              <button
+                key={item.ratio}
+                type="button"
+                className={`aspect-btn ${currentRatio === item.ratio ? 'active' : ''}`}
+                title={item.title}
+                onClick={() => commit(changeAspectRatio(p, item.ratio), `Aspect ratio: ${item.label}`)}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
         <span className="subtle">
           {p.settings.width} × {p.settings.height} <span className="separator">/</span>{' '}
           {p.settings.fps} fps
@@ -251,6 +282,36 @@ export default function Preview({
             className="video-canvas"
             style={{ aspectRatio: `${p.settings.width}/${p.settings.height}` }}
           >
+            {/* Blurred background fill when aspect ratio differs from source */}
+            {p.settings.fillMode !== 'fit' &&
+              activeAsset &&
+              !activeAsset.type.startsWith('audio/') &&
+              Math.abs(activeAsset.width / activeAsset.height - p.settings.width / p.settings.height) > 0.05 &&
+              mediaUrls.has(activeAsset.id) && (
+                <div
+                  className="blur-backdrop"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    overflow: 'hidden',
+                    zIndex: 0,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <video
+                    src={mediaUrls.get(activeAsset.id)}
+                    muted
+                    preload="metadata"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      filter: 'blur(36px) brightness(0.55)',
+                      transform: 'scale(1.25)',
+                    }}
+                  />
+                </div>
+              )}
             {[...p.clips]
               .filter((c) => time >= c.start - 1 && time <= clipEnd(c) + 1)
               .sort(

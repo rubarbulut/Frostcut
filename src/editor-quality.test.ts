@@ -6,11 +6,13 @@ import {
   insertMediaClip,
   updateMediaAsset,
   validateProject,
+  changeAspectRatio,
   type MediaAsset,
 } from './model';
 import { captionAppearance } from './caption-style';
 import { CAPTION_PALETTES, CAPTION_ANIMATIONS } from './CaptionAppearance';
 import { viralPhrases, keywordPattern, generateShortTitle, highlightRanges } from './highlights';
+import { SPEED_RAMP_PRESETS } from './SpeedRampingControls';
 
 describe('Video Editor Quality & Feature Control', () => {
   const sampleVideo: MediaAsset = {
@@ -277,5 +279,58 @@ describe('Video Editor Quality & Feature Control', () => {
     // Outro should not end on "çünkü"
     expect(bestClip.text).not.toContain('çünkü');
   });
+
+  it('switches aspect ratio dynamically with proper dimensions and validation', () => {
+    let p = createProject('Aspect Ratio Test');
+
+    // 16:9 Landscape
+    p = changeAspectRatio(p, '16:9');
+    expect(p.settings.width).toBe(1920);
+    expect(p.settings.height).toBe(1080);
+    expect(p.settings.aspectRatio).toBe('16:9');
+    expect(p.settings.preset).toBe('YouTube');
+    expect(p.exportSettings.width).toBe(1920);
+    expect(p.exportSettings.height).toBe(1080);
+    expect(() => validateProject(p)).not.toThrow();
+
+    // 9:16 Portrait
+    p = changeAspectRatio(p, '9:16');
+    expect(p.settings.width).toBe(1080);
+    expect(p.settings.height).toBe(1920);
+    expect(p.settings.aspectRatio).toBe('9:16');
+    expect(p.settings.preset).toBe('YouTube Shorts');
+    expect(() => validateProject(p)).not.toThrow();
+
+    // 1:1 Square
+    p = changeAspectRatio(p, '1:1');
+    expect(p.settings.width).toBe(1080);
+    expect(p.settings.height).toBe(1080);
+    expect(p.settings.aspectRatio).toBe('1:1');
+    expect(() => validateProject(p)).not.toThrow();
+
+    // 4:5 Social Portrait
+    p = changeAspectRatio(p, '4:5');
+    expect(p.settings.width).toBe(1080);
+    expect(p.settings.height).toBe(1350);
+    expect(p.settings.aspectRatio).toBe('4:5');
+    expect(() => validateProject(p)).not.toThrow();
+  });
+
+  it('defines speed ramping presets with dynamic velocity curves', () => {
+    expect(SPEED_RAMP_PRESETS.length).toBeGreaterThanOrEqual(4);
+
+    const ids = SPEED_RAMP_PRESETS.map((p: any) => p.id);
+    expect(ids).toContain('steady');
+    expect(ids).toContain('hero');
+    expect(ids).toContain('bullet');
+    expect(ids).toContain('flash');
+
+    for (const preset of SPEED_RAMP_PRESETS) {
+      expect(preset.name).toBeDefined();
+      expect(preset.svgPath).toContain('M');
+      expect(preset.speed).toBeGreaterThan(0);
+    }
+  });
 });
+
 

@@ -18,7 +18,9 @@ import {
   FolderPlus,
   X,
   AlertTriangle,
+  Settings2,
 } from 'lucide-react';
+import { SpeedRampingControls } from './SpeedRampingControls';
 import { useEditor, mediaUrls, unregisterMedia } from './store';
 import {
   type Project,
@@ -41,6 +43,65 @@ import { VisualEffectsControls } from './VisualEffectsControls';
 import { AudioTools } from './AudioTools';
 import { CaptionLanguage } from './SubtitleTools';
 import { useShallow } from 'zustand/react/shallow';
+
+function MediaHoverThumbnail({
+  asset,
+  url,
+}: {
+  asset: MediaAsset;
+  url?: string;
+}) {
+  const [hoverTime, setHoverTime] = useState<number | null>(null);
+  const [scrubPct, setScrubPct] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!asset.duration || !url || asset.type.startsWith('audio/')) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const target = ratio * asset.duration;
+    setScrubPct(ratio * 100);
+    setHoverTime(target);
+    if (videoRef.current) {
+      videoRef.current.currentTime = target;
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHoverTime(null);
+    setScrubPct(0);
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+    }
+  };
+
+  return (
+    <div
+      className="asset-thumbnail"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      {asset.type.startsWith('audio/') ? (
+        <Volume2 size={28} />
+      ) : url ? (
+        <video ref={videoRef} src={url} preload="metadata" muted playsInline />
+      ) : (
+        <FileVideo size={28} />
+      )}
+      <span className={hoverTime !== null ? 'hovering' : ''}>
+        {hoverTime !== null ? timecode(hoverTime) : timecode(asset.duration)}
+      </span>
+      {hoverTime !== null && (
+        <div className="hover-scrub-indicator" style={{ width: `${scrubPct}%` }} />
+      )}
+      {asset.folder && (
+        <span className="asset-folder-tag" title={`Folder: ${asset.folder}`}>
+          📁 {asset.folder}
+        </span>
+      )}
+    </div>
+  );
+}
 
 export function MediaPanel({
   onImport,
@@ -253,21 +314,7 @@ export function MediaPanel({
               onDoubleClick={() => handleAddToTimeline(m.id)}
               title={`${m.name} · Double-click to insert at playhead`}
             >
-              <div className="asset-thumbnail">
-                {m.type.startsWith('audio/') ? (
-                  <Volume2 size={28} />
-                ) : mediaUrls.has(m.id) ? (
-                  <video src={mediaUrls.get(m.id)} preload="metadata" muted />
-                ) : (
-                  <FileVideo size={28} />
-                )}
-                <span>{timecode(m.duration)}</span>
-                {m.folder && (
-                  <span className="asset-folder-tag" title={`Folder: ${m.folder}`}>
-                    📁 {m.folder}
-                  </span>
-                )}
-              </div>
+              <MediaHoverThumbnail asset={m} url={mediaUrls.get(m.id)} />
 
               <div className="asset-card-header">
                 <b title={m.name}>{m.name}</b>
@@ -458,12 +505,16 @@ export function PropertiesPanel() {
     clip = p.clips.find((c) => selected.includes(c.id)),
     locked = clip ? isLocked(p, clip) : false;
   function captions(patch: Partial<Project['captions']>) {
-    commit({ ...p, captions: { ...p.captions, ...patch } }, 'Caption style');
+    const cur = useEditor.getState().project;
+    commit({ ...cur, captions: { ...cur.captions, ...patch } }, 'Caption style');
   }
   function props(patch: Partial<ClipProps>) {
     if (!clip || locked) return;
-    const next = structuredClone(p);
-    Object.assign(next.clips.find((c) => c.id === clip.id)!.properties, patch);
+    const cur = useEditor.getState().project;
+    const next = structuredClone(cur);
+    const targetClip = next.clips.find((c) => c.id === clip.id);
+    if (!targetClip) return;
+    Object.assign(targetClip.properties, patch);
     commit(next, 'Clip properties');
   }
   return (
@@ -648,18 +699,20 @@ export function PropertiesPanel() {
                 )}
                 <AudioTools key={clip.id} clip={clip} />
                 <div className="property-divider" />
+
                 <div className="section-heading">
                   <Volume2 size={16} />
-                  <b>Audio</b>
+                  <b>Audio & Volume</b>
                 </div>
                 {!isAudioClip(p, clip) && (
                   <button
+                    type="button"
                     className="text-button"
                     disabled={clip.audioDetached}
-                    onClick={() => commit(detachAudio(p, clip.id), 'Detach source audio')}
+                    onClick={() => commit(detachAudio(useEditor.getState().project, clip.id), 'Detach source audio')}
                   >
                     {clip.audioDetached
-                      ? 'Audio detached · edit it on the audio track'
+                      ? '✓ Audio detached · editing on A1'
                       : 'Detach audio for independent editing'}
                   </button>
                 )}
@@ -687,7 +740,7 @@ export function PropertiesPanel() {
                 <div className="property-divider" />
 
                 <div className="section-heading">
-                  <b>Trim</b>
+                  <b>Trim & Timing</b>
                 </div>
                 <div className="number-grid">
                   {(['sourceStart', 'sourceEnd', 'start'] as const).map((key) => (
@@ -708,7 +761,8 @@ export function PropertiesPanel() {
                         value={Number(clip[key].toFixed(2))}
                         onChange={(e) => {
                           const n = +e.target.value,
-                            m = p.media.find((m) => m.id === clip.mediaId)!;
+                            cur = useEditor.getState().project,
+                            m = cur.media.find((m) => m.id === clip.mediaId)!;
                           if (
                             !Number.isFinite(n) ||
                             n < 0 ||
@@ -716,7 +770,7 @@ export function PropertiesPanel() {
                             (key === 'sourceEnd' && (n <= clip.sourceStart || n > m.duration))
                           )
                             return;
-                          const next = structuredClone(p);
+                          const next = structuredClone(cur);
                           next.clips.find((c) => c.id === clip.id)![key] = n;
                           commit(next, 'Trim or move clip');
                         }}
@@ -724,6 +778,19 @@ export function PropertiesPanel() {
                     </Field>
                   ))}
                 </div>
+                <div className="property-divider" />
+
+                {/* 2-Tier Architecture: Advanced Pro Settings Accordion */}
+                <details className="advanced-pro-settings" open>
+                  <summary>
+                    <Settings2 size={14} />
+                    <span>Advanced Pro Settings</span>
+                  </summary>
+
+                  <div className="advanced-pro-content">
+                    <SpeedRampingControls clip={clip} onChange={props} />
+                  </div>
+                </details>
               </fieldset>
             </>
           ) : (

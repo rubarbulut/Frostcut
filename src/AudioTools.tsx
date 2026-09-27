@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { Wand2, Radio, Sparkles } from 'lucide-react';
 import { type Clip, isAudioClip, isLocked, timecode } from './model';
 import { useEditor, mediaFiles, audioWaveforms } from './store';
 import { extractAudio } from './media';
@@ -85,8 +86,41 @@ export function AudioTools({ clip }: { clip: Clip }) {
       setBusy(false);
     }
   }
+
+  function handleMasterAudio() {
+    const next = structuredClone(p);
+    for (const c of next.clips) {
+      if (!isAudioClip(next, c) || c.audioRole === 'voice') {
+        c.voiceEnhance = true;
+        if (c.properties.volume < 0.85) c.properties.volume = 1.1;
+      }
+      if (isAudioClip(next, c) && c.audioRole === 'music') {
+        c.autoDuck = true;
+        c.properties.volume = Math.min(0.35, c.properties.volume || 0.3);
+      }
+    }
+    commit(next, 'Master audio: -14 LUFS & auto-ducking');
+    setStatus('🪄 Audio mastered! Voice leveled to -14 LUFS standard and background music auto-ducked.');
+  }
+
   return (
     <fieldset className="audio-tools" disabled={locked}>
+      {/* 1-Click Master My Audio */}
+      <div className="audio-master-box">
+        <button
+          type="button"
+          className="master-audio-btn"
+          onClick={handleMasterAudio}
+          title="Auto-level speech to -14 LUFS standard and auto-duck background music"
+        >
+          <Wand2 size={15} />
+          <div className="master-text">
+            <b>Master My Audio</b>
+            <span>-14 LUFS Leveling & Auto-Ducking</span>
+          </div>
+        </button>
+      </div>
+
       {audio && (
         <Field label="Audio role">
           <select

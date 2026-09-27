@@ -26,6 +26,7 @@ import {
   Plus,
   Home,
   Keyboard,
+  Flame,
 } from 'lucide-react';
 import { Modal, Field, Range } from './components';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
@@ -87,6 +88,7 @@ import { speechSafeSilences } from './highlights';
 import { estimatedMegabytes, videoBitrate } from './export-settings';
 import { EditPreview, OperationsPreview } from './EditPreview';
 import CreatorTools from './CreatorTools';
+import { LongToShortsModal } from './LongToShortsModal';
 type Job = {
   kind: 'transcribe' | 'analysis' | 'export';
   step: number;
@@ -133,7 +135,9 @@ export default function App() {
     })),
   );
   const [screen, setScreen] = useState<'landing' | 'editor'>('landing'),
-    [modal, setModal] = useState<'project' | 'auto' | 'export' | 'transcribe' | 'shortcuts' | null>(null),
+    [modal, setModal] = useState<
+      'project' | 'auto' | 'export' | 'transcribe' | 'shortcuts' | 'magic-shorts' | null
+    >(null),
     [panel, setPanel] = useState('media'),
     [importerOpen, setImporterOpen] = useState(false),
     [creatorOpen, setCreatorOpen] = useState(false),
@@ -630,12 +634,25 @@ export default function App() {
         onChange={async (e) => {
           const f = e.target.files?.[0];
           e.target.value = '';
-          if (!f || !p.media.length) return;
+          if (!f) return;
+          let cur = useEditor.getState().project;
+          if (!cur.media.length) {
+            for (let i = 0; i < 50; i++) {
+              await new Promise((r) => setTimeout(r, 100));
+              cur = useEditor.getState().project;
+              if (cur.media.length) break;
+            }
+          }
+          if (!cur.media.length) return;
           try {
-            const mediaId = selectedClip?.mediaId ?? p.media[0].id,
-              t = parseSrt(await f.text(), mediaId);
+            const selId = useEditor.getState().selected[0];
+            const mediaId = selId
+              ? cur.clips.find((c) => c.id === selId)?.mediaId ?? cur.media[0].id
+              : cur.media[0].id;
+            const t = parseSrt(await f.text(), mediaId);
+            const fresh = useEditor.getState().project;
             commit(
-              { ...p, transcripts: [...p.transcripts.filter((x) => x.mediaId !== mediaId), t] },
+              { ...fresh, transcripts: [...fresh.transcripts.filter((x) => x.mediaId !== mediaId), t] },
               'Import transcript',
             );
             setPanel('transcript');
@@ -831,6 +848,15 @@ export default function App() {
                   >
                     <Sparkles size={16} />
                     Auto Cut
+                  </button>
+                  <button
+                    className="magic-shorts-button"
+                    disabled={!p.clips.length || !!job}
+                    onClick={() => setModal('magic-shorts')}
+                    title="1-Click Long-Form to Shorts Studio"
+                  >
+                    <Flame size={15} />
+                    Long to Shorts
                   </button>
                 </div>
               </div>
@@ -1461,6 +1487,9 @@ export default function App() {
       )}
       {modal === 'shortcuts' && (
         <KeyboardShortcutsModal onClose={() => setModal(null)} />
+      )}
+      {modal === 'magic-shorts' && (
+        <LongToShortsModal onClose={() => setModal(null)} onNotify={setToast} />
       )}
       {modal === 'export' && (
         <Modal title="Ready for the world." onClose={() => setModal(null)}>
