@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import CaptionLane from './CaptionLane';
 import { AdjustmentLabels, AdjustmentLanes } from './AdjustmentLane';
@@ -22,6 +22,7 @@ import {
   Minus,
   Plus,
   Hand,
+  Maximize2,
 } from 'lucide-react';
 import { useTimelineNavigation } from './timeline-navigation';
 import { timelineBeats } from './audio-tools';
@@ -113,6 +114,33 @@ export default function Timeline() {
     width = Math.max(900, (Math.max(total, ...p.adjustments?.map((a) => a.end) ?? []) + 8) * zoom),
     step = zoom < 15 ? 10 : zoom < 35 ? 5 : 2;
   const beats = timelineBeats(p);
+
+  const fitTimeline = useCallback(() => {
+    if (!body.current) return;
+    const containerWidth = body.current.clientWidth - 80;
+    const dur = Math.max(1, total, ...(p.adjustments?.map((a) => a.end) ?? []));
+    const targetZoom = Math.max(8, Math.min(240, containerWidth / dur));
+    setZoom(Number(targetZoom.toFixed(1)));
+    body.current.scrollTo({ left: 0, behavior: 'smooth' });
+  }, [total, p.adjustments]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'z' && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const target = e.target as HTMLElement | null;
+        if (
+          target &&
+          (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+        ) {
+          return;
+        }
+        e.preventDefault();
+        fitTimeline();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [fitTimeline]);
   function startDrag(e: React.PointerEvent, c: Clip, kind: 'move' | 'in' | 'out') {
     const playhead = useEditor.getState().playhead;
     if (e.button !== 0) return;
@@ -355,6 +383,15 @@ export default function Timeline() {
           TIMELINE <span>{p.clips.length} clips</span>
         </span>
         <div className="zoom-control">
+          <button
+            type="button"
+            className="icon-mini-btn"
+            title="Fit to window (Shift+Z)"
+            aria-label="Fit to window"
+            onClick={fitTimeline}
+          >
+            <Maximize2 size={13} />
+          </button>
           <Minus size={13} />
           <input
             aria-label="Timeline zoom"

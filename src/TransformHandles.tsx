@@ -2,6 +2,7 @@ import { useEditor } from './store';
 import { clipEnd, isLocked, isAudioClip } from './model';
 import { setAnimatedValue, transformAt } from './motion';
 import { dragClipProperties } from './clip-drag';
+import { visualBounds } from './aspect-fill';
 export function TransformHandles() {
   const { project: p, selected, playhead, previewClip } = useEditor();
   const original = p.clips.find(
@@ -13,7 +14,7 @@ export function TransformHandles() {
   const clip = previewClip?.id === original.id ? previewClip : original,
     props = transformAt(clip, playhead, p.settings.width, p.settings.height);
   const asset = p.media.find((m) => m.id === clip.mediaId)!,
-    fit = Math.min(p.settings.width / asset.width, p.settings.height / asset.height);
+    bounds = visualBounds(asset, p.settings, p.settings.fillMode);
   return (
     <div
       className="transform-box"
@@ -21,8 +22,8 @@ export function TransformHandles() {
       style={{
         left: `${50 + (props.x / p.settings.width) * 100}%`,
         top: `${50 + (props.y / p.settings.height) * 100}%`,
-        width: `${((asset.width * fit) / p.settings.width) * 100}%`,
-        height: `${((asset.height * fit) / p.settings.height) * 100}%`,
+        width: `${(bounds.width / p.settings.width) * 100}%`,
+        height: `${(bounds.height / p.settings.height) * 100}%`,
         transform: `translate(-50%, -50%) rotate(${props.rotation}deg) scale(${props.scale})`,
       }}
       onPointerDown={(e) => {

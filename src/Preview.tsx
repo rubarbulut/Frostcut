@@ -22,6 +22,8 @@ import { PlaybackSpeed } from './PlaybackSpeed';
 import { hasVisualEffects } from './visual-effects';
 import { EffectPreview } from './EffectPreview';
 import { AdjustmentComposite } from './AdjustmentComposite';
+import { frameFillMode, frameObjectFit, needsBlurFill } from './aspect-fill';
+import { AudioPeakMeter } from './AudioPeakMeter';
 import { ensureProxy, previewSource, proxyStatus, type PreviewQuality } from './proxies';
 function VideoLayer({
   clip,
@@ -54,7 +56,9 @@ function VideoLayer({
     audioActive = time >= window.timelineStart && time < window.timelineStart + window.duration;
   const props = transformAt(clip, time, p.settings.width, p.settings.height);
   const withEffects = !isAudioClip(p, clip) && hasVisualEffects(clip.effects);
+  const withBlur = !isAudioClip(p, clip) && needsBlurFill(asset, p.settings, p.settings.fillMode);
   const effectStyle = {
+    objectFit: frameObjectFit(p.settings.fillMode),
     opacity: props.opacity,
     transform: `translate(${(props.x / p.settings.width) * 100}%,${(props.y / p.settings.height) * 100}%) rotate(${props.rotation}deg) scale(${props.scale})`,
     clipPath: `inset(${props.crop}%)`,
@@ -124,13 +128,14 @@ function VideoLayer({
         style={{
           ...effectStyle,
           visibility:
-            active && !track.hidden && !isAudioClip(p, clip) && !withEffects ? 'visible' : 'hidden',
+            active && !track.hidden && !isAudioClip(p, clip) && !withEffects && !withBlur ? 'visible' : 'hidden',
         }}
       />
-      {withEffects && (
+      {(withEffects || withBlur) && (
         <EffectPreview
           videoRef={ref}
-          effects={clip.effects!}
+          effects={clip.effects}
+          frame={withBlur ? p.settings : undefined}
           active={active && !track.hidden}
           playing={playing}
           source={url}
@@ -246,6 +251,11 @@ export default function Preview({
         </span>
       </div>
       <div className="preview-quality">
+        <select aria-label="Frame fill" value={frameFillMode(p.settings.fillMode)} disabled={processing} onChange={(e) => commit({ ...p, settings: { ...p.settings, fillMode: e.target.value as NonNullable<typeof p.settings.fillMode> } }, 'Frame fill')}>
+          <option value="fit">Fit · keep whole image</option>
+          <option value="crop">Crop · fill frame</option>
+          <option value="blur-background">Blur background</option>
+        </select>
         <select
           aria-label="Preview quality"
           value={quality}
@@ -285,36 +295,6 @@ export default function Preview({
             style={{ aspectRatio: `${p.settings.width}/${p.settings.height}` }}
           >
             <AdjustmentComposite layers={p.adjustments} time={time} draft={previewAdjustment}>
-            {/* Blurred background fill when aspect ratio differs from source */}
-            {p.settings.fillMode !== 'fit' &&
-              activeAsset &&
-              !activeAsset.type.startsWith('audio/') &&
-              Math.abs(activeAsset.width / activeAsset.height - p.settings.width / p.settings.height) > 0.05 &&
-              mediaUrls.has(activeAsset.id) && (
-                <div
-                  className="blur-backdrop"
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    overflow: 'hidden',
-                    zIndex: 0,
-                    pointerEvents: 'none',
-                  }}
-                >
-                  <video
-                    src={mediaUrls.get(activeAsset.id)}
-                    muted
-                    preload="metadata"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      filter: 'blur(36px) brightness(0.55)',
-                      transform: 'scale(1.25)',
-                    }}
-                  />
-                </div>
-              )}
             {[...p.clips]
               .filter((c) => time >= c.start - 1 && time <= clipEnd(c) + 1)
               .sort(
@@ -452,6 +432,7 @@ export default function Preview({
             <SkipForward size={16} />
           </button>
         </div>
+        <AudioPeakMeter />
         <button
           className="icon"
           aria-label="Fullscreen preview"

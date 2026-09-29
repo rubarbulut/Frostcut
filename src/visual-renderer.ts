@@ -9,6 +9,7 @@ import { videoBitrate } from './export-settings';
 import { hasVisualEffects } from './visual-effects';
 import { EffectsRenderer } from './effects-renderer';
 import { drawCanvasAdjustments } from './adjustment-renderer';
+import { AspectFrameRenderer, imagePlacement, needsBlurFill } from './aspect-fill';
 
 function aborted(signal: AbortSignal) {
   if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
@@ -213,6 +214,7 @@ export async function renderCanvasVideo(
     pendingImages: string[] = [];
   let encoder: VideoEncoder | undefined, encoderError: Error | undefined;
   let effectRenderer: EffectsRenderer | undefined;
+  let aspectRenderer: AspectFrameRenderer | undefined;
   const config: VideoEncoderConfig = {
     codec: 'avc1.640034',
     width,
@@ -248,6 +250,8 @@ export async function renderCanvasVideo(
   const releaseRenderer = () => {
     effectRenderer?.dispose();
     effectRenderer = undefined;
+    aspectRenderer?.dispose();
+    aspectRenderer = undefined;
     if (encoder && encoder.state !== 'closed') encoder.close();
     for (const video of videos.values()) {
       video.removeAttribute('src');
@@ -328,7 +332,8 @@ export async function renderCanvasVideo(
             video!.currentTime = source;
           });
         const props = transformAt(clip as MotionClip, time, p.settings.width, p.settings.height);
-        const fit = Math.min(width / video.videoWidth, height / video.videoHeight);
+        const sourceSize = { width: video.videoWidth, height: video.videoHeight };
+        const frameSize = { width, height };
         ctx.save();
         ctx.translate(
           width / 2 + (props.x * width) / p.settings.width,
@@ -346,15 +351,20 @@ export async function renderCanvasVideo(
           height * (1 - crop * 2),
         );
         ctx.clip();
-        const image = hasVisualEffects(clip.effects)
+        let image: CanvasImageSource = hasVisualEffects(clip.effects)
           ? (effectRenderer ??= new EffectsRenderer()).draw(video, video.videoWidth, video.videoHeight, clip.effects!)
           : video;
+        let placement = imagePlacement(sourceSize, frameSize, p.settings.fillMode);
+        if (needsBlurFill(sourceSize, frameSize, p.settings.fillMode)) {
+          image = (aspectRenderer ??= new AspectFrameRenderer()).draw(image, sourceSize, frameSize, p.settings.fillMode);
+          placement = { x: 0, y: 0, width, height };
+        }
         ctx.drawImage(
           image,
-          (-video.videoWidth * fit) / 2,
-          (-video.videoHeight * fit) / 2,
-          video.videoWidth * fit,
-          video.videoHeight * fit,
+          placement.x - width / 2,
+          placement.y - height / 2,
+          placement.width,
+          placement.height,
         );
         ctx.restore();
       }

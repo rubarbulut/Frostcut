@@ -5,6 +5,7 @@ import { PlaybackSpeed } from './PlaybackSpeed';
 import { hasVisualEffects } from './visual-effects';
 import { EffectPreview } from './EffectPreview';
 import { AdjustmentComposite } from './AdjustmentComposite';
+import { frameObjectFit, needsBlurFill } from './aspect-fill';
 import {
   applyOperations,
   captionAt,
@@ -54,8 +55,11 @@ function ProposedLayer({
   const audible = time >= window.timelineStart && time < window.timelineStart + window.duration;
   const previewRate = useEditor((s) => s.previewRate);
   const withEffects = !isAudioClip(p, clip) && hasVisualEffects(clip.effects);
+  const asset = p.media.find((m) => m.id === clip.mediaId)!;
+  const withBlur = !isAudioClip(p, clip) && needsBlurFill(asset, p.settings, p.settings.fillMode);
   const active = time >= clip.start && time < clipEnd(clip) && !track.hidden && !isAudioClip(p, clip);
   const effectStyle = {
+    objectFit: frameObjectFit(p.settings.fillMode),
     opacity: props.opacity,
     transform: `translate(${(props.x / p.settings.width) * 100}%, ${(props.y / p.settings.height) * 100}%) rotate(${props.rotation}deg) scale(${props.scale})`,
     clipPath: `inset(${props.crop}%)`,
@@ -81,13 +85,14 @@ function ProposedLayer({
         muted={!audible || !clipAudible(p, clip)}
         style={{
           ...effectStyle,
-          visibility: active && !withEffects ? 'visible' : 'hidden',
+          visibility: active && !withEffects && !withBlur ? 'visible' : 'hidden',
         }}
       />
-      {withEffects && (
+      {(withEffects || withBlur) && (
         <EffectPreview
           videoRef={ref}
-          effects={clip.effects!}
+          effects={clip.effects}
+          frame={withBlur ? p.settings : undefined}
           active={active}
           playing={playing}
           source={mediaUrls.get(clip.mediaId)}

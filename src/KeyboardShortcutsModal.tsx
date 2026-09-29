@@ -21,6 +21,7 @@ export function KeyboardShortcutsModal({ onClose }: { onClose: () => void }) {
         { keys: ['Alt', 'Drag'], desc: 'Duplicate clip instance' },
         { keys: ['Shift', 'Click'], desc: 'Multi-select clips' },
         { keys: ['Ctrl', 'Wheel'], desc: 'Zoom in / out on timeline' },
+        { keys: ['Shift', 'Z'], desc: 'Fit timeline to window' },
       ],
     },
     {
