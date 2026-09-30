@@ -1,5 +1,5 @@
 import type { FFmpeg } from '@ffmpeg/ffmpeg';
-import { captionGroups, clipEnd, duration, isAudioClip, type Project } from './model';
+import { captionGroups, duration, type Project } from './model';
 import { transformAt, type MotionClip } from './motion';
 import { captionAppearance } from './caption-style';
 import { captionFontFamily } from './caption-typography';
@@ -10,6 +10,7 @@ import { hasVisualEffects } from './visual-effects';
 import { EffectsRenderer } from './effects-renderer';
 import { drawCanvasAdjustments } from './adjustment-renderer';
 import { AspectFrameRenderer, imagePlacement, needsBlurFill } from './aspect-fill';
+import { captionTimelineIndex, clipTimelineIndex } from './timeline-index';
 
 function aborted(signal: AbortSignal) {
   if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
@@ -203,7 +204,7 @@ export async function renderCanvasVideo(
   canvas.height = height;
   const ctx = canvas.getContext('2d', { alpha: false })!;
   const videos = new Map<string, HTMLVideoElement>();
-  const groups = p.captions.enabled ? captionGroups(p) : [];
+  const clips = clipTimelineIndex(p), captions = captionTimelineIndex(p);
   await document.fonts.load(`700 ${width * 0.1}px Noto`);
   aborted(signal);
   await document.fonts.load(`400 ${width * 0.1}px Noto`);
@@ -295,19 +296,7 @@ export async function renderCanvasVideo(
       const time = frame / fps;
       ctx.fillStyle = '#090d10';
       ctx.fillRect(0, 0, width, height);
-      const active = p.clips
-        .filter(
-          (c) =>
-            !isAudioClip(p, c) &&
-            time >= c.start &&
-            time < clipEnd(c) &&
-            !p.tracks.find((t) => t.id === c.trackId)?.hidden,
-        )
-        .sort(
-          (a, b) =>
-            p.tracks.findIndex((t) => t.id === b.trackId) -
-            p.tracks.findIndex((t) => t.id === a.trackId),
-        );
+      const active = clips.at(time);
       for (const clip of active) {
         let video = videos.get(clip.mediaId);
         if (!video) {
@@ -369,9 +358,7 @@ export async function renderCanvasVideo(
         ctx.restore();
       }
       drawCanvasAdjustments(ctx, p.adjustments, time);
-      const caption = groups.find(
-        (g) => time >= g[0].timelineStart && time < g.at(-1)!.timelineEnd,
-      );
+      const caption = captions.first(time);
       if (caption) drawCanvasCaption(ctx, p, caption, time, width, height);
       if (encoder) {
         const videoFrame = new VideoFrame(canvas, {

@@ -3,7 +3,6 @@ import { Play, Pause, SkipBack, SkipForward, Maximize, Film, Cat } from 'lucide-
 import { useEditor, mediaUrls } from './store';
 import {
   type Clip,
-  captionGroups,
   duration,
   clipEnd,
   timecode,
@@ -24,6 +23,7 @@ import { EffectPreview } from './EffectPreview';
 import { AdjustmentComposite } from './AdjustmentComposite';
 import { frameAspectRatio, frameFillMode, frameObjectFit, needsBlurFill } from './aspect-fill';
 import { AudioPeakMeter } from './AudioPeakMeter';
+import { captionTimelineIndex, clipTimelineIndex } from './timeline-index';
 import { ensureProxy, previewSource, proxyStatus, type PreviewQuality } from './proxies';
 function VideoLayer({
   clip,
@@ -167,8 +167,9 @@ export default function Preview({
     setPlaying = useEditor((s) => s.setPlaying),
     frame = useRef<HTMLDivElement>(null),
     total = duration(p),
-    groups = useMemo(() => p.captions.enabled ? captionGroups(p) : [], [p]),
-    caption = groups.find((g) => time >= g[0].timelineStart && time < g.at(-1)!.timelineEnd),
+    clips = useMemo(() => clipTimelineIndex(p, true), [p.clips, p.tracks]),
+    captions = useMemo(() => captionTimelineIndex(p), [p]),
+    caption = captions.first(time),
     appearance = captionAppearance(p.captions);
   const layout = captionLayout(p);
   const mediaRevision = useEditor((s) => s.mediaRevision);
@@ -295,13 +296,7 @@ export default function Preview({
             style={{ aspectRatio: `${p.settings.width}/${p.settings.height}` }}
           >
             <AdjustmentComposite layers={p.adjustments} time={time} draft={previewAdjustment}>
-            {[...p.clips]
-              .filter((c) => time >= c.start - 1 && time <= clipEnd(c) + 1)
-              .sort(
-                (a, b) =>
-                  p.tracks.findIndex((t) => t.id === b.trackId) -
-                  p.tracks.findIndex((t) => t.id === a.trackId),
-              )
+            {clips.at(time)
               .map((c) => (
                 <VideoLayer
                   key={c.id}

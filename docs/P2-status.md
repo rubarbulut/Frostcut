@@ -141,6 +141,17 @@ rendering must be updated together for visual features.
   Real browser/export fidelity and interaction checks remain pending;
   see [aspect-fill.md](aspect-fill.md).
 
+## Timeline lookup performance
+
+- Main/proposed preview and canvas export build clip/caption interval indexes
+  once per edit/export. Stable track/clip order, overlapping-caption first match,
+  half-open export times and inclusive preview mounting edges are preserved.
+- Proposed preview also stops regrouping the complete transcript on each frame.
+  No timing, frame-rate or encoding-quality setting is reduced.
+- Five scan-equivalence tests passed in 346 ms with one worker; type-check passed.
+  Actual speed measurements and browser/export checks are pending.
+  See [timeline-index.md](timeline-index.md).
+
 ## Transcript chapter delivery
 
 - Creator tools → Chapters offers manual editing, a non-model transcript structure

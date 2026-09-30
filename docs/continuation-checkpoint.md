@@ -30,15 +30,21 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
   indicators and explicit effect-disable recovery in the retained blur compositor.
   Eight tests passed in 766 ms, one worker; source type-check passed.
   Actual browser/render QA is pending. See docs/aspect-fill.md.
+- c27e7d9 saved and pushed that aspect-fill follow-up.
+- Current timeline-index delivery is implemented in main/proposed previews and
+  canvas export. Five scan-equivalence tests passed in 346 ms with one worker;
+  type-check passed. See docs/timeline-index.md. No real benchmark or media render.
 
 ## Next lightweight step
 
-Reduce per-frame timeline lookup work in canvas export: build a reusable index
-once, preserve stable track/clip ordering and first-match caption semantics,
-and test boundaries/overlaps against the existing scan. This addresses inspected
-repeated full clip/track scans and caption search, without dropping frames or
-changing encoding quality. Do not claim a measured render-speed improvement
-until a real benchmark is permitted.
+Fix the source-inspected master audio meter: its current movement is simulated
+from clip volume plus sine/cosine jitter, and its Mute button only changes meter
+state. Replace this with actual shared-preview audio sample peaks and a real
+master preview gain. Avoid per-playhead effect restarts and stop polling when
+paused. Keep fallback playback functional if Web Audio is unavailable, show that
+metering is unavailable, and verify signal math/routing with short checks. Actual
+browser audio verification remains deferred. Do not rename simulated values as
+real measurements or change export audio because preview is muted.
 
 ## Remaining scope and review
 

@@ -8,7 +8,6 @@ import { AdjustmentComposite } from './AdjustmentComposite';
 import { frameObjectFit, needsBlurFill } from './aspect-fill';
 import {
   applyOperations,
-  captionAt,
   clipEnd,
   duration,
   timecode,
@@ -24,6 +23,7 @@ import { usePreviewAudio } from './preview-audio';
 import { captionAppearance } from './caption-style';
 import { captionTypography, captionBoxStyle, captionDecoration } from './caption-typography';
 import { captionEmoji, captionLayout } from './caption-layout';
+import { captionTimelineIndex, clipTimelineIndex } from './timeline-index';
 export function OperationsPreview({
   project,
   operations,
@@ -132,7 +132,9 @@ export function EditPreview({
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [playing, total]);
-  const caption = captionAt(p, time),
+  const clips = useMemo(() => clipTimelineIndex(p, true), [p.clips, p.tracks]),
+    captions = useMemo(() => captionTimelineIndex(p), [p]),
+    caption = captions.first(time),
     appearance = captionAppearance(p.captions),
     layout = captionLayout(p);
   const position = p.captions.position;
@@ -145,13 +147,7 @@ export function EditPreview({
           style={{ aspectRatio: `${p.settings.width}/${p.settings.height}` }}
         >
           <AdjustmentComposite layers={p.adjustments} time={time}>
-          {[...p.clips]
-            .filter((c) => time >= c.start - 1 && time <= clipEnd(c) + 1)
-            .sort(
-              (a, b) =>
-                p.tracks.findIndex((t) => t.id === b.trackId) -
-                p.tracks.findIndex((t) => t.id === a.trackId),
-            )
+          {clips.at(time)
             .map((c) => (
               <ProposedLayer key={c.id} p={p} clip={c} time={time} playing={playing} />
             ))}
