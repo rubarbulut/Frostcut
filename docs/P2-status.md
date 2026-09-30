@@ -252,6 +252,18 @@ rendering must be updated together for visual features.
   text rollup, insertion UI and real decoded parts/batch output acceptance remain
   pending on codex/nested-sequences. Main editor code is unchanged; P2 stays open.
 
+- da6a77d adds the actual live visual source/publication driver on the development
+  branch: independent full-path original/proxy clocks/rates, one edit-time plan,
+  atomic frames and one newest queued request. Seek/source changes cancel old
+  waits; continuous ticks avoid repeated pause/play. Inactive/gap sources, pending
+  play/load/seek cancellation, disposal, unsupported rates and failures are handled.
+  27 driver/compositor/nested-parts tests passed in 851 ms, one active worker;
+  source type-check passed. Twelve new tests use real plans and fake source/drawing
+  interfaces, not real footage/GPU. No decode/playback/audio/media/FFmpeg/AI/build
+  job ran. The driver is not mounted: main/proposed UI still requires real audio
+  windows/availability/buses and controller ownership. Source frame/pixel/memory/
+  audio/output acceptance remains pending; main editor code is unchanged.
+
 ## Transcript chapter delivery
 
 - Creator tools → Chapters offers manual editing, a non-model transcript structure

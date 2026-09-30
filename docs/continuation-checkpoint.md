@@ -17,8 +17,8 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
 Nested sequence source-model work is saved/pushed as ae6997d on
 `codex/nested-sequences`, in the attached managed worktree:
 `C:/Users/Arenb/.codex/worktrees/nested-sequences/Videoeditor`.
-Latest saved/pushed increment: 39cf340, real child source context and preset motion
-preserved across Shorts/parts, following 178c8ae's hierarchical MP4 audio route.
+Latest saved/pushed increment: da6a77d, actual independent visual preview source/
+publication driver, following 39cf340's Shorts source fix and 178c8ae's MP4 audio.
 Continue from that branch's current HEAD, not ae6997d.
 Use that directory and its current docs/nested-sequences.md for continuing code.
 Main retains the prior working editor and timing-plan foundation. Do not recreate
@@ -86,8 +86,28 @@ gaps and missing files. No decode/playback/FFmpeg/GPU/model/browser/build job ra
 Real decoded parts/batch output acceptance remains pending; main editor code is
 unchanged by this increment. Do not repeat the source-context/preset fix.
 
-Next connect main/proposed live previews with memoized plans, instance decoder/proxy clocks, completed
-frame publication and real hierarchical Web Audio buses/gains/fades/ducking. Add
+da6a77d adds sequence-preview-frames.ts in the development worktree. It uses the
+actual recursive preview compositor, one stable edit-time plan, independent muted
+original/proxy decoders per full placement path, composed playback rates and one
+in-flight/latest queued frame. Completed scratch frames publish atomically; old
+paused seeks/loads cancel without blocking the newest request. Continuous ticks
+avoid repeated pause/play. Inactive/gap sources unload, owner disposal cancels all
+work and errors stop per-tick retries until an explicit new epoch. Unsupported
+rates fail without clamping; paused scrubbing stays available. No media engine or
+proxy-generation job starts from this driver. Shared URLs are not owned/revoked.
+27 driver/compositor/nested-parts tests passed in 851 ms with one active worker;
+source type-check passed after driver changes. Twelve new tests inspect real frame
+plans and fake decoder/compositor interfaces. No real decode/playback/audio/GPU/
+FFmpeg/model/browser/build job ran. Actual source frame timing/pixels/memory is not
+proven. Neither preview mounts the driver yet, and their source guards remain.
+Main editor code is unchanged. Read the worktree feature note; do not rebuild it.
+
+Next implement indexed hierarchical audio windows (including crossfade handles),
+actual original-source audio availability and real Web Audio buses/local envelopes/
+nonlinear group processing. Then mount main/proposed previews with memoized visual/
+audio controller ownership, draft edits, seek epochs, viewport/font/media/quality
+revision handling and mute/meter/error/cleanup controls. Do not expose visual-only
+or silent nested playback. Add
 child text/sidecar rollup and insertion/navigation UI after those consumers work.
 Do not rebuild the export graph or restore its blanket source guard; inspect
 sequence-audio.ts, media.ts and the worktree feature note. Never drop refs or replace
