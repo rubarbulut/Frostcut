@@ -15,7 +15,7 @@ Paid services, uploads, account connections and cloud compute are not silently e
 | Motion tracking | Local decoder/selection/review/apply/editable motion implemented; footage/browser/export review pending | Real source-frame tracking, editable results, lost-target handling, timeline/keyframe mapping and exported motion |
 | Stabilization | Pending | Measured source motion and bounded correction/crop, preview/review/apply, export evidence |
 | Adjustment layers | Timeline/inspector and shared filter plan implemented; pixel/export review pending | Timeline-wide visual adjustment over a bounded interval, stacking, trimming, persistence and export |
-| Nested sequences | Reference graph/time plan implemented; persisted source model/editor/audio/compositing integration pending | Reference/insert sequences with timing, audio and captions, cycle protection, edit propagation and export |
+| Nested sequences | Main: reference graph/time plan. Development branch: real source model/persistence/edit operations; recursive UI/audio/compositing/export pending | Reference/insert sequences with timing, audio and captions, cycle protection, edit propagation and export |
 | AI chapters | Editor and local-model path implemented; model/browser verification pending | Transcript-based boundaries/titles, review/edit, navigation and chapter export, timing invalidation |
 | Brand kit learning | Caption profiles implemented; browser review pending | Learn editable reusable branding from approved project examples; persistent profiles and explicit application |
 | AI style memory | Local accepted-edit preferences implemented; browser review pending | Learn from accepted edits, explain proposed defaults, apply/reject/reset and persist across projects |
@@ -213,6 +213,14 @@ rendering must be updated together for visual features.
 - Persisted source-model changes, UI/operations, real child compositing/audio,
   captions and export are still required. This plan is not exposed as a usable
   nested feature. See [nested-sequences.md](nested-sequences.md).
+- Source-model development is saved as ae6997d on `codex/nested-sequences` in the
+  attached managed worktree. Main is unchanged except tracking documentation.
+  Source types/metadata/dependencies, reference persistence/edit/history, creation/
+  duplication/insertion operations, guards and complete-graph batch preflight are
+  implemented there. Native regressions/type-check passed; no media/model workload
+  ran. Recursive audio/visual/caption consumers and insertion UI remain pending.
+  See continuation-checkpoint.md for the exact worktree and evidence. This branch
+  is not a delivered nested feature and must not close P2.
 
 ## Transcript chapter delivery
 

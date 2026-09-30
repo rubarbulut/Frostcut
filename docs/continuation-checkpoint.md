@@ -12,6 +12,40 @@ Commit and push are authorized. Antigravity also works in this checkout: inspect
 status/log and preserve unrelated edits. Stage explicit files, not the whole tree.
 Repository: https://github.com/rubarbulut/Frostcut, branch main.
 
+## Active development location — resume here
+
+Nested sequence source-model work is saved/pushed as ae6997d on
+`codex/nested-sequences`, in the attached managed worktree:
+`C:/Users/Arenb/.codex/worktrees/nested-sequences/Videoeditor`.
+Use that directory and its current docs/nested-sequences.md for continuing code.
+Main retains the prior working editor and timing-plan foundation. Do not recreate
+the worktree, repeat the model migration, or merge this incomplete feature yet.
+The worktree's ignored node_modules is a junction to this checkout's dependencies;
+no install, model download or extra dev server was started. Its worktree attachment
+identity is the exact absolute root above; keep it while this work is active.
+
+The branch has real exclusive media/sequence Clip types, live source metadata and
+descendant file dependencies, validated reference save/open, creation/duplication/
+insertion operations, lock/cycle/removal guards, split/move/trim/speed/history and
+linked-audio detachment, plus source-aware timeline/inspector/handles/batch preflight.
+Batch selection was fixed to retain the complete source graph. Duplication avoids
+an unnecessary second clip-data clone. No fake file/media IDs are created.
+
+26 source/plan/sequence/batch/file tests passed in 1.08 s; 10 native crossfade/tracking
+tests passed in 559 ms; 24 source/native plan/caption/detach tests passed in 924 ms;
+the seven source tests passed again in 418 ms after the copy optimization. One active
+worker; counts overlap. Final source type-check passed. No real media/model/render/
+browser/build job ran. Both worktrees were clean after their commits.
+
+Next implement actual recursive child visual composition shared by main/proposed
+preview and export, real hierarchical audio envelopes/windows/gains/fades/ducking,
+and child caption/text consumers, then insertion/navigation UI. The branch's native
+preview/export currently reject references through requireMediaClip; replace these
+with real recursive consumers, never filter/drop refs or substitute placeholders.
+Review graph snapshot/index memory costs before enabling on long tracked projects.
+Complete feature code before merging to main; real media acceptance stays pending
+while the user does animation work. Full P2 scope remains intact.
+
 ## Current state
 
 - cf82af6: optional local accepted-edit preference memory, linked to actual
@@ -90,13 +124,12 @@ quality, decoder frame presentation, actual worker loading, browser interaction
 and rendered output acceptance open until heavier checks are permitted. Source
 times are video.currentTime after seek, not a claim of encoded PTS precision.
 The 50,000-point independent layer preserves baseline keys; native cap258 stays.
-Project size mismatch is fixed; do not repeat it. Nested reference/time plan exists;
-do not rebuild it or confuse copied Shorts with live references. Next extend the
-real source model/consumers toward full nested editing using the six requirements
-in docs/nested-sequences.md. Media clips and sequence references need distinct
-source identity; no fake media IDs/files. Do not expose imported nested clips
-before all production consumers support them. Inspect snapshot/index memory costs
-before enabling the new plan on long tracked projects. Preserve full P2 scope.
+Project size mismatch is fixed; do not repeat it. Main retains the timing-plan
+foundation; the source-model/operations increment lives on codex/nested-sequences.
+Resume in the managed worktree listed at the top of this checkpoint and follow
+its feature doc. Recursive visual/audio/caption consumers and creation/insertion
+UI remain required. Do not expose or merge incomplete nested editing. Inspect
+snapshot/index memory costs before enabling on long tracked projects.
 Use only code and tiny pixel/unit checks while the user animates. Real footage,
 browser and export QA is deferred. Nested sequences remains in full P2 scope.
 
