@@ -226,6 +226,13 @@ rendering must be updated together for visual features.
   the changed parent. All graph guards and stable render snapshots are preserved.
   28 focused tests passed in 1.05 s, one active worker; source type-check passed.
   Actual playback/memory measurements and recursive consumers remain pending.
+- 5e6d969 connects recursive child canvas visuals to the canvas video renderer on
+  the development branch: local fill/motion/tracking/effects/grades/captions, then
+  parent effects/fill/transforms/group opacity. Child canvases reuse by depth;
+  native frames avoid inactive timeline copies. 43 focused tests passed in 1.31 s,
+  one active worker; final type-check passed. No actual GPU/media/codec/model run.
+  Live preview drivers, real hierarchical audio, text/sidecar rollup and insertion
+  UI remain pending. MP4 still rejects references at entry; P2 remains open.
 
 ## Transcript chapter delivery
 

@@ -17,8 +17,8 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
 Nested sequence source-model work is saved/pushed as ae6997d on
 `codex/nested-sequences`, in the attached managed worktree:
 `C:/Users/Arenb/.codex/worktrees/nested-sequences/Videoeditor`.
-Latest saved/pushed increment: 3df0899, metadata-only graph validation and reduced
-insertion copying. Continue from that branch's current HEAD, not ae6997d.
+Latest saved/pushed increment: 5e6d969, recursive canvas visual composition wired to
+the canvas video renderer. Continue from that branch's current HEAD, not ae6997d.
 Use that directory and its current docs/nested-sequences.md for continuing code.
 Main retains the prior working editor and timing-plan foundation. Do not recreate
 the worktree, repeat the model migration, or merge this incomplete feature yet.
@@ -46,11 +46,27 @@ deep snapshots and reject invalid graphs before copying. 28 focused tests passed
 in 1.05 s with one active worker; source type-check passed. No real media/model/
 render/browser/build workload or actual performance benchmark was launched.
 
-Next implement actual recursive child visual composition shared by main/proposed
-preview and export, real hierarchical audio envelopes/windows/gains/fades/ducking,
-and child caption/text consumers, then insertion/navigation UI. The branch's native
-preview/export currently reject references through requireMediaClip; replace these
-with real recursive consumers, never filter/drop refs or substitute placeholders.
+5e6d969 connects actual recursive child canvas composition to renderCanvasVideo:
+local child fill/motion/tracking/effects/grades/captions precede parent group effects/
+fill/transforms/crop/opacity and root grades/captions. Actual original-file export
+decoding draws sequentially with independent source clocks. Native frames retain
+their existing index capture, avoiding inactive timeline clones and new nested
+duration restrictions. The caption drawer moved unchanged (body comparison passed).
+Child surfaces reuse by depth; unused backings shrink and owner cancellation/disposal
+releases resources. Child pool limits are explicit: 64M pixels / 16,384px per side,
+separate from root, aspect, shader, decoder and output costs. Export keeps native/
+projected density; preview mode follows viewport density. Logical child aspect is
+preserved through raster rounding. 43 focused tests passed in 1.31 s across five
+suites, one active worker; final type-check passed. Tests use recording canvases and
+fake shader/decoder boundaries: no real GPU/codec/media/AI/browser/build job ran.
+
+Shared recursive canvas visuals/export decoding now exist; do not rebuild them.
+Next connect main/proposed live previews with memoized plans, instance-specific
+decoder/proxy clocks and completed-frame publication, real hierarchical audio
+envelopes/windows/gains/fades/ducking, then child text/sidecar rollup and insertion/
+navigation UI. Main/proposed preview and the MP4 entry point still reject references;
+MP4's guard must stay until real nested audio is ready. Replace guards with real
+consumers, never filter/drop references or produce a silent approximation.
 Import/insertion cloning is fixed; do not repeat it. Review actual render-plan
 snapshot/index memory costs before enabling on long tracked projects.
 Complete feature code before merging to main; real media acceptance stays pending
