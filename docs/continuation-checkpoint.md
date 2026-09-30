@@ -45,18 +45,27 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
   envelopes in both previews. Thirteen tests passed in 754 ms with one worker,
   including five new plan tests; type-check passed. Actual browser/audio
   performance measurement is pending. See docs/clip-audio-plans.md.
+- 95bc77a saved and pushed the audio-plan delivery.
+- Current motion-tracking foundation adds region-tracker.ts, tracking.worker.ts,
+  tracking-worker.ts and typed protocol. It measures actual small pixel arrays,
+  preserves source times, detects low texture/loss/ambiguity, and supports bounded
+  one-frame transfer/cancellation. Twelve tests passed in 357 ms with one worker;
+  source type-check passed. No real video job or AI workload was launched.
+  This is not exposed in the editor or marked delivered: see docs/motion-tracking.md.
 
 ## Next lightweight step
 
-Start P2 motion tracking with real local region matching, not generated positions
-or a model placeholder. Tracking must run only on explicit user action, process
-one bounded source frame at a time off the UI thread, detect low-texture/lost or
-ambiguous targets, preserve source timestamps, support cancellation and review,
-and produce editable source-time keyframes consumed by existing preview/export.
-Code and tiny deterministic pixel-array checks can be done while the user is
-animating; real source-video tracking/render QA remains deferred. Do not claim
-the feature delivered at algorithm-only or worker-only stages. Nested sequences
-remains in full P2 scope and needs complete composite/audio/caption semantics.
+Continue full motion tracking from the implemented core, not from scratch:
+add an original-local-media frame provider with exact source times, abortable
+load/seek and cleanup, then region selection/progress/cancel/result review and
+stale-result guards. Apply measured positions explicitly as editable source-time
+X/Y motion with Fit/Crop/Blur and existing transforms accounted for. The current
+schema caps each keyframe track at 258 entries: do not truncate/approximate paths
+to fit. Coordinate any cap expansion with binary-search interpolation and bounded
+keyframe-list rendering. Preserve lock/undo/save/sequence/split behavior and both
+preview/export paths. See docs/motion-tracking.md for remaining requirements.
+Use only code and tiny pixel/unit checks while the user animates. Real footage,
+browser and export QA is deferred. Nested sequences remains in full P2 scope.
 
 ## Remaining scope and review
 

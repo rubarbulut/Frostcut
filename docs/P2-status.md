@@ -12,7 +12,7 @@ Paid services, uploads, account connections and cloud compute are not silently e
 | Chroma key | Implemented; final regression pending | Editable key color, threshold, edge softness and spill; matching actual preview/MP4 compositing; undo, save/open and split preservation |
 | Advanced masks | Implemented; final regression pending | Rectangle, ellipse and editable polygon, feather/invert/position controls; same mask in preview and MP4; persistence and timeline editing |
 | Background removal | Pending | Real local segmentation, editable edge controls, preview/export parity, model license/runtime availability, cancellation and useful failure states |
-| Motion tracking | Pending | Real source-frame tracking, editable results, lost-target handling, timeline/keyframe mapping and exported motion |
+| Motion tracking | Region matcher/worker core implemented; source/UI/keyframe integration pending | Real source-frame tracking, editable results, lost-target handling, timeline/keyframe mapping and exported motion |
 | Stabilization | Pending | Measured source motion and bounded correction/crop, preview/review/apply, export evidence |
 | Adjustment layers | Timeline/inspector and shared filter plan implemented; pixel/export review pending | Timeline-wide visual adjustment over a bounded interval, stacking, trimming, persistence and export |
 | Nested sequences | Pending | Reference/insert sequences with timing, audio and captions, cycle protection, edit propagation and export |
@@ -173,6 +173,18 @@ rendering must be updated together for visual features.
   source type-check passed. Five new tests include exact original-helper
   equivalence and construction-only lookup checks. Browser/audio benchmarking
   remains pending. See [clip-audio-plans.md](clip-audio-plans.md).
+
+## Motion tracking foundation
+
+- A real fixed-template region matcher measures translated target positions in
+  actual pixel arrays, retaining source timestamps. Low texture, low correlation
+  and ambiguous separated matches fail/stop instead of producing guessed positions.
+- A cancellable worker bridge transfers one bounded frame at a time, converts
+  RGBA and matches off the UI thread, with cleanup on loss/abort/error/completion.
+- Twelve tiny pixel/worker-lifecycle tests passed in 357 ms with one worker;
+  source type-check passed. Source-video extraction, region/review UI, editable
+  motion application and actual footage/export validation remain pending. This
+  foundation alone does not deliver motion tracking. See [motion-tracking.md](motion-tracking.md).
 
 ## Transcript chapter delivery
 
