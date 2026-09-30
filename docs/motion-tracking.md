@@ -122,8 +122,9 @@ model inference, render, production build or browser suite was started.
    exports. Verify enable/remove/edit/Undo/Redo and save/open in the browser.
 4. Assess real tracking quality and time on representative footage. Do not infer
    performance or accuracy from tiny unit arrays. Heavier checks remain deferred
-   while the user does animation work. Saved project files have an existing 20 MB
-   open limit; large multi-clip tracking projects need an explicit size review.
+   while the user does animation work. Project save/open now share a 64 MiB byte
+   budget and compact lossless JSON; actual large-file review remains pending.
+   See [project-files.md](project-files.md).
 
 This delivers the code path; pending media/UI acceptance is still part of the feature.
 Other P2 requirements in `P2-status.md` remain in scope.

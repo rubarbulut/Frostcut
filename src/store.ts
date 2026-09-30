@@ -6,6 +6,7 @@ import { clearProxies } from './proxies';
 import type { CutOptions } from './ai';
 import { rememberAcceptedEdit, rememberHistoryOutcome } from './style-memory-store';
 import type { AdjustmentLayer } from './adjustments';
+import { projectFileBlob } from './project-file';
 export const mediaFiles = new Map<string, File>();
 export const mediaUrls = new Map<string, string>();
 export const mediaThumbnails = new Map<string, string>();
@@ -292,7 +293,7 @@ export function downloadBlob(blob: Blob, name: string) {
 export function saveProject() {
   const p = useEditor.getState().project;
   downloadBlob(
-    new Blob([JSON.stringify(p, null, 2)], { type: 'application/json' }),
+    projectFileBlob(p),
     `${p.name.replace(/[^\w -]/g, '_')}.frostcut.json`,
   );
 }

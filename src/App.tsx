@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { Modal, Field, Range } from './components';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
+import { readProjectFile } from './project-file';
 import {
   useEditor,
   registerMedia,
@@ -214,7 +215,7 @@ export default function App() {
       const cmd = e.ctrlKey || e.metaKey;
       if (cmd && e.key.toLowerCase() === 's') {
         e.preventDefault();
-        saveProject();
+        saveCurrentProject();
       }
       if (screen !== 'editor') return;
       if (e.code === 'Space') {
@@ -376,8 +377,7 @@ export default function App() {
   }
   async function openProject(file: File) {
     try {
-      if (file.size > 20e6) throw new Error('Project file is too large.');
-      const project = validateProject(JSON.parse(await file.text()));
+      const project = await readProjectFile(file);
       load(project);
       setScreen('editor');
       setToast('Project opened. Relink original footage in the Media panel.');
@@ -385,6 +385,12 @@ export default function App() {
     } catch (e) {
       notify(e);
     }
+  }
+  function saveCurrentProject() {
+    try {
+      saveProject();
+      setToast('Project download started. Original media stays separate; keep it with your backup.');
+    } catch (error) { notify(error); }
   }
   function jobProgress(message: string, progress?: number) {
     setJob((current) =>
@@ -742,7 +748,7 @@ export default function App() {
                 className="icon"
                 aria-label="Save project"
                 title="Save project · Ctrl S"
-                onClick={saveProject}
+                onClick={saveCurrentProject}
               >
                 <Save size={17} />
               </button>

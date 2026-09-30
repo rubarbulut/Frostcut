@@ -69,6 +69,11 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
   with one active worker; final source type-check passed. Tests use tiny arrays and
   fake video/worker lifecycles. No real footage/model/render/browser/build ran.
   See docs/motion-tracking.md for the full code path and pending acceptance.
+- 453e880 saved and pushed the connected tracking inspector/source delivery.
+- Project files now serialize compact lossless JSON and share a 64 MiB save/open
+  byte budget. Excess imports fail before reading; save failures show a toast and
+  keep editing/autosave/media/history. Three tiny tests passed in 507 ms;
+  source type-check passed. Large-file/browser review remains pending.
 
 ## Next lightweight step
 
@@ -78,10 +83,8 @@ quality, decoder frame presentation, actual worker loading, browser interaction
 and rendered output acceptance open until heavier checks are permitted. Source
 times are video.currentTime after seek, not a claim of encoded PTS precision.
 The 50,000-point independent layer preserves baseline keys; native cap258 stays.
-Next lightweight task: inspect project save/open size handling (existing 20 MB open
-limit versus potentially large tracked projects), make an explicit actionable
-size guard so a saved file is never silently unusable, and preserve media/history.
-Then inspect full nested-sequence architecture and implement a concrete small
+Project size mismatch is fixed; do not repeat it. Next inspect the full
+nested-sequence architecture and implement a concrete small
 increment that can be verified without render/model runs. Do not reduce P2 scope.
 Use only code and tiny pixel/unit checks while the user animates. Real footage,
 browser and export QA is deferred. Nested sequences remains in full P2 scope.
