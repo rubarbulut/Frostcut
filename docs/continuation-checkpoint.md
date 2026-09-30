@@ -74,6 +74,13 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
   byte budget. Excess imports fail before reading; save failures show a toast and
   keep editing/autosave/media/history. Three tiny tests passed in 507 ms;
   source type-check passed. Large-file/browser review remains pending.
+- bf7c048 saved and pushed the project byte-budget/compact-JSON fix.
+- Nested sequence reference/time-plan foundation is implemented separately from
+  the persisted Project source model. It uses actual sequence IDs, keeps child
+  composition hierarchy, source clocks/speed products/instance paths, inherited
+  routing flags and indexed timing, with missing/cycle/depth/expansion guards.
+  Eight focused tests passed in 434 ms; source type-check passed. Not exposed in
+  editor, not yet a persisted/rendered feature. See docs/nested-sequences.md.
 
 ## Next lightweight step
 
@@ -83,9 +90,13 @@ quality, decoder frame presentation, actual worker loading, browser interaction
 and rendered output acceptance open until heavier checks are permitted. Source
 times are video.currentTime after seek, not a claim of encoded PTS precision.
 The 50,000-point independent layer preserves baseline keys; native cap258 stays.
-Project size mismatch is fixed; do not repeat it. Next inspect the full
-nested-sequence architecture and implement a concrete small
-increment that can be verified without render/model runs. Do not reduce P2 scope.
+Project size mismatch is fixed; do not repeat it. Nested reference/time plan exists;
+do not rebuild it or confuse copied Shorts with live references. Next extend the
+real source model/consumers toward full nested editing using the six requirements
+in docs/nested-sequences.md. Media clips and sequence references need distinct
+source identity; no fake media IDs/files. Do not expose imported nested clips
+before all production consumers support them. Inspect snapshot/index memory costs
+before enabling the new plan on long tracked projects. Preserve full P2 scope.
 Use only code and tiny pixel/unit checks while the user animates. Real footage,
 browser and export QA is deferred. Nested sequences remains in full P2 scope.
 

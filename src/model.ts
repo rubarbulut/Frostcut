@@ -336,8 +336,8 @@ export function changeAspectRatio(
   next.exportSettings.height = height;
   return next;
 }
-export const clipDuration = (c: Clip) => (c.sourceEnd - c.sourceStart) / c.properties.speed;
-export const clipEnd = (c: Clip) => c.start + clipDuration(c);
+export const clipDuration = (c: Pick<Clip, 'sourceStart' | 'sourceEnd' | 'properties'>) => (c.sourceEnd - c.sourceStart) / c.properties.speed;
+export const clipEnd = (c: Pick<Clip, 'start' | 'sourceStart' | 'sourceEnd' | 'properties'>) => c.start + clipDuration(c);
 export const duration = (p: Project) => Math.max(0, ...p.clips.map(clipEnd));
 export const sortedClips = (p: Project) => [...p.clips].sort((a, b) => a.start - b.start);
 export const isAudioClip = (p: Project, c: Clip) =>

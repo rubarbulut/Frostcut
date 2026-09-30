@@ -15,7 +15,7 @@ Paid services, uploads, account connections and cloud compute are not silently e
 | Motion tracking | Local decoder/selection/review/apply/editable motion implemented; footage/browser/export review pending | Real source-frame tracking, editable results, lost-target handling, timeline/keyframe mapping and exported motion |
 | Stabilization | Pending | Measured source motion and bounded correction/crop, preview/review/apply, export evidence |
 | Adjustment layers | Timeline/inspector and shared filter plan implemented; pixel/export review pending | Timeline-wide visual adjustment over a bounded interval, stacking, trimming, persistence and export |
-| Nested sequences | Pending | Reference/insert sequences with timing, audio and captions, cycle protection, edit propagation and export |
+| Nested sequences | Reference graph/time plan implemented; persisted source model/editor/audio/compositing integration pending | Reference/insert sequences with timing, audio and captions, cycle protection, edit propagation and export |
 | AI chapters | Editor and local-model path implemented; model/browser verification pending | Transcript-based boundaries/titles, review/edit, navigation and chapter export, timing invalidation |
 | Brand kit learning | Caption profiles implemented; browser review pending | Learn editable reusable branding from approved project examples; persistent profiles and explicit application |
 | AI style memory | Local accepted-edit preferences implemented; browser review pending | Learn from accepted edits, explain proposed defaults, apply/reject/reset and persist across projects |
@@ -200,6 +200,19 @@ rendering must be updated together for visual features.
   in 1.67 seconds with one active worker; final type-check passed. Actual codecs,
   browser interaction, frame timing, matching quality and preview/export fidelity
   remain unverified. No real media/model job or browser/build suite was run.
+
+## Nested sequence reference foundation
+
+- A real sequence-ID source type and immutable hierarchical time plan preserve
+  child settings, source/parent clocks, speed products and distinct placements.
+  Interval indexes retain existing media ordering; visibility/audio flags inherit
+  through the hierarchy. Missing/cyclic/deep graphs and excessive frame expansion
+  fail explicitly. A shortened child leaves a gap instead of repeating footage.
+- Eight focused metadata/sequence tests passed in 434 ms with one active worker;
+  source type-check passed. No media/model/browser/build workload was launched.
+- Persisted source-model changes, UI/operations, real child compositing/audio,
+  captions and export are still required. This plan is not exposed as a usable
+  nested feature. See [nested-sequences.md](nested-sequences.md).
 
 ## Transcript chapter delivery
 
