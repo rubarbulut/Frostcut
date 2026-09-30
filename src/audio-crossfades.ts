@@ -1,4 +1,4 @@
-import { clipAudible, clipDuration, clipEnd, isAudioClip, type Clip, type Project } from './model';
+import { clipAudible, clipDuration, clipEnd, isAudioClip, isSequenceClip, type Clip, type Project } from './model';
 import { createDuckGain, duckGain } from './audio-tools';
 import { requireClipSource } from './clip-source';
 export function audioWindow(p: Project, c: Clip) {
@@ -44,7 +44,8 @@ export function audioWindow(p: Project, c: Clip) {
     fadeIn,
     fadeOut,
     start: Math.max(0, c.sourceStart - pre * c.properties.speed),
-    end: Math.min(asset.duration, c.sourceEnd + post * c.properties.speed),
+    end: isSequenceClip(c) ? c.sourceEnd + post * c.properties.speed
+      : Math.min(asset.duration, c.sourceEnd + post * c.properties.speed),
     timelineStart: c.start - pre,
     duration: clipDuration(c) + pre + post,
   };
@@ -68,6 +69,18 @@ export function audioGainAt(p: Project, c: Clip, time: number) {
   );
 }
 
+/** A zero-duration afade can retain FFmpeg's default sample fade; emit only requested ramps. */
+export function audioFadeFilter(window: Pick<ReturnType<typeof audioWindow>, 'fadeIn' | 'fadeOut' | 'duration'>) {
+  const number = (n: number) => Number(n.toFixed(6)).toString();
+  const filters: string[] = [];
+  if (window.fadeIn > 0) filters.push(`afade=t=in:d=${number(Math.max(0.0001, window.fadeIn))}`);
+  if (window.fadeOut > 0) {
+    const fade = Math.max(0.0001, window.fadeOut);
+    filters.push(`afade=t=out:st=${number(Math.max(0, window.duration - fade))}:d=${number(fade)}`);
+  }
+  return filters.join(',') || 'anull';
+}
+
 export type ClipAudioPlan = {
   readonly window: ReturnType<typeof audioWindow>;
   readonly audible: boolean;
@@ -75,9 +88,9 @@ export type ClipAudioPlan = {
 };
 
 /** Edit-dependent timing/speech data; no media decoding or playhead-dependent cache. */
-export function createClipAudioPlan(p: Project, c: Clip): ClipAudioPlan {
+export function createClipAudioPlan(p: Project, c: Clip, hasAudio?: ReadonlyMap<string, boolean>): ClipAudioPlan {
   const window = audioWindow(p, c), audible = clipAudible(p, c);
-  const volume = c.properties.volume, duckAt = audible ? createDuckGain(p, c) : () => 1;
+  const volume = c.properties.volume, duckAt = audible ? createDuckGain(p, c, hasAudio) : () => 1;
   return {
     window, audible,
     gainAt(time) {

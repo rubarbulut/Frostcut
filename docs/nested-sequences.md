@@ -5,8 +5,9 @@ Existing Shorts/parts remain independent sequence copies. The new
 time plan; it does not turn those copies into nested edits. The development branch
 `codex/nested-sequences` now adds the canonical source model, persistence and edit
 operations. Recursive canvas visual composition is now connected to the canvas
-video renderer. Live preview, hierarchical audio and insertion UI remain pending;
-the MP4 entry point still rejects references until their audio is implemented.
+video renderer. Actual hierarchical audio filters are now wired to the MP4 export
+entry point. Live preview, child text/sidecar rollup and insertion UI remain pending;
+real codec/filter/decoded-output acceptance has not run.
 This branch is not a complete nested feature and must not be merged as one yet.
 Main retains the earlier plan.
 
@@ -28,11 +29,11 @@ Main retains the earlier plan.
   Batch preflight now sees the complete current graph even when exporting only
   selected parts. File-only tracking/reframe/beat/caption actions stay on native
   media; reference source captions are edited in their source sequence.
-- Native main/proposed preview and the MP4 entry point still call `requireMediaClip`
-  and reject sequence placements. Replace these guards with recursive consumers; do not
+- Native main/proposed previews still call `requireMediaClip` and reject sequence
+  placements. Replace these guards with recursive consumers; do not
   filter/drop reference clips to obtain a successful output. New insertion and
-  creation UI is not exposed yet. Child caption rendering/rollup and real audio
-  envelopes/effects are still required.
+  creation UI is not exposed yet. Live preview audio and child text/sidecar rollup
+  are still required; canvas captions and export audio are follow-ups below.
 - Checks: 26 source/plan/sequence/batch/file tests passed in 1.08 s (five suites);
   10 native crossfade/tracking tests passed in 559 ms (two suites); 24 source/native
   plan/caption/detach tests passed in 924 ms (four suites). All used one active worker.
@@ -96,10 +97,51 @@ dependencies; no install/model download or extra dev server was started.
   behavior, hierarchy/order, repeated clocks, grouping/styles, blur, gaps/visibility,
   raster budgets, cancellation/concurrency and cleanup. No actual video, shader/GPU,
   codec, AI, browser suite or production build ran; pixel/media QA is pending.
-- This increment does not expose nested editing: main/proposed live preview still
+- That visual increment did not expose nested editing: main/proposed live preview still
   needs an instance-aware decoder/compositor driver with completed-frame publication.
-  Actual hierarchical audio and text/sidecar rollup remain required before removing
-  the MP4 source guard or adding insertion UI. Do not export a silent approximation.
+  The audio follow-up below replaces the MP4 guard. Live audio and child text/sidecar
+  rollup remain required before adding insertion UI. Do not export a silent approximation.
+
+## Hierarchical audio export increment
+
+- `sequence-audio.ts` compiles actual sequence buses: each child's native audio is
+  trimmed, stretched, voice-processed, gained/ducked, faded and placed on its own
+  local clock before mixing. Parent placements trim/speed/process the completed
+  child mix; parent voice enhancement is not approximated as extra per-leaf gain.
+  Shared reachable child buses split into independent placement branches rather
+  than duplicating every native input for every ancestor placement. Mixer silence
+  preserves empty/shortened child gaps and the explicit reference out point.
+- Reference audio windows retain fixed source ends after a child is shortened;
+  native media bounds remain unchanged. Pre-zero crossfade handles are processed
+  before cutting the negative timeline portion. Stereo float/48kHz buses use sample
+  delays; tempo changes stay chained within 0.5–2 per stage. Mute, detached video
+  audio, linked A1 and audio-only placements retain their local routing semantics.
+- `speechRanges` now maps actual audible child speech through trims/speeds, excludes
+  child music/mutes/zero gain and unions exact child overlaps before the final parent
+  pause merge. Known absent audio streams do not cause false music ducking. Existing
+  native callers retain their default behavior; clip plans can accept real audio
+  availability reports for the future live driver.
+- MP4 references now route through real descendant file checks, mounted originals,
+  checked ffprobe reports, the audio compiler and recursive visual renderer before
+  final AAC/MP4 mixing. Files/mounts participate in cleanup/cancellation. Missing or
+  malformed audio reports fail; absent audio is accepted only from a checked report.
+  Native export keeps its existing path. The previous blanket MP4 media-source
+  guard is replaced by this actual path; main/proposed previews still reject refs.
+- Both export paths now omit disabled `afade` stages instead of sending `d=0`, which
+  can retain FFmpeg's default sample fade. Enabled ramps preserve their bounds and
+  tiny durations use the preview envelope's 0.1ms minimum. Filter options were checked
+  against [FFmpeg documentation](https://ffmpeg.org/ffmpeg-filters.html) and the
+  [upstream fade implementation](https://github.com/FFmpeg/FFmpeg/blob/n6.0/libavfilter/af_afade.c).
+- 21 focused audio/compiler/window/ducking tests passed in 833 ms across four suites,
+  one active worker; final source type-check passed. Seven new graph tests check
+  real model clocks/filters/pad consumers, nonlinear group placement, reuse, gaps,
+  roles/probe results, sample delays, rate chains, negative handles and graph errors;
+  one additional test covers disabled/enabled/tiny fade emission. No source decode,
+  audio playback, FFmpeg job, GPU, AI, browser suite or production build was run.
+  Actual filter compatibility, perceived mix, timing and decoded MP4 QA are pending.
+- Nested editing is still not exposed. Complete actual main/proposed preview video
+  clocks/proxies and hierarchical Web Audio buses, child text/sidecars and insertion/
+  navigation UI. Do not claim preview/export audio parity from string/metadata tests.
 
 ## Implemented reference plan
 
@@ -147,6 +189,8 @@ browser suite or production build was started.
    handling; preserve native paths and never create fake assets/files.
 2. Finish integration/acceptance of lock/history/removal/source-gap behavior in UI.
    Verify references survive parts and batch outputs, beyond metadata preflight.
+   Audit operations that strip the sequence workspace before applying parts/Shorts
+   edits: source metadata must stay available to real reference trim/assembly.
    Review render-plan snapshot costs before enabling it on large tracked projects;
    render compilation still clones sequence data. Validation now skips those
    snapshots/indexes; insertion and duplication avoid unnecessary extra timeline
@@ -158,10 +202,10 @@ browser suite or production build was started.
    Connect main/proposed live previews to this compositor, with memoized edit-time
    plans, instance-specific source clocks/proxies and atomic publication of completed
    frames. Preserve existing preview quality/controls and actual audio routing.
-5. Compile real audio windows/gains/fades/ducking/voice processing through parent
-   envelopes and speeds, for both actual playback and export. Routing flags alone
-   are insufficient. Define nested caption text/sidecar export alongside visual
-   caption compositing; never drop child captions or audio silently.
+5. Actual hierarchical export audio filters/routing are implemented. Connect live
+   playback to real hierarchical buses, gains/fades/ducking and local clock rates,
+   including source audio availability and nonlinear group processing. Define child
+   caption text/sidecar rollup alongside visual compositing; do not drop child text.
 6. Brief unit/type checks can continue now. Actual interaction, decoder timing,
    nested captions/audio/effects, playback and decoded MP4/parts/batch quality need
    later browser/media acceptance while heavier workloads are permitted.

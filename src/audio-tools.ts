@@ -1,4 +1,5 @@
-import { clipAudible, clipEnd, isAudioClip, isMediaClip, type Clip, type Project } from './model';
+import { clipAudible, clipEnd, isAudioClip, isMediaClip, isSequenceClip, type Clip, type Project } from './model';
+import { sequenceProject, sourceSequence } from './clip-source';
 
 /** Percussive onset peaks, in source seconds. No fabricated evenly-spaced beat grid. */
 export function detectBeats(samples: Float32Array, sampleRate = 16000): number[] {
@@ -41,16 +42,35 @@ export function timelineBeats(p: Project, excluded: string[] = []) {
     .sort((a, b) => a - b);
 }
 
-export function speechRanges(p: Project, musicId?: string) {
-  const ranges = p.clips
+export function speechRanges(p: Project, musicId?: string, hasAudio?: ReadonlyMap<string, boolean>) {
+  const visiting = new Set<string>();
+  const children = new Map<string, { start: number; end: number }[]>();
+  const collect = (local: Project, excluded?: string): { start: number; end: number }[] => local.clips
     .filter(
       (c) =>
-        c.id !== musicId && clipAudible(p, c) && c.properties.volume > 0 && c.audioRole !== 'music',
+        c.id !== excluded && clipAudible(local, c) && c.properties.volume > 0 && c.audioRole !== 'music' &&
+        (!isMediaClip(c) || hasAudio?.get(c.mediaId) !== false),
     )
     .flatMap((c) => {
+      if (isSequenceClip(c)) {
+        const id = c.sequenceId;
+        if (visiting.has(id)) throw new Error('Nested sequences cannot contain a reference cycle.');
+        let ranges = children.get(id);
+        if (!ranges) {
+          const child = sourceSequence(p, id);
+          if (!child) throw new Error('A referenced sequence is missing.');
+          visiting.add(id); ranges = mergeSpeechRanges(collect(sequenceProject(p, child)), 0); visiting.delete(id);
+          children.set(id, ranges);
+        }
+        return ranges.flatMap((r) => {
+          const start = Math.max(r.start, c.sourceStart), end = Math.min(r.end, c.sourceEnd);
+          return end > start ? [{ start: c.start + (start - c.sourceStart) / c.properties.speed,
+            end: c.start + (end - c.sourceStart) / c.properties.speed }] : [];
+        });
+      }
       const words = c.captionWords?.length
         ? c.captionWords
-        : p.transcripts.find((t) => t.mediaId === c.mediaId)?.words;
+        : local.transcripts.find((t) => t.mediaId === c.mediaId)?.words;
       if (!words?.length) return [{ start: c.start, end: clipEnd(c) }];
       return words
         .filter((w) => w.end > c.sourceStart && w.start < c.sourceEnd)
@@ -58,21 +78,25 @@ export function speechRanges(p: Project, musicId?: string) {
           start: c.start + (Math.max(w.start, c.sourceStart) - c.sourceStart) / c.properties.speed,
           end: c.start + (Math.min(w.end, c.sourceEnd) - c.sourceStart) / c.properties.speed,
         }));
-    })
-    .sort((a, b) => a.start - b.start);
+    });
+  return mergeSpeechRanges(collect(p, musicId), 0.45);
+}
+
+function mergeSpeechRanges(ranges: { start: number; end: number }[], gap: number) {
+  ranges.sort((a, b) => a.start - b.start);
   const merged: { start: number; end: number }[] = [];
   for (const r of ranges) {
     const last = merged.at(-1);
-    if (last && r.start - last.end <= 0.45) last.end = Math.max(last.end, r.end);
+    if (last && r.start - last.end <= gap) last.end = Math.max(last.end, r.end);
     else merged.push({ ...r });
   }
   return merged;
 }
 
-export function duckGain(p: Project, c: Clip, time: number) {
+export function duckGain(p: Project, c: Clip, time: number, hasAudio?: ReadonlyMap<string, boolean>) {
   if (!c.autoDuck || c.audioRole !== 'music') return 1;
   let gain = 1;
-  for (const r of speechRanges(p, c.id)) {
+  for (const r of speechRanges(p, c.id, hasAudio)) {
     if (time < r.start - 0.15 || time > r.end + 0.3) continue;
     const envelope =
       time < r.start ? (r.start - time) / 0.15 : time <= r.end ? 0 : (time - r.end) / 0.3;
@@ -82,9 +106,9 @@ export function duckGain(p: Project, c: Clip, time: number) {
 }
 
 /** Compile merged speech once; seek directly to the next release boundary. */
-export function createDuckGain(p: Project, c: Clip): (time: number) => number {
+export function createDuckGain(p: Project, c: Clip, hasAudio?: ReadonlyMap<string, boolean>): (time: number) => number {
   if (!c.autoDuck || c.audioRole !== 'music') return () => 1;
-  const ranges = speechRanges(p, c.id);
+  const ranges = speechRanges(p, c.id, hasAudio);
   return (time) => {
     let low = 0, high = ranges.length;
     while (low < high) {
@@ -105,14 +129,14 @@ export function createDuckGain(p: Project, c: Clip): (time: number) => number {
   };
 }
 
-export function audioEffectsFilter(p: Project, c: Clip, timelineStart: number) {
+export function audioEffectsFilter(p: Project, c: Clip, timelineStart: number, hasAudio?: ReadonlyMap<string, boolean>) {
   const effects = c.voiceEnhance
     ? 'highpass=f=80,lowpass=f=8000,acompressor=threshold=0.125:ratio=3:attack=10:release=100:makeup=1.5,'
     : '';
   if (!c.autoDuck || c.audioRole !== 'music') return effects + `volume=${c.properties.volume}`;
   // Individual volume stages avoid an unbounded nested expression on long edits.
   // Ranges are merged first, so ramps never multiply during overlapping speech.
-  const ranges = speechRanges(p, c.id).filter(
+  const ranges = speechRanges(p, c.id, hasAudio).filter(
     (r) => r.end + 0.3 > c.start && r.start - 0.15 < clipEnd(c),
   );
   const envelope = ranges.map((r) => {

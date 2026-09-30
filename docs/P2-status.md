@@ -235,6 +235,14 @@ rendering must be updated together for visual features.
   Tests record drawing calls, not real GPU/media pixels. Main/proposed preview
   drivers, real hierarchical audio, text rollup and insertion UI remain pending;
   MP4 still rejects references at entry. This increment does not close P2.
+- Actual hierarchical audio export now builds local child mixes and independent
+  parent trim/rate/voice/gain/duck/fade/delay stages, sharing child buses across
+  placements. MP4 uses real descendant mounts/probe reports plus recursive visuals;
+  its blanket source guard is replaced. Child gap silence and speech/no-audio
+  ducking are handled; disabled fade stages are omitted in both export paths.
+  21 focused tests passed in 833 ms, one active worker; final type-check passed.
+  No actual audio/media/FFmpeg/GPU/model job ran. Live preview, text/sidecar rollup,
+  insertion UI and real decoded-output acceptance remain pending; P2 stays open.
 
 ## Transcript chapter delivery
 

@@ -14,6 +14,12 @@ export function sourceSequence(p: Project, id: string): ProjectSequence | undefi
     adjustments: p.adjustments, exportSettings: p.exportSettings, suggestions: p.suggestions };
 }
 
+/** Local sequence clocks/settings, with the original project's real media/transcripts. */
+export function sequenceProject(p: Project, sequence: ProjectSequence): Project {
+  const { id, name: _, ...timeline } = sequence;
+  return { ...p, ...timeline, activeSequenceId: id };
+}
+
 // Editor commits replace Project objects; cache only metadata/dependencies, never decoded media.
 const sources = new WeakMap<Project, Map<string, ClipSource | undefined>>();
 export function clipSource(p: Project, clip: Clip): ClipSource | undefined {

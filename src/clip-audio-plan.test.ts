@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { addMedia, createProject, defaultProps, deleteRange, type Clip } from './model';
-import { audioGainAt, audioWindow, createClipAudioPlan } from './audio-crossfades';
+import { audioFadeFilter, audioGainAt, audioWindow, createClipAudioPlan } from './audio-crossfades';
 import { createDuckGain, duckGain, speechRanges } from './audio-tools';
 
 function fixture() {
@@ -29,6 +29,12 @@ function fixture() {
 }
 
 describe('cached clip audio plans', () => {
+  it('does not send zero-duration default fades to the encoder and retains enabled ramps', () => {
+    expect(audioFadeFilter({ fadeIn: 0, fadeOut: 0, duration: 10 })).toBe('anull');
+    expect(audioFadeFilter({ fadeIn: 0.2, fadeOut: 0.4, duration: 5 })).toBe('afade=t=in:d=0.2,afade=t=out:st=4.6:d=0.4');
+    expect(audioFadeFilter({ fadeIn: 0, fadeOut: 0.2, duration: 5 })).toBe('afade=t=out:st=4.8:d=0.2');
+    expect(audioFadeFilter({ fadeIn: 1e-10, fadeOut: 0, duration: 5 })).toBe('afade=t=in:d=0.0001');
+  });
   it('preserves original gain at arbitrary seeks, fade/crossfade edges and speech ramps', () => {
     const p = fixture(), before = structuredClone(p);
     for (const clip of p.clips) {

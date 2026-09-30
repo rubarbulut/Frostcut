@@ -122,6 +122,20 @@ the original checkout; no install or extra dev server is needed.
   no actual footage/GPU/codec/model/browser/build workload was launched. Live preview
   drivers, real hierarchical audio, child text/sidecar rollup and insertion UI are
   still pending. MP4's entry source guard stays until the real audio path is ready.
+- 5e6d969 saved/pushed the recursive canvas visual composition increment.
+- Actual hierarchical audio export is now wired: sequence-audio.ts builds local
+  child mixes, independent parent trim/speed/voice/gain/duck/fade/sample-delay stages
+  and shared child bus splits. Real descendant mounts/ffprobe reports feed those
+  filters and the recursive canvas renderer before final AAC/MP4. The MP4 source
+  guard is replaced; native export retains its existing path. Preview still needs
+  actual independent decoder clocks and hierarchical audio buses before exposure.
+- Fixed reference audio ends/gap silence, negative crossfade handle clipping, actual
+  descendant speech mapping and known-no-audio ducking. Both export paths omit zero
+  afade stages to avoid the upstream default sample fade; enabled/tiny ramps remain.
+- 21 focused tests across four suites passed in 833 ms, one active worker; final
+  source type-check passed. They inspect real model/envelope/filter construction,
+  not actual sound/FFmpeg output. No decode/playback/FFmpeg/GPU/AI/browser/build job
+  ran. Real codec/filter/mix/timing/output acceptance is deferred, not satisfied.
 
 ## Next lightweight step
 
@@ -138,9 +152,14 @@ source model/helpers/operations already exist; do not repeat that migration.
 Shared recursive canvas visuals now exist and the export visual renderer uses them;
 do not rebuild that compositor or the caption drawer. Next implement actual main/
 proposed preview drivers with memoized plans, independent instance clocks/proxies,
-completed-frame publication and real hierarchical audio windows/gains/fades/ducking,
-then caption/text rollup and insertion/navigation UI. Remove requireMediaClip guards
-only as the matching real consumer replaces them; MP4 still needs real audio first.
+completed-frame publication and real hierarchical Web Audio buses/windows/gains/
+fades/ducking, then caption/text rollup and insertion/navigation UI. Actual export
+audio graph/MP4 routing now exist; do not rebuild them or restore the blanket MP4
+guard. Main/proposed preview source guards must only be removed as real drivers
+replace them. Inspect sequence-audio.ts, media.ts and the feature note first.
+Audit parts/Shorts operation source context too: callers that strip sequences before
+trim/assembly must retain the real reference source graph. Metadata-only batch checks
+do not prove those edit/export routes. Keep that work in scope before exposure.
 Never filter/drop refs or substitute placeholders. See docs/nested-sequences.md.
 Graph import/insertion cloning is fixed; do not repeat that refactor. Inspect actual
 render-plan snapshot/index memory costs before enabling on long tracked projects.

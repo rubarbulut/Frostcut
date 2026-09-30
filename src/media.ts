@@ -1,5 +1,5 @@
 import { FFmpeg, FFFSType } from '@ffmpeg/ffmpeg';
-import { requireMediaClip } from './clip-source';
+import { requireMediaClip, sourceMediaIds } from './clip-source';
 import {
   type Project,
   type MediaAsset,
@@ -11,12 +11,13 @@ import {
   captionGroups,
   isAudioClip,
   clipAudible,
+  isSequenceClip,
 } from './model';
 import { mediaFiles } from './store';
 import { captionAppearance } from './caption-style';
 import { needsTypographyRenderer } from './caption-typography';
 import { cancelBackgroundMediaJobs } from './media-runtime';
-import { audioWindow } from './audio-crossfades';
+import { audioFadeFilter, audioWindow } from './audio-crossfades';
 import { audioEffectsFilter } from './audio-tools';
 import { renderCanvasVideo } from './visual-renderer';
 import { hasAdjustments } from './adjustments';
@@ -24,6 +25,7 @@ import { needsAspectRenderer } from './aspect-fill';
 import { captionEmoji } from './caption-layout';
 import { videoBitrate } from './export-settings';
 import { hasVisualEffects } from './visual-effects';
+import { compileSequenceAudio } from './sequence-audio';
 let engine: FFmpeg | undefined;
 let busy = false;
 let engineQueue: Promise<unknown> = Promise.resolve();
@@ -289,6 +291,7 @@ export async function exportMp4(
   onProgress: (message: string, value?: number) => void,
 ): Promise<Blob> {
   if (!p.clips.length) throw new Error('Add a video before exporting.');
+  if (p.clips.some(isSequenceClip)) return exportNestedMp4(p, signal, onProgress);
   const mediaClips = p.clips.map(requireMediaClip);
   for (const c of mediaClips)
     if (!mediaFiles.has(c.mediaId)) throw new Error('Relink missing media before exporting.');
@@ -402,7 +405,7 @@ export async function exportMp4(
                 ? `atempo=2,atempo=${props.speed / 2}`
                 : `atempo=${props.speed}`;
           filters.push(
-            `[${input}:a]atrim=duration=${number(window.end - window.start)},asetpts=PTS-STARTPTS,${tempo},${audioEffectsFilter(p, c, window.timelineStart)},afade=t=in:d=${window.fadeIn},afade=t=out:st=${Math.max(0, window.duration - window.fadeOut)}:d=${window.fadeOut},adelay=${Math.round(window.timelineStart * 1000)}|${Math.round(window.timelineStart * 1000)}[a${index}]`,
+            `[${input}:a]atrim=duration=${number(window.end - window.start)},asetpts=PTS-STARTPTS,${tempo},${audioEffectsFilter(p, c, window.timelineStart)},${audioFadeFilter(window)},adelay=${Math.round(window.timelineStart * 1000)}|${Math.round(window.timelineStart * 1000)}[a${index}]`,
           );
           audios.push(`[a${index}]`);
         }
@@ -465,6 +468,56 @@ export async function exportMp4(
     }
   });
 }
+/** Actual hierarchical audio mix alongside the recursively composed visual stream. */
+async function exportNestedMp4(p: Project, signal: AbortSignal, onProgress: (message: string, value?: number) => void): Promise<Blob> {
+  const mediaIds = sourceMediaIds(p);
+  for (const id of mediaIds) if (!mediaFiles.has(id)) throw new Error('Relink missing media before exporting.');
+  return withEngine(signal, onProgress, async (ff) => {
+    const files: string[] = [], mounted: string[] = [], paths = new Map<string, string>();
+    const sourceTime = (n: number) => Number(n.toFixed(6)).toString();
+    const width = Math.round(p.exportSettings.width / 2) * 2, height = Math.round(p.exportSettings.height / 2) * 2;
+    try {
+      for (const [i, id] of mediaIds.entries()) {
+        const directory = `/nested-input${i}`;
+        mounted.push(directory);
+        paths.set(id, await mountSource(ff, mediaFiles.get(id)!, directory));
+      }
+      const hasAudio = await probeSourceAudio(ff, paths, files);
+      const graph = compileSequenceAudio(p, hasAudio);
+      const visual = await renderCanvasVideo(p, width, height, p.exportSettings.fps, ff, files, signal, onProgress);
+      const args = [...(visual.raw ? ['-f', 'h264', '-r', String(p.exportSettings.fps)] : []), '-i', visual.path];
+      for (const input of graph.inputs)
+        args.push('-ss', sourceTime(input.start), '-t', sourceTime(input.end - input.start), '-i', paths.get(input.mediaId)!);
+      onProgress('Mixing sequence audio and finalizing MP4…', 85);
+      files.push('output.mp4');
+      const code = await ff.exec([...args, '-filter_complex_threads', '1', '-filter_complex', graph.filters.join(';'),
+        '-map', '0:v', '-map', `[${graph.output}]`, '-t', sourceTime(duration(p)), '-r', String(p.exportSettings.fps),
+        '-c:v', 'copy', '-c:a', 'aac', '-b:a', `${p.exportSettings.audioBitrate ?? 160}k`, '-movflags', '+faststart', 'output.mp4']);
+      if (code !== 0) throw new Error('Nested sequence MP4 rendering failed. Check the source files and audio processing settings.');
+      const data = (await ff.readFile('output.mp4')) as Uint8Array;
+      return new Blob([data.slice().buffer as ArrayBuffer], { type: 'video/mp4' });
+    } finally {
+      for (const file of files) await ff.deleteFile(file).catch(() => {});
+      for (const directory of mounted) await unmountSource(ff, directory);
+    }
+  });
+}
+
+async function probeSourceAudio(ff: FFmpeg, paths: ReadonlyMap<string, string>, files: string[]) {
+  const hasAudio = new Map<string, boolean>();
+  for (const [i, [id, path]] of [...paths].entries()) {
+    const probe = `nested-probe${i}.json`;
+    files.push(probe);
+    const code = await ff.ffprobe(['-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=codec_type', '-of', 'json', path, '-o', probe]);
+    // The bundled core can return -1 after a successful probe; trust the checked report.
+    if (code !== 0 && code !== -1) throw new Error('Could not inspect source audio. Relink the video and retry.');
+    const report = JSON.parse((await ff.readFile(probe, 'utf8')) as string);
+    if (!Array.isArray(report.streams)) throw new Error('The source audio report is incomplete. Relink and retry.');
+    hasAudio.set(id, report.streams.length > 0);
+  }
+  return hasAudio;
+}
+
 export const animationTransform = (c: Clip, time: number) => {
   const t = Math.max(0, Math.min(1, (time - c.start) / clipDuration(c))),
     name = c.properties.animation;
