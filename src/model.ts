@@ -1,7 +1,7 @@
 import { animatedProperties, type KeyframeTracks } from './motion';
 import { validClipTracking, type ClipTracking } from './tracking-data';
 import { clipTrimLimit, sourceSequence } from './clip-source';
-import { NestedSequencePlan, validSequenceReference } from './nested-sequence-plan';
+import { validateSequenceGraph, validSequenceReference } from './nested-sequence-plan';
 import type { SavedAnimation } from './animation-presets';
 import {
   translatedWords,
@@ -1075,7 +1075,7 @@ function validateProjectData(value: unknown, referenceIds?: ReadonlySet<string>)
         };
       });
       if (!referenceIds && (p.clips.some(isSequenceClip) || p.sequences.some((s) => s.clips.some(isSequenceClip))))
-        new NestedSequencePlan(p.sequences.map((s) => sourceSequence(p, s.id)!));
+        validateSequenceGraph(p.sequences.map((s) => sourceSequence(p, s.id)!));
     } else if (p.activeSequenceId !== undefined) fail();
     // Suggestions are regenerated from the validated timeline; never trust imported operations.
     p.suggestions = [];

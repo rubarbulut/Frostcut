@@ -45,6 +45,21 @@ describe('real media and live sequence source model', () => {
     expect(() => validateProject(JSON.parse(JSON.stringify(trimmed)))).not.toThrow();
   });
 
+  it('opens references without render snapshots and only snapshots the changed parent on insertion', () => {
+    const { project: p, childId } = fixture(), imported = JSON.parse(JSON.stringify(p));
+    const clone = vi.spyOn(globalThis, 'structuredClone');
+    try {
+      expect(validateProject(imported).clips).toEqual(p.clips);
+      expect(clone).not.toHaveBeenCalled();
+      const next = insertSequenceReference(p, childId);
+      expect(next.clips).toHaveLength(2);
+      expect(p.clips).toHaveLength(1);
+      expect(clone).toHaveBeenCalledTimes(1);
+      expect(clone.mock.calls[0][0]).toMatchObject({ id: p.activeSequenceId, clips: next.clips });
+      expect(next.sequences?.find((s) => s.id === childId)).toBe(p.sequences?.find((s) => s.id === childId));
+    } finally { clone.mockRestore(); }
+  });
+
   it('preserves references under split/move/trim/speed and real editor history', () => {
     const { project: p } = fixture(), reference = p.clips[0];
     const split = splitClip(p, reference.id, 7);

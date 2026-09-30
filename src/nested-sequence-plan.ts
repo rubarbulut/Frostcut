@@ -65,46 +65,66 @@ export type SequenceFramePlan = {
 };
 type CompiledNode = { sequence: SequencePlanNode; duration: number; index: TimelineIndex<SequencePlanClip>; tracks: Map<string, Track> };
 
+type ValidatedNode = { sequence: SequencePlanNode; duration: number; children: Set<string> };
+/** Check metadata and the full graph without copying tracking/caption payloads or building frame indexes. */
+function inspectSequenceGraph(sequences: readonly SequencePlanNode[]) {
+  if (!sequences.length || sequences.length > 30) throw new Error('A nested project supports 1–30 sequences.');
+  const nodes = new Map<string, ValidatedNode>();
+  for (const sequence of sequences) {
+    if (!string(sequence.id) || nodes.has(sequence.id)) throw new Error('Sequence IDs must be unique.');
+    if (!Array.isArray(sequence.clips) || sequence.clips.length > 10000) throw new Error('A sequence supports up to 10,000 clips.');
+    const tracks = new Set(sequence.tracks.map((t) => t.id)), ids = new Set<string>(), children = new Set<string>();
+    let duration = 0;
+    for (const clip of sequence.clips) {
+      if (!isMediaClip(clip) && !isSequenceClip(clip)) throw new Error('A clip needs exactly one media or sequence source.');
+      if (!string(clip.id) || ids.has(clip.id) || !tracks.has(clip.trackId)) throw new Error('Sequence clips need unique IDs and existing tracks.');
+      ids.add(clip.id);
+      if (isSequenceReference(clip)) {
+        if (!validSequenceReference(clip)) throw new Error('The nested sequence clip has invalid source timing or transforms.');
+        children.add(clip.sequenceId);
+      }
+      duration = Math.max(duration, clipEnd(clip));
+    }
+    if (!finite(duration)) throw new Error('Sequence duration must stay within 24 hours.');
+    nodes.set(sequence.id, { sequence, duration, children });
+  }
+  // Check inactive/unreachable nodes too. Repeated placements share the same DAG edge.
+  const visiting = new Set<string>(), depths = new Map<string, number>();
+  const depth = (id: string): number => {
+    const node = nodes.get(id);
+    if (!node) throw new Error('A referenced sequence is missing.');
+    if (visiting.has(id)) throw new Error('Nested sequences cannot contain a reference cycle.');
+    const cached = depths.get(id); if (cached !== undefined) return cached;
+    visiting.add(id);
+    let longest = 1;
+    for (const child of node.children) longest = Math.max(longest, 1 + depth(child));
+    visiting.delete(id);
+    if (longest > MAX_SEQUENCE_DEPTH) throw new Error(`Nested sequences support at most ${MAX_SEQUENCE_DEPTH} levels. Simplify the reference chain.`);
+    depths.set(id, longest); return longest;
+  };
+  for (const id of nodes.keys()) depth(id);
+  return nodes;
+}
+
+/** Import/insertion needs graph validation, not a decoded-frame plan or deep snapshot. */
+export function validateSequenceGraph(sequences: readonly SequencePlanNode[]): void {
+  inspectSequenceGraph(sequences);
+}
+
 /** Immutable edit-time compilation. Preserves hierarchy for group effects/captions/audio. */
 export class NestedSequencePlan {
   private readonly nodes = new Map<string, CompiledNode>();
   constructor(sequences: readonly SequencePlanNode[]) {
-    if (!sequences.length || sequences.length > 30) throw new Error('A nested project supports 1–30 sequences.');
-    for (const sequence of sequences) {
-      if (!string(sequence.id) || this.nodes.has(sequence.id)) throw new Error('Sequence IDs must be unique.');
-      if (!Array.isArray(sequence.clips) || sequence.clips.length > 10000) throw new Error('A sequence supports up to 10,000 clips.');
+    // Reject invalid graphs before any heavy snapshots/index construction.
+    for (const { sequence, duration } of inspectSequenceGraph(sequences).values()) {
       // Snapshot once: active edit and saved sequences must be supplied by sequenceViews.
       const snapshot = structuredClone(sequence), tracks = new Map(snapshot.tracks.map((t) => [t.id, t]));
-      const ids = new Set<string>();
-      for (const clip of snapshot.clips) {
-        if (!isMediaClip(clip) && !isSequenceClip(clip)) throw new Error('A clip needs exactly one media or sequence source.');
-        if (!string(clip.id) || ids.has(clip.id) || !tracks.has(clip.trackId)) throw new Error('Sequence clips need unique IDs and existing tracks.');
-        ids.add(clip.id);
-        if (isSequenceReference(clip) && !validSequenceReference(clip)) throw new Error('The nested sequence clip has invalid source timing or transforms.');
-      }
       const order = new Map(snapshot.tracks.map((t, i) => [t.id, i]));
       const clips = snapshot.clips.map((clip, i) => ({ clip, i }))
         .sort((a, b) => order.get(b.clip.trackId)! - order.get(a.clip.trackId)! || a.i - b.i).map(({ clip }) => clip);
-      const duration = Math.max(0, ...clips.map(clipEnd));
-      if (!finite(duration)) throw new Error('Sequence duration must stay within 24 hours.');
       this.nodes.set(snapshot.id, { sequence: snapshot, duration, tracks,
         index: new TimelineIndex(clips, (clip) => ({ start: clip.start, end: clipEnd(clip) })) });
     }
-    // Check every sequence, including inactive/unreachable ones, with memoized DAG depths.
-    const visiting = new Set<string>(), depths = new Map<string, number>();
-    const depth = (id: string): number => {
-      const node = this.nodes.get(id);
-      if (!node) throw new Error('A referenced sequence is missing.');
-      if (visiting.has(id)) throw new Error('Nested sequences cannot contain a reference cycle.');
-      const cached = depths.get(id); if (cached !== undefined) return cached;
-      visiting.add(id);
-      let longest = 1;
-      for (const clip of node.sequence.clips) if (isSequenceReference(clip)) longest = Math.max(longest, 1 + depth(clip.sequenceId));
-      visiting.delete(id);
-      if (longest > MAX_SEQUENCE_DEPTH) throw new Error(`Nested sequences support at most ${MAX_SEQUENCE_DEPTH} levels. Simplify the reference chain.`);
-      depths.set(id, longest); return longest;
-    };
-    for (const id of this.nodes.keys()) depth(id);
   }
 
   frameAt(sequenceId: string, time: number): SequenceFramePlan {

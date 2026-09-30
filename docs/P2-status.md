@@ -222,6 +222,11 @@ rendering must be updated together for visual features.
 - Short metadata/native regressions and source type-check passed; exact overlapping
   counts/limits are in nested-sequences.md. No real media/model/render/browser/build
   workload ran. This development branch does not close P2 or deliver nested editing.
+- Import/insertion now validate the graph without constructing render snapshots/
+  interval indexes; insertion snapshots only the changed parent once. Actual render
+  plans still take stable snapshots, after full-graph rejection. 28 focused tests
+  passed in 1.05 s, one active worker; source type-check passed. Real memory/playback
+  measurements and recursive consumers remain pending on the development branch.
 
 ## Transcript chapter delivery
 

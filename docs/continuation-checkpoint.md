@@ -96,6 +96,15 @@ the original checkout; no install or extra dev server is needed.
   in 924 ms. One active worker; counts overlap. Final source type-check passed.
   Real media/model/render/browser/build never ran. Native preview/export still
   explicitly require media clips; recursive consumers and insertion UI are pending.
+- ae6997d saved and pushed that source-model increment on codex/nested-sequences.
+- Shared metadata-only graph validation now replaces full render-plan compilation
+  during project import/insertion. It preserves all graph checks without cloning
+  saved tracking/caption payloads or building interval indexes. Insertion snapshots
+  only its changed parent once. Actual render plans retain stable deep snapshots
+  and reject invalid graphs before copying; their cache/memory review is pending.
+- 28 focused source/plan/sequence/batch/file tests passed in 1.05 s, one active
+  worker; source type-check passed. Clone-call checks cover actual import/insertion.
+  No real media/model/render/browser/build workload was started.
 
 ## Next lightweight step
 
@@ -114,7 +123,8 @@ preview and export, then real hierarchical audio windows/gains/fades/ducking and
 caption/text consumers, followed by insertion/navigation UI. Remove the temporary
 requireMediaClip guards only as real recursive consumers replace them; never
 filter/drop refs or substitute placeholders. See docs/nested-sequences.md.
-Inspect graph snapshot/index memory costs before enabling on long tracked projects.
+Graph import/insertion cloning is fixed; do not repeat that refactor. Inspect actual
+render-plan snapshot/index memory costs before enabling on long tracked projects.
 Preserve full P2 scope and do not merge this incomplete feature into main yet.
 Use only code and tiny pixel/unit checks while the user animates. Real footage,
 browser and export QA is deferred. Nested sequences remains in full P2 scope.

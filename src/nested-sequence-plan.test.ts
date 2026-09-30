@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { addMedia, createProject, defaultProps } from './model';
 import { sequenceSnapshot, sequenceViews } from './sequences';
 import { createEqualPartSequences } from './equal-parts';
 import { clipTimelineIndex } from './timeline-index';
-import { MAX_SEQUENCE_DEPTH, MAX_SEQUENCE_FRAME_LAYERS, NestedSequencePlan, validSequenceReference,
+import { MAX_SEQUENCE_DEPTH, MAX_SEQUENCE_FRAME_LAYERS, NestedSequencePlan, validateSequenceGraph, validSequenceReference,
   type SequenceFrameLayer, type SequencePlanNode, type SequenceReferenceClip } from './nested-sequence-plan';
 
 function footage() {
@@ -102,18 +102,42 @@ describe('hierarchical sequence timing plan', () => {
 
   it('rejects missing sources, self/indirect/inactive cycles and excessive nesting depth', () => {
     const root = node('root'), sub = child();
+    const rejects = (sequences: SequencePlanNode[], message: string) => {
+      expect(() => validateSequenceGraph(sequences)).toThrow(message);
+      expect(() => new NestedSequencePlan(sequences)).toThrow(message);
+    };
     root.clips = [reference('placement', 'absent')];
-    expect(() => new NestedSequencePlan([root, sub])).toThrow('missing');
+    rejects([root, sub], 'missing');
     root.clips = [reference('placement', 'root')];
-    expect(() => new NestedSequencePlan([root, sub])).toThrow('cycle');
+    rejects([root, sub], 'cycle');
     root.clips = [reference('placement', 'child')]; sub.clips.push(reference('loop', 'root'));
-    expect(() => new NestedSequencePlan([root, sub])).toThrow('cycle');
+    rejects([root, sub], 'cycle');
     const inactive = node('inactive'); inactive.clips = [reference('loop', 'inactive')];
-    expect(() => new NestedSequencePlan([node('active'), inactive])).toThrow('cycle');
+    rejects([node('active'), inactive], 'cycle');
     const chain = Array.from({ length: MAX_SEQUENCE_DEPTH + 1 }, (_, i) => node(`s${i}`));
     chain.forEach((s, i) => { if (i < chain.length - 1) s.clips = [reference(`r${i}`, chain[i + 1].id)]; });
-    expect(() => new NestedSequencePlan(chain)).toThrow('levels');
+    rejects(chain, 'levels');
+    expect(() => validateSequenceGraph(chain.slice(1))).not.toThrow();
     expect(() => new NestedSequencePlan(chain.slice(1))).not.toThrow();
+  });
+
+  it('validates without snapshots and rejects an invalid inactive graph before copying any payload', () => {
+    const root = node('root'), sub = child(), inactive = node('inactive');
+    root.clips = [reference('a', 'child'), reference('b', 'child')];
+    const before = JSON.stringify([root, sub]);
+    const clone = vi.spyOn(globalThis, 'structuredClone');
+    try {
+      validateSequenceGraph([root, sub]);
+      expect(clone).not.toHaveBeenCalled();
+      expect(JSON.stringify([root, sub])).toBe(before);
+      inactive.clips = [reference('loop', 'inactive')];
+      expect(() => new NestedSequencePlan([root, sub, inactive])).toThrow('cycle');
+      expect(clone).not.toHaveBeenCalled();
+      const plan = new NestedSequencePlan([root, sub]);
+      expect(clone).toHaveBeenCalledTimes(2);
+      sub.clips[0].sourceStart = 7;
+      expect(nestedLayer(plan.frameAt('root', 1).layers[0]).frame.layers[0].sourceTime).toBe(7);
+    } finally { clone.mockRestore(); }
   });
 
   it('bounds frame expansion explicitly instead of dropping overlapping media', () => {

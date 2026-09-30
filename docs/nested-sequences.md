@@ -41,6 +41,25 @@ Worktree: `C:/Users/Arenb/.codex/worktrees/nested-sequences/Videoeditor`.
 Its ignored node_modules is a junction to the original checkout's installed
 dependencies; no install/model download or extra dev server was started.
 
+## Graph validation memory increment
+
+- Save/open and insertion now call the shared `validateSequenceGraph` metadata
+  check. They no longer build render interval indexes or deep-copy every sequence,
+  including saved tracking/caption payloads, solely to detect invalid references.
+  The same checks still cover all active/inactive nodes, source identities, clip
+  IDs/tracks, reference properties, duration, missing sources, cycles and depth.
+- Repeated placements share one graph edge. Insertion reads the authoritative live
+  source/parent and snapshots only the changed parent once; inactive child data
+  remains shared. Ordinary timeline snapshots and history are preserved.
+- Actual `NestedSequencePlan` construction still takes independent full snapshots
+  for stable frames. It now rejects an invalid whole graph before taking any of
+  those snapshots. Edit-time render-plan caching/reuse remains future work; no
+  real memory or playback speed measurement is claimed.
+- 28 source/plan/sequence/batch/file tests passed in 1.05 s across five suites, with
+  one active worker; source type-check passed. Includes clone-call checks on real
+  import/insertion, shared cycle/depth rejection and stable old render snapshots.
+  No media/model/render/browser/build workload was started.
+
 ## Implemented reference plan
 
 - A `SequenceReferenceClip` has a real child sequence ID and editable parent
@@ -87,9 +106,10 @@ browser suite or production build was started.
    handling; preserve native paths and never create fake assets/files.
 2. Finish integration/acceptance of lock/history/removal/source-gap behavior in UI.
    Verify references survive parts and batch outputs, beyond metadata preflight.
-   Review graph snapshot costs before enabling it on large tracked projects;
-   compilation still clones sequence data. Duplicate creation avoids a second
-   unnecessary clip clone, but no real memory/performance measurement was made.
+   Review render-plan snapshot costs before enabling it on large tracked projects;
+   render compilation still clones sequence data. Validation now skips those
+   snapshots/indexes; insertion and duplication avoid unnecessary extra timeline
+   clones. No real memory/performance measurement was made.
 3. Add sequence creation/duplication and explicit insert/nest/navigation controls.
    Show the source sequence and editable range, retain independent placements and
    make child-edit propagation apparent. Do not label copied clips as nested.

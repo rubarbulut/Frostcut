@@ -12,7 +12,7 @@ import {
   type SequenceClip,
 } from './model';
 import { sourceSequence } from './clip-source';
-import { NestedSequencePlan, validSequenceReference } from './nested-sequence-plan';
+import { validateSequenceGraph, validSequenceReference } from './nested-sequence-plan';
 
 export function sequenceSnapshot(p: Project, id: string, name: string): ProjectSequence {
   return structuredClone({
@@ -153,7 +153,7 @@ export function createSequence(project: Project, name: string, duplicateId?: str
 export function insertSequenceReference(project: Project, sequenceId: string, options: {
   start?: number; sourceStart?: number; sourceEnd?: number; trackId?: string;
 } = {}): Project {
-  const p = syncSequence(project), source = sourceSequence(p, sequenceId);
+  const p = project, source = sourceSequence(p, sequenceId);
   if (!source) throw new Error('Choose an existing source sequence.');
   if (p.activeSequenceId === sequenceId) throw new Error('A sequence cannot be inserted into itself.');
   const seconds = Math.max(0, ...source.clips.map(clipEnd));
@@ -166,6 +166,6 @@ export function insertSequenceReference(project: Project, sequenceId: string, op
   if (!validSequenceReference(reference) || reference.sourceEnd > seconds)
     throw new Error('Choose a source range inside this sequence and a supported timeline position.');
   const next = { ...p, clips: [...p.clips, reference] };
-  new NestedSequencePlan(sequenceViews(next)); // Also rejects indirect cycles through inactive edits.
+  validateSequenceGraph(sequenceViews(next)); // Also rejects indirect cycles through inactive edits.
   return syncSequence(next);
 }
