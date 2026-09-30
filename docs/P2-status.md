@@ -15,7 +15,7 @@ Paid services, uploads, account connections and cloud compute are not silently e
 | Motion tracking | Local decoder/selection/review/apply/editable motion implemented; footage/browser/export review pending | Real source-frame tracking, editable results, lost-target handling, timeline/keyframe mapping and exported motion |
 | Stabilization | Pending | Measured source motion and bounded correction/crop, preview/review/apply, export evidence |
 | Adjustment layers | Timeline/inspector and shared filter plan implemented; pixel/export review pending | Timeline-wide visual adjustment over a bounded interval, stacking, trimming, persistence and export |
-| Nested sequences | Main: reference graph/time plan. Development branch: real source model/persistence/edit operations; recursive UI/audio/compositing/export pending | Reference/insert sequences with timing, audio and captions, cycle protection, edit propagation and export |
+| Nested sequences | Main: reference graph/time plan. Development branch: source model, recursive visual/MP4 audio and parts source context implemented; live preview, text rollup, insertion UI and real output review pending | Reference/insert sequences with timing, audio and captions, cycle protection, edit propagation and export |
 | AI chapters | Editor and local-model path implemented; model/browser verification pending | Transcript-based boundaries/titles, review/edit, navigation and chapter export, timing invalidation |
 | Brand kit learning | Caption profiles implemented; browser review pending | Learn editable reusable branding from approved project examples; persistent profiles and explicit application |
 | AI style memory | Local accepted-edit preferences implemented; browser review pending | Learn from accepted edits, explain proposed defaults, apply/reject/reset and persist across projects |
@@ -240,6 +240,17 @@ rendering must be updated together for visual features.
   21 focused tests passed in 833 ms, one active worker; final type-check passed.
   No actual media/audio/FFmpeg/GPU/model run. Live preview, parts/Shorts source-context
   audit, child text/sidecar rollup, insertion UI and decoded-output QA remain open.
+
+- 39cf340 fixes actual Short reference trim against live child source metadata
+  without cloning the complete saved workspace. Preset keys retain source clocks
+  through Short cutting/assembly for native clips and parent groups; both portrait
+  creation paths store 9:16 metadata. Equal parts and actual batch switching keep
+  real child bindings/graphs. 18 tests passed in 900 ms, one active worker; final
+  source type-check passed. New checks cover real edits and frame/audio compiler
+  preparation after roundtrip, later child edits/gaps and missing-file preflight.
+  No actual decode/playback/media/FFmpeg/GPU/AI/browser/build job ran. Live preview,
+  text rollup, insertion UI and real decoded parts/batch output acceptance remain
+  pending on codex/nested-sequences. Main editor code is unchanged; P2 stays open.
 
 ## Transcript chapter delivery
 

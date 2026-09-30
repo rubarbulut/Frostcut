@@ -17,8 +17,9 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
 Nested sequence source-model work is saved/pushed as ae6997d on
 `codex/nested-sequences`, in the attached managed worktree:
 `C:/Users/Arenb/.codex/worktrees/nested-sequences/Videoeditor`.
-Latest saved/pushed increment: 178c8ae, hierarchical audio wired into actual nested
-MP4 export code. Continue from that branch's current HEAD, not ae6997d.
+Latest saved/pushed increment: 39cf340, real child source context and preset motion
+preserved across Shorts/parts, following 178c8ae's hierarchical MP4 audio route.
+Continue from that branch's current HEAD, not ae6997d.
 Use that directory and its current docs/nested-sequences.md for continuing code.
 Main retains the prior working editor and timing-plan foundation. Do not recreate
 the worktree, repeat the model migration, or merge this incomplete feature yet.
@@ -73,9 +74,19 @@ sample-fade behavior checked). Native export otherwise retains its existing path
 final type-check passed. No actual sound/FFmpeg/decode/GPU/AI/browser/build job ran;
 real filter, timing, perceived mix and decoded MP4 acceptance remain unverified.
 
-Next audit parts/Shorts source context: callers that strip sequences before applying
-reference trim/assembly must preserve real source metadata. Then connect main/
-proposed live previews with memoized plans, instance decoder/proxy clocks, completed
+39cf340 fixes actual Short reference trim: stripped derived timelines read original
+child source bounds without cloning the whole saved workspace. Preset keys are
+baked before Short cuts/assembly, matching existing equal-part behavior; native and
+group motion retain their original source clocks. Both portrait paths store 9:16
+metadata. Actual BatchExport already keeps the graph through switchSequence.
+18 tests across nested-parts/sequences/equal-parts/batch-plan passed in 900 ms,
+one active worker; final source type-check passed. Six new integration checks cover
+actual source edits, frame/audio plan preparation, roundtrip, later child edits,
+gaps and missing files. No decode/playback/FFmpeg/GPU/model/browser/build job ran.
+Real decoded parts/batch output acceptance remains pending; main editor code is
+unchanged by this increment. Do not repeat the source-context/preset fix.
+
+Next connect main/proposed live previews with memoized plans, instance decoder/proxy clocks, completed
 frame publication and real hierarchical Web Audio buses/gains/fades/ducking. Add
 child text/sidecar rollup and insertion/navigation UI after those consumers work.
 Do not rebuild the export graph or restore its blanket source guard; inspect
