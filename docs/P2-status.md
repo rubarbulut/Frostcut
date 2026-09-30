@@ -221,6 +221,11 @@ rendering must be updated together for visual features.
   ran. Recursive audio/visual/caption consumers and insertion UI remain pending.
   See continuation-checkpoint.md for the exact worktree and evidence. This branch
   is not a delivered nested feature and must not close P2.
+- 3df0899 saves the graph validation memory follow-up on that branch. Import/
+  insertion no longer build full render snapshots/indexes; insertion only snapshots
+  the changed parent. All graph guards and stable render snapshots are preserved.
+  28 focused tests passed in 1.05 s, one active worker; source type-check passed.
+  Actual playback/memory measurements and recursive consumers remain pending.
 
 ## Transcript chapter delivery
 

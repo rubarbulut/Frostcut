@@ -17,6 +17,8 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
 Nested sequence source-model work is saved/pushed as ae6997d on
 `codex/nested-sequences`, in the attached managed worktree:
 `C:/Users/Arenb/.codex/worktrees/nested-sequences/Videoeditor`.
+Latest saved/pushed increment: 3df0899, metadata-only graph validation and reduced
+insertion copying. Continue from that branch's current HEAD, not ae6997d.
 Use that directory and its current docs/nested-sequences.md for continuing code.
 Main retains the prior working editor and timing-plan foundation. Do not recreate
 the worktree, repeat the model migration, or merge this incomplete feature yet.
@@ -37,12 +39,20 @@ the seven source tests passed again in 418 ms after the copy optimization. One a
 worker; counts overlap. Final source type-check passed. No real media/model/render/
 browser/build job ran. Both worktrees were clean after their commits.
 
+3df0899 removes full render snapshots/indexes from project import/insertion graph
+validation and keeps all graph guards. Insertion now snapshots only the changed
+parent once; inactive child payloads stay shared. Actual render plans retain stable
+deep snapshots and reject invalid graphs before copying. 28 focused tests passed
+in 1.05 s with one active worker; source type-check passed. No real media/model/
+render/browser/build workload or actual performance benchmark was launched.
+
 Next implement actual recursive child visual composition shared by main/proposed
 preview and export, real hierarchical audio envelopes/windows/gains/fades/ducking,
 and child caption/text consumers, then insertion/navigation UI. The branch's native
 preview/export currently reject references through requireMediaClip; replace these
 with real recursive consumers, never filter/drop refs or substitute placeholders.
-Review graph snapshot/index memory costs before enabling on long tracked projects.
+Import/insertion cloning is fixed; do not repeat it. Review actual render-plan
+snapshot/index memory costs before enabling on long tracked projects.
 Complete feature code before merging to main; real media acceptance stays pending
 while the user does animation work. Full P2 scope remains intact.
 
