@@ -152,6 +152,18 @@ rendering must be updated together for visual features.
   Actual speed measurements and browser/export checks are pending.
   See [timeline-index.md](timeline-index.md).
 
+## Actual preview audio metering
+
+- The transport meter now samples the shared stereo preview output after clip
+  gains/effects. Simulated volume/jitter movement is removed. Main and proposed
+  preview media activity controls metering; paused/gap/muted output stops sampling.
+- Mute now changes the real preview output gain and native fallback volume.
+  Unsupported/partial metering reports unavailable. This is preview session state;
+  project/export audio settings are unchanged.
+- Seven focused signal/routing tests passed in 202 ms using one worker;
+  source type-check passed. Actual browser audio verification remains pending.
+  See [preview-audio-meter.md](preview-audio-meter.md).
+
 ## Transcript chapter delivery
 
 - Creator tools → Chapters offers manual editing, a non-model transcript structure

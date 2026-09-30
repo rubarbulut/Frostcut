@@ -1,6 +1,8 @@
-import { useEffect, type RefObject } from 'react';
+import { useEffect, useSyncExternalStore, type RefObject } from 'react';
+import {
+  ensurePreviewAudioOutput, previewMuteSnapshot, setPreviewAudioActive, setUnmeteredPreview, subscribePreviewAudio,
+} from './preview-audio-output';
 
-let context: AudioContext | undefined;
 const routes = new WeakMap<
   HTMLMediaElement,
   {
@@ -21,14 +23,15 @@ export function usePreviewAudio(
   playing: boolean,
   enhanced = false,
 ) {
+  const masterMuted = useSyncExternalStore(subscribePreviewAudio, previewMuteSnapshot, previewMuteSnapshot);
   useEffect(() => {
     const media = ref.current;
     if (!media) return;
+    setPreviewAudioActive(media, playing);
     let route = routes.get(media);
     if (playing && !route && typeof AudioContext !== 'undefined') {
       try {
-        context ??= new AudioContext();
-        const source = context.createMediaElementSource(media);
+        const { context } = ensurePreviewAudioOutput();
         const gainNode = context.createGain();
         const high = context.createBiquadFilter(),
           low = context.createBiquadFilter(),
@@ -42,18 +45,31 @@ export function usePreviewAudio(
         compressor.attack.value = 0.01;
         compressor.release.value = 0.1;
         compressor.knee.value = 6;
+        // Allocate processing nodes before taking ownership of this element's audio.
+        const source = context.createMediaElementSource(media);
         route = { source, gain: gainNode, high, low, compressor, connected: false, enhanced };
         routes.set(media, route);
       } catch {
         // A browser without Web Audio can still preview at native volume.
       }
     }
+    setUnmeteredPreview(media, playing && !route);
     if (route) {
+      const output = ensurePreviewAudioOutput();
+      media.volume = 1;
+      route.gain.gain.value = gain * (enhanced ? 1.5 : 1);
+      if (!playing) {
+        route.source.disconnect();
+        route.gain.disconnect();
+        route.connected = false;
+        return;
+      }
       if (!route.connected || route.enhanced !== enhanced) {
         route.source.disconnect();
         route.high.disconnect();
         route.low.disconnect();
         route.compressor.disconnect();
+        route.gain.disconnect();
         if (enhanced)
           route.source
             .connect(route.high)
@@ -61,18 +77,20 @@ export function usePreviewAudio(
             .connect(route.compressor)
             .connect(route.gain);
         else route.source.connect(route.gain);
+        route.gain.connect(output.input);
         route.connected = true;
         route.enhanced = enhanced;
       }
-      route.gain.connect(context!.destination);
-      media.volume = 1;
-      route.gain.gain.value = gain * (enhanced ? 1.5 : 1);
-      if (playing && context?.state === 'suspended') void context.resume().catch(() => {});
-    } else media.volume = Math.min(1, gain);
-  }, [ref, gain, playing, enhanced]);
+      if (output.context.state === 'suspended') void output.context.resume().catch(() => {});
+    } else media.volume = masterMuted ? 0 : Math.min(1, gain);
+  }, [ref, gain, playing, enhanced, masterMuted]);
   useEffect(() => {
     const media = ref.current;
     return () => {
+      if (media) {
+        setUnmeteredPreview(media, false);
+        setPreviewAudioActive(media, false);
+      }
       const route = media && routes.get(media);
       route?.source.disconnect();
       route?.gain.disconnect();

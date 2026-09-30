@@ -34,17 +34,24 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
 - Current timeline-index delivery is implemented in main/proposed previews and
   canvas export. Five scan-equivalence tests passed in 346 ms with one worker;
   type-check passed. See docs/timeline-index.md. No real benchmark or media render.
+- 8fb5ef1 saved and pushed the timeline-index delivery.
+- Current audio-meter delivery replaces simulated movement with actual shared
+  stereo-output sample peaks and real preview mute, including fallback volume.
+  Sampling stops when no preview media is active or when muted. Seven focused
+  tests passed in 202 ms, source type-check passed; browser audio review pending.
+  See docs/preview-audio-meter.md. No real audio/video workload was launched.
 
 ## Next lightweight step
 
-Fix the source-inspected master audio meter: its current movement is simulated
-from clip volume plus sine/cosine jitter, and its Mute button only changes meter
-state. Replace this with actual shared-preview audio sample peaks and a real
-master preview gain. Avoid per-playhead effect restarts and stop polling when
-paused. Keep fallback playback functional if Web Audio is unavailable, show that
-metering is unavailable, and verify signal math/routing with short checks. Actual
-browser audio verification remains deferred. Do not rename simulated values as
-real measurements or change export audio because preview is muted.
+Cache preview audio timing/ducking plans per edit: VideoLayer/ProposedLayer call
+audioWindow directly and again through audioGainAt on every playhead tick, while
+duckGain rebuilds and sorts all transcript speech ranges for each music tick.
+Separate edit-dependent planning from time-dependent evaluation, preserve real
+crossfade/fade/duck values and arbitrary seeking, and compare against current
+functions in a brief regression check. Avoid new decoded audio buffers. Then
+reconsider the next pending P2 feature that can be implemented without model or
+render workloads (nested sequences is a likely candidate, but requires complete
+timing/audio/caption/render integration and cycle protection).
 
 ## Remaining scope and review
 
