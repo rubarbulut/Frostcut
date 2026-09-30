@@ -39,16 +39,20 @@ export function validClipTracking(value: unknown, duration: number): value is Cl
 }
 
 /** Source points stay intact; interpolation performs a logarithmic lookup. */
-export function trackingPointAt(points: MotionTrackingPoint[], time: number) {
-  if (time <= points[0].time) return points[0];
-  if (time >= points.at(-1)!.time) return points.at(-1)!;
-  let low = 1, high = points.length - 1;
+export function trackingPointIndex(points: MotionTrackingPoint[], time: number) {
+  let low = 0, high = points.length;
   while (low < high) {
     const mid = (low + high) >>> 1;
     if (points[mid].time < time) low = mid + 1;
     else high = mid;
   }
-  const next = points[low], previous = points[low - 1];
+  return low;
+}
+export function trackingPointAt(points: MotionTrackingPoint[], time: number) {
+  if (time <= points[0].time) return points[0];
+  if (time >= points.at(-1)!.time) return points.at(-1)!;
+  const index = trackingPointIndex(points, time);
+  const next = points[index], previous = points[index - 1];
   const fraction = (time - previous.time) / (next.time - previous.time);
   return { time, x: previous.x + (next.x - previous.x) * fraction,
     y: previous.y + (next.y - previous.y) * fraction };

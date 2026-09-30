@@ -12,7 +12,7 @@ Paid services, uploads, account connections and cloud compute are not silently e
 | Chroma key | Implemented; final regression pending | Editable key color, threshold, edge softness and spill; matching actual preview/MP4 compositing; undo, save/open and split preservation |
 | Advanced masks | Implemented; final regression pending | Rectangle, ellipse and editable polygon, feather/invert/position controls; same mask in preview and MP4; persistence and timeline editing |
 | Background removal | Pending | Real local segmentation, editable edge controls, preview/export parity, model license/runtime availability, cancellation and useful failure states |
-| Motion tracking | Matcher/worker and source-time motion layer implemented; source/UI integration pending | Real source-frame tracking, editable results, lost-target handling, timeline/keyframe mapping and exported motion |
+| Motion tracking | Local decoder/selection/review/apply/editable motion implemented; footage/browser/export review pending | Real source-frame tracking, editable results, lost-target handling, timeline/keyframe mapping and exported motion |
 | Stabilization | Pending | Measured source motion and bounded correction/crop, preview/review/apply, export evidence |
 | Adjustment layers | Timeline/inspector and shared filter plan implemented; pixel/export review pending | Timeline-wide visual adjustment over a bounded interval, stacking, trimming, persistence and export |
 | Nested sequences | Pending | Reference/insert sequences with timing, audio and captions, cycle protection, edit propagation and export |
@@ -191,6 +191,15 @@ rendering must be updated together for visual features.
   explicit manual edits and use binary-search interpolation. Ten layer/native
   motion tests passed in 567 ms, one worker; type-check passed. Source provider,
   review/apply UI and actual footage/export verification remain pending.
+- Original local-source reference loading, region drag/numeric selection, bounded
+  sampling, progress/cancel, trajectory/loss review and explicit apply/partial-apply
+  are now connected in the inspector. Saved source time/X/Y points are editable,
+  with point navigation/add/delete, enable and remove. Project/source/selection
+  changes cancel/invalidate pending work. No job starts when mounting the UI.
+- 29 focused tests across six source/job/layer/matcher/worker/motion suites passed
+  in 1.67 seconds with one active worker; final type-check passed. Actual codecs,
+  browser interaction, frame timing, matching quality and preview/export fidelity
+  remain unverified. No real media/model job or browser/build suite was run.
 
 ## Transcript chapter delivery
 

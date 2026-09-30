@@ -41,6 +41,7 @@ import { Field, Range, Modal } from './components';
 import { CaptionAppearance } from './CaptionAppearance';
 import { TransformControls } from './TransformControls';
 import { VisualEffectsControls } from './VisualEffectsControls';
+import { MotionTrackingControls } from './MotionTrackingControls';
 import { AudioTools } from './AudioTools';
 import { CaptionLanguage } from './SubtitleTools';
 import { useShallow } from 'zustand/react/shallow';
@@ -671,6 +672,7 @@ export function PropertiesPanel() {
                 <b>{isAudioClip(p, clip) ? 'Source audio' : 'Transform'}</b>
                 {locked && <span>Track locked</span>}
               </div>
+              {!isAudioClip(p, clip) && <MotionTrackingControls key={clip.id} clip={clip} />}
               <fieldset disabled={locked}>
                 {!isAudioClip(p, clip) && <TransformControls clip={clip} />}
                 {!isAudioClip(p, clip) && <VisualEffectsControls key={clip.id} clip={clip} />}

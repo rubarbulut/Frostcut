@@ -59,23 +59,30 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
   previews/export/handles. Ten focused tests passed in 567 ms, type-check passed.
   Native keyframe capture/fields edit baseline values, preventing double offsets;
   detached audio clears tracking. Source provider/UI is still pending.
+- 1431fb5 saved and pushed the source-time layer delivery.
+- Source decoding and tracking inspector are now implemented: original local
+  blob source, bounded one-frame canvas reads, abortable load/seek, explicit region
+  selection/job/progress/cancel, trajectory/loss review, stale guards and explicit
+  apply/partial apply. Saved points are individually editable with source time/X/Y,
+  add/delete/navigation, enable/remove and Undo/Redo. Nothing runs on mount.
+- Latest combined check: 29 focused tests across six suites passed in 1.67 seconds
+  with one active worker; final source type-check passed. Tests use tiny arrays and
+  fake video/worker lifecycles. No real footage/model/render/browser/build ran.
+  See docs/motion-tracking.md for the full code path and pending acceptance.
 
 ## Next lightweight step
 
-Continue full motion tracking from the implemented core, not from scratch:
-add an original-local-media frame provider with reported source times, abortable
-load/seek and cleanup, then region selection/progress/cancel/result review and
-stale-result guards. Keep measured source-time points in a separate optional clip
-tracking layer, with binary-search interpolation and a bounded point editor. This
-preserves existing animation keys and avoids truncating tracking to the native
-258-key animation limit. Compose source-region translation compensation with
-Fit/Crop/Blur geometry and existing scale/rotation in shared preview/export motion.
-Disabled or out-of-range tracking must preserve the original motion exactly.
-Do not invent points after target loss. Preserve lock/undo/save/sequence/split
-behavior and both preview/export paths. The layer/validation/composition and
-manual point-edit helper are implemented; next connect original-source decoding
-and a region/progress/review/apply inspector with a bounded point editor.
-See docs/motion-tracking.md for remaining requirements.
+Motion tracking's planned source/UI integration is implemented, not a future task.
+Inspect current git log/status first and avoid rebuilding it. Keep real footage
+quality, decoder frame presentation, actual worker loading, browser interaction
+and rendered output acceptance open until heavier checks are permitted. Source
+times are video.currentTime after seek, not a claim of encoded PTS precision.
+The 50,000-point independent layer preserves baseline keys; native cap258 stays.
+Next lightweight task: inspect project save/open size handling (existing 20 MB open
+limit versus potentially large tracked projects), make an explicit actionable
+size guard so a saved file is never silently unusable, and preserve media/history.
+Then inspect full nested-sequence architecture and implement a concrete small
+increment that can be verified without render/model runs. Do not reduce P2 scope.
 Use only code and tiny pixel/unit checks while the user animates. Real footage,
 browser and export QA is deferred. Nested sequences remains in full P2 scope.
 

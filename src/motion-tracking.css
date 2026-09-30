@@ -1,0 +1,17 @@
+.motion-tracking-controls details, .tracking-point-editor { margin: 10px 0; }
+.motion-tracking-controls summary, .tracking-dialog summary { cursor: pointer; font-weight: 600; margin-bottom: 10px; }
+.motion-tracking-controls fieldset, .tracking-dialog fieldset { border: 0; padding: 0; margin: 12px 0; min-width: 0; }
+.tracking-dialog { padding: 0 22px 22px; overflow: auto; }
+.tracking-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.tracking-source-view { position: relative; width: 100%; background: #090d10; margin: 14px auto; touch-action: none; overflow: hidden; cursor: crosshair; }
+.tracking-source-view canvas, .tracking-source-view svg { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
+.tracking-source-view svg { position: absolute; inset: 0; pointer-events: none; }
+.tracking-source-placeholder { position: absolute; inset: 0; display: grid; place-items: center; color: #a4b3bb; padding: 15px; text-align: center; }
+.tracking-region { fill: #7dd3fc20; stroke: #7dd3fc; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.tracking-path { fill: none; stroke: #fbbf24; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.tracking-error { color: #fda4af; }
+.tracking-review { padding: 14px; border: 1px solid #38505c; border-radius: 10px; margin-top: 14px; }
+.tracking-dialog progress { max-width: 100%; }
+.tracking-point-editor .button-row { flex-wrap: wrap; margin: 10px 0; }
+.tracking-point-editor .button-row .field { flex: 1; min-width: 90px; }
+.motion-tracking-controls .subtle, .tracking-dialog .subtle { display: block; line-height: 1.5; }

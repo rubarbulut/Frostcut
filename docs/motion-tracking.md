@@ -1,8 +1,31 @@
 # Local motion tracking — implementation in progress
 
-This P2 feature is not yet available in the editor. The current delivery is the
-actual region-matching algorithm, cancellable one-frame worker bridge and saved
-source-time motion layer. Source video decoding and selection/review UI remain required.
+The editor now exposes a local source-region tracker in the selected video clip's
+Motion tracking inspector. Matcher, worker, original-source decoder, review/apply
+UI and editable saved motion are implemented. Real footage/browser/export review
+remains pending; P2 motion tracking is not marked complete.
+
+## Editor flow
+
+1. Select an unlocked local video clip and open Motion tracking → Select source
+   region. Set the source range, sample rate and analysis longest side.
+2. Load original reference, then drag a textured rectangle or edit its percentages.
+   The rectangle must be at least 8 pixels per side at analysis resolution.
+3. Track selected range starts an explicit local job with progress and cancellation.
+   Closing the dialog, relinking media, switching selection or changing the project
+   cancels/invalidate the job. Nothing starts from mounting/opening the inspector.
+4. Review the measured trajectory and any low-correlation/ambiguous target loss.
+   Apply measured motion or explicitly Apply tracked portion commits one undoable
+   edit. Fewer than two measured points cannot apply. An existing layer is replaced
+   only by this explicit action; cancelled/failed jobs leave it intact.
+5. Enable/disable/remove the layer or edit saved points one at a time. Point-number
+   navigation exposes every point without rendering a full table. Source timestamps
+   and X/Y percentages are editable; add at playhead and delete non-anchor points
+   are supported. The first point remains the compensation anchor.
+
+Outside the saved half-open source range, original animation resumes. A partial
+application can therefore create a visible transition; the review explains this.
+No position is extrapolated into the untracked remainder.
 
 ## Implemented core
 
@@ -37,8 +60,18 @@ invent a trajectory after loss. Actual footage quality remains unverified.
 - Cancellation terminates the worker and rejects the in-flight operation. Lost
   targets terminate before yielding the final result. Normal completion, consumer
   return and transport/runtime errors clean up as well.
-- The frame provider must also observe the AbortSignal during source loading/seeks.
-  No actual provider or user-facing tracking job is connected yet.
+- The on-demand source reader uses the original registered local blob URL, one
+  paused off-DOM video and one canvas bounded to the chosen 320/480/640 px longest
+  side, without upsampling. It does not use proxy/effected/composited output.
+- Loading/seeking waits register listeners before initiating work, have a 15-second
+  timeout and observe cancellation. All completion/error/abort paths pause, detach
+  and release the decoder/canvas; concurrent reads are refused.
+- Source samples are end-exclusive. Their timestamps use the video's reported
+  currentTime after seek, not encoded frame PTS. Variable-frame-rate and frame
+  presentation accuracy require real-media review. Output quality/fps are unchanged.
+- Requests above 50,000 samples are refused before decode. The user can explicitly
+  choose a shorter range or lower sample rate. All accepted points are stored;
+  only the review SVG is bounded to approximately 1,024 drawing vertices.
 
 ## Evidence
 
@@ -69,21 +102,28 @@ cover backpressure, abort, errors, transferred-buffer bounds and immediate clean
 on loss. The bridge uses a fake transport in tests; real worker loading, video
 decoding, tracking accuracy and preview/export motion remain unverified.
 
-## Next delivery requirements
+The integrated source/job/layer/matcher/worker/native-motion suites passed 29 tests
+in 1.67 seconds with one active worker; final source type-check passed. Four new
+source tests exercise an EventTarget media double and owned bounded pixel buffers,
+including abort during load/seek, errors/timeouts, geometry, backpressure and
+end-exclusive source sampling. Three job tests cover measured result provenance,
+partial/no-tail application, single-seed rejection, request budgets and cleanup on
+failure/abort. These do not establish real codec/browser behavior. No actual video,
+model inference, render, production build or browser suite was started.
 
-1. Add an on-demand source frame provider using original local media, a bounded
-   canvas and reported video source timestamps. Abort must cancel decode/seek
-   waits and release video/canvas resources. Never start tracking from mounting UI.
-2. Add original-source region selection, start/end/sample-rate/search controls,
-   progress/cancel, lost-target diagnostics and a trajectory review. Snapshot source
-   clip/media/settings so stale results cannot apply after edits or sequence changes.
-3. Explicitly apply measured points through the implemented independent tracking
-   layer as one undoable edit; handle partial results explicitly.
-4. Add a bounded/paginated point editor exposing all saved tracking points. Native
-   animation keys stay separate; no cap expansion or path approximation is needed.
-5. Verify persistence, split/move/trim/speed, Undo/Redo, sequence/parts/batch behavior
-   and preview/export keyframe consumption with brief code checks. Real source and
-   rendered output checks remain deferred while the user is doing animation work.
+## Remaining acceptance checks
 
-This is one step toward full motion tracking, not a delivered replacement for it.
+1. Review actual local MP4/WebM and variable-frame-rate seeks, worker loading,
+   rectangle pointer/keyboard/numeric interactions and result presentation.
+2. Check textured translations, repeated patterns/occlusion, cancellation while
+   loading/seeking/matching, relink/project/sequence invalidation and lock guards.
+3. Compare measured motion in both previews and decoded MP4, including Fit/Crop/Blur,
+   existing animation/scale/rotation, trim/speed, split, episode/sequence and batch
+   exports. Verify enable/remove/edit/Undo/Redo and save/open in the browser.
+4. Assess real tracking quality and time on representative footage. Do not infer
+   performance or accuracy from tiny unit arrays. Heavier checks remain deferred
+   while the user does animation work. Saved project files have an existing 20 MB
+   open limit; large multi-clip tracking projects need an explicit size review.
+
+This delivers the code path; pending media/UI acceptance is still part of the feature.
 Other P2 requirements in `P2-status.md` remain in scope.
