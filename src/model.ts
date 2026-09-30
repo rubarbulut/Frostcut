@@ -1,4 +1,5 @@
 import { animatedProperties, type KeyframeTracks } from './motion';
+import { validClipTracking, type ClipTracking } from './tracking-data';
 import type { SavedAnimation } from './animation-presets';
 import {
   translatedWords,
@@ -103,6 +104,7 @@ export type Clip = {
   voiceEnhance?: boolean;
   audioDetached?: boolean;
   keyframes?: KeyframeTracks;
+  tracking?: ClipTracking;
   id: string;
   mediaId: string;
   trackId: string;
@@ -363,6 +365,7 @@ export function detachAudio(p: Project, id: string): Project {
     audioRole: 'voice',
     captionWords: [],
     keyframes: undefined,
+    tracking: undefined,
     properties: {
       ...defaultProps,
       speed: clip.properties.speed,
@@ -863,6 +866,7 @@ export function validateProject(value: unknown): Project {
         fail();
       if (c.captionWords !== undefined) validateWords(c.captionWords, m!.duration);
       if (c.effects !== undefined && !validVisualEffects(c.effects)) fail();
+      if (c.tracking !== undefined && (isAudioClip(p, c) || !validClipTracking(c.tracking, m!.duration))) fail();
       if (c.keyframes !== undefined) {
         if (
           !c.keyframes ||

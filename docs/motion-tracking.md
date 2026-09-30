@@ -1,8 +1,8 @@
 # Local motion tracking — implementation in progress
 
 This P2 feature is not yet available in the editor. The current delivery is the
-actual region-matching algorithm and cancellable one-frame worker bridge. Source
-video decoding, selection/review UI and applying editable motion remain required.
+actual region-matching algorithm, cancellable one-frame worker bridge and saved
+source-time motion layer. Source video decoding and selection/review UI remain required.
 
 ## Implemented core
 
@@ -42,6 +42,25 @@ invent a trajectory after loss. Actual footage quality remains unverified.
 
 ## Evidence
 
+The optional per-clip tracking layer preserves every accepted source point (up to
+50,000; excess requests are refused, not truncated). Binary-search interpolation
+composes region translation compensation with the original animation, current
+Fit/Crop/Blur foreground geometry, scale and rotation. This retains intentional
+baseline movement; it does not promise to pin a target despite that movement.
+Compensation is active only inside the saved half-open source range. No tail is
+invented after that range. Existing native animation limits remain unchanged.
+
+Both previews, canvas export and preview handles consume the shared composition.
+Transform fields and keyframe capture still edit the baseline, avoiding double
+application. Tracking is copied through splits/parts, linked to source time under
+move/trim/speed, validated on open and removed from detached audio copies. Point
+edits explicitly become manual and drop measured correlation/margin metadata.
+
+Ten focused tests across tracking-layer and native-motion suites passed in 567 ms
+with one worker; source type-check passed. Six new tests cover geometry, baseline
+preservation, 600-point persistence, invalid data, time mapping, locks, stale
+results, manual editing and actual store Undo/Redo. Pixel/media QA remains pending.
+
 Twelve tests across matcher/worker suites passed in 357 ms with one active worker;
 source type-check passed. Tests use tiny deterministic pixel arrays to establish
 measured translation, brightness normalization, occlusion/ambiguity loss, texture
@@ -53,18 +72,15 @@ decoding, tracking accuracy and preview/export motion remain unverified.
 ## Next delivery requirements
 
 1. Add an on-demand source frame provider using original local media, a bounded
-   canvas and exact requested source timestamps. Abort must cancel decode/seek
+   canvas and reported video source timestamps. Abort must cancel decode/seek
    waits and release video/canvas resources. Never start tracking from mounting UI.
 2. Add original-source region selection, start/end/sample-rate/search controls,
    progress/cancel, lost-target diagnostics and a trajectory review. Snapshot source
    clip/media/settings so stale results cannot apply after edits or sequence changes.
-3. Map measured points into source-time X/Y motion. Respect Fit/Crop/Blur geometry,
-   existing scale/rotation/animation, trim/speed and track locks. Apply explicitly
-   as one undoable edit; handle partial results explicitly.
-4. Resolve the inspected existing limit of 258 keys per animated property. Do not
-   truncate measured paths or silently approximate them to pass validation. If
-   increasing the limit, also use indexed interpolation and bounded keyframe UI
-   rendering so long tracks remain usable. Keep all saved keyframes editable.
+3. Explicitly apply measured points through the implemented independent tracking
+   layer as one undoable edit; handle partial results explicitly.
+4. Add a bounded/paginated point editor exposing all saved tracking points. Native
+   animation keys stay separate; no cap expansion or path approximation is needed.
 5. Verify persistence, split/move/trim/speed, Undo/Redo, sequence/parts/batch behavior
    and preview/export keyframe consumption with brief code checks. Real source and
    rendered output checks remain deferred while the user is doing animation work.

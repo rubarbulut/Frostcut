@@ -54,6 +54,11 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
   This is not exposed in the editor or marked delivered: see docs/motion-tracking.md.
 - 3317da2 saved and pushed that matcher/worker foundation. The worktree was clean
   at the user's latest credit-limit checkpoint request. No media/model job is running.
+- b025ab1 saved and pushed that credit-limit continuation note.
+- The separate tracking motion layer is now implemented and consumed by both
+  previews/export/handles. Ten focused tests passed in 567 ms, type-check passed.
+  Native keyframe capture/fields edit baseline values, preventing double offsets;
+  detached audio clears tracking. Source provider/UI is still pending.
 
 ## Next lightweight step
 
@@ -67,8 +72,10 @@ preserves existing animation keys and avoids truncating tracking to the native
 Fit/Crop/Blur geometry and existing scale/rotation in shared preview/export motion.
 Disabled or out-of-range tracking must preserve the original motion exactly.
 Do not invent points after target loss. Preserve lock/undo/save/sequence/split
-behavior and both preview/export paths. This design is recorded, not implemented
-yet. See docs/motion-tracking.md for remaining requirements.
+behavior and both preview/export paths. The layer/validation/composition and
+manual point-edit helper are implemented; next connect original-source decoding
+and a region/progress/review/apply inspector with a bounded point editor.
+See docs/motion-tracking.md for remaining requirements.
 Use only code and tiny pixel/unit checks while the user animates. Real footage,
 browser and export QA is deferred. Nested sequences remains in full P2 scope.
 

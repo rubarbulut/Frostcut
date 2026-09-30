@@ -1,6 +1,6 @@
 import { useEditor } from './store';
 import { clipEnd, isLocked, isAudioClip } from './model';
-import { setAnimatedValue, transformAt } from './motion';
+import { baseTransformAt, setAnimatedValue, transformAt } from './motion';
 import { dragClipProperties } from './clip-drag';
 import { visualBounds } from './aspect-fill';
 export function TransformHandles() {
@@ -12,7 +12,8 @@ export function TransformHandles() {
   if (!original || isLocked(p, original) || p.tracks.find((t) => t.id === original.trackId)?.hidden)
     return null;
   const clip = previewClip?.id === original.id ? previewClip : original,
-    props = transformAt(clip, playhead, p.settings.width, p.settings.height);
+    props = transformAt(clip, playhead, p.settings.width, p.settings.height, p.settings.fillMode),
+    base = baseTransformAt(clip, playhead, p.settings.width, p.settings.height);
   const asset = p.media.find((m) => m.id === clip.mediaId)!,
     bounds = visualBounds(asset, p.settings, p.settings.fillMode);
   return (
@@ -32,7 +33,7 @@ export function TransformHandles() {
           let next = setAnimatedValue(
             original,
             'x',
-            props.x + (dx * p.settings.width) / rect.width,
+            base.x + (dx * p.settings.width) / rect.width,
             playhead,
             p.settings.width,
             p.settings.height,
@@ -40,7 +41,7 @@ export function TransformHandles() {
           next = setAnimatedValue(
             next,
             'y',
-            props.y + (dy * p.settings.height) / rect.height,
+            base.y + (dy * p.settings.height) / rect.height,
             playhead,
             p.settings.width,
             p.settings.height,

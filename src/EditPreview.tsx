@@ -48,7 +48,7 @@ function ProposedLayer({
   playing: boolean;
 }) {
   const ref = useRef<HTMLVideoElement>(null),
-    props = transformAt(clip, time, p.settings.width, p.settings.height);
+    props = transformAt(clip, time, p.settings.width, p.settings.height, p.settings.fillMode);
   const audio = useMemo(() => createClipAudioPlan(p, clip), [p, clip]),
     window = audio.window,
     track = p.tracks.find((t) => t.id === clip.trackId)!;

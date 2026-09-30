@@ -320,7 +320,7 @@ export async function renderCanvasVideo(
           await videoEvent(video, 'seeked', signal, () => {
             video!.currentTime = source;
           });
-        const props = transformAt(clip as MotionClip, time, p.settings.width, p.settings.height);
+        const props = transformAt(clip as MotionClip, time, p.settings.width, p.settings.height, p.settings.fillMode);
         const sourceSize = { width: video.videoWidth, height: video.videoHeight };
         const frameSize = { width, height };
         ctx.save();

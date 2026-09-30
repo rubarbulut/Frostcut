@@ -300,6 +300,7 @@ export async function exportMp4(
       const animated = p.clips.some(
         (c) =>
           c.properties.animation !== 'None' ||
+          c.tracking?.enabled ||
           hasVisualEffects(c.effects) ||
           c.properties.crop > 0 ||
           Object.values(c.keyframes ?? {}).some((frames) => frames.length),

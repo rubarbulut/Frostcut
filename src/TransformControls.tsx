@@ -8,7 +8,7 @@ import {
   presetKeyframes,
   setAnimatedValue,
   toggleKeyframe,
-  transformAt,
+  baseTransformAt,
   type AnimatedProperty,
 } from './motion';
 import { dragClipProperties } from './clip-drag';
@@ -36,7 +36,7 @@ const limits = (key: keyof typeof labels) =>
 export function TransformControls({ clip: original }: { clip: Clip }) {
   const { project: p, commit, playhead, previewClip, seek, setPlaying } = useEditor();
   const clip = previewClip?.id === original.id ? previewClip : original;
-  const values = transformAt(clip, playhead, p.settings.width, p.settings.height);
+  const values = baseTransformAt(clip, playhead, p.settings.width, p.settings.height);
   const sourceTime = clip.sourceStart + (playhead - clip.start) * clip.properties.speed;
   const inside = playhead >= clip.start && playhead <= clipEnd(clip),
     locked = isLocked(p, clip);

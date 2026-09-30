@@ -1,4 +1,5 @@
-import type { ClipProps } from './model';
+import type { AspectFillMode, ClipProps } from './model';
+import { trackingOffsetAt, type ClipTracking } from './tracking-data';
 export const animatedProperties = ['x', 'y', 'scale', 'rotation', 'opacity'] as const;
 export type AnimatedProperty = (typeof animatedProperties)[number];
 export type Keyframe = { time: number; value: number; easing?: 'linear' | 'smooth' };
@@ -14,6 +15,7 @@ export type MotionClip = {
   sourceEnd: number;
   properties: ClipProps;
   keyframes?: KeyframeTracks;
+  tracking?: ClipTracking;
 };
 export function interpolateKeyframes(
   frames: Keyframe[] | undefined,
@@ -88,7 +90,7 @@ export function presetKeyframes(
     };
   return {};
 }
-export function transformAt(c: MotionClip, time: number, width: number, height: number) {
+export function baseTransformAt(c: MotionClip, time: number, width: number, height: number) {
   const sourceTime = c.sourceStart + (time - c.start) * c.properties.speed;
   const tracks = c.keyframes ?? presetKeyframes(c, c.properties.animation, width, height);
   return {
@@ -100,6 +102,12 @@ export function transformAt(c: MotionClip, time: number, width: number, height: 
       ]),
     ),
   } as ClipProps;
+}
+export function transformAt(c: MotionClip, time: number, width: number, height: number, fillMode?: AspectFillMode) {
+  const base = baseTransformAt(c, time, width, height);
+  const sourceTime = c.sourceStart + (time - c.start) * c.properties.speed;
+  const offset = trackingOffsetAt(c.tracking, sourceTime, width, height, base, fillMode);
+  return { ...base, x: base.x + offset.x, y: base.y + offset.y };
 }
 export function setAnimatedValue<T extends MotionClip>(
   clip: T,
@@ -145,7 +153,7 @@ export function toggleKeyframe<T extends MotionClip>(
       c.sourceStart,
       Math.min(c.sourceEnd, c.sourceStart + (time - c.start) * c.properties.speed),
     );
-  const value = transformAt(c, time, width, height)[property];
+  const value = baseTransformAt(c, time, width, height)[property];
   c.keyframes ??= presetKeyframes(c, c.properties.animation, width, height);
   const frames = c.keyframes[property] ?? [];
   const existing = frames.findIndex((f) => Math.abs(f.time - sourceTime) < 0.001);

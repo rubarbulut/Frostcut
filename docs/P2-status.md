@@ -12,7 +12,7 @@ Paid services, uploads, account connections and cloud compute are not silently e
 | Chroma key | Implemented; final regression pending | Editable key color, threshold, edge softness and spill; matching actual preview/MP4 compositing; undo, save/open and split preservation |
 | Advanced masks | Implemented; final regression pending | Rectangle, ellipse and editable polygon, feather/invert/position controls; same mask in preview and MP4; persistence and timeline editing |
 | Background removal | Pending | Real local segmentation, editable edge controls, preview/export parity, model license/runtime availability, cancellation and useful failure states |
-| Motion tracking | Region matcher/worker core implemented; source/UI/keyframe integration pending | Real source-frame tracking, editable results, lost-target handling, timeline/keyframe mapping and exported motion |
+| Motion tracking | Matcher/worker and source-time motion layer implemented; source/UI integration pending | Real source-frame tracking, editable results, lost-target handling, timeline/keyframe mapping and exported motion |
 | Stabilization | Pending | Measured source motion and bounded correction/crop, preview/review/apply, export evidence |
 | Adjustment layers | Timeline/inspector and shared filter plan implemented; pixel/export review pending | Timeline-wide visual adjustment over a bounded interval, stacking, trimming, persistence and export |
 | Nested sequences | Pending | Reference/insert sequences with timing, audio and captions, cycle protection, edit propagation and export |
@@ -185,6 +185,12 @@ rendering must be updated together for visual features.
   source type-check passed. Source-video extraction, region/review UI, editable
   motion application and actual footage/export validation remain pending. This
   foundation alone does not deliver motion tracking. See [motion-tracking.md](motion-tracking.md).
+- The optional source-time tracking layer now composes with existing animation in
+  both previews and canvas export without replacing native keys. Its validated
+  points retain source coordinates through split/move/trim/speed/parts, support
+  explicit manual edits and use binary-search interpolation. Ten layer/native
+  motion tests passed in 567 ms, one worker; type-check passed. Source provider,
+  review/apply UI and actual footage/export verification remain pending.
 
 ## Transcript chapter delivery
 

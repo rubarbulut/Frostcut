@@ -54,7 +54,7 @@ function VideoLayer({
   const audio = useMemo(() => createClipAudioPlan(p, clip), [p, clip]),
     window = audio.window,
     audioActive = time >= window.timelineStart && time < window.timelineStart + window.duration;
-  const props = transformAt(clip, time, p.settings.width, p.settings.height);
+  const props = transformAt(clip, time, p.settings.width, p.settings.height, p.settings.fillMode);
   const withEffects = !isAudioClip(p, clip) && hasVisualEffects(clip.effects);
   const withBlur = !isAudioClip(p, clip) && needsBlurFill(asset, p.settings, p.settings.fillMode);
   const effectStyle = {
