@@ -1,17 +1,9 @@
 import type { FFmpeg } from '@ffmpeg/ffmpeg';
-import { captionGroups, duration, type Project } from './model';
-import { transformAt, type MotionClip } from './motion';
-import { requireMediaClip } from './clip-source';
-import { captionAppearance } from './caption-style';
-import { captionFontFamily } from './caption-typography';
+import { duration, type Project } from './model';
 import { mediaUrls } from './store';
-import { captionEmoji, captionLayout } from './caption-layout';
 import { videoBitrate } from './export-settings';
-import { hasVisualEffects } from './visual-effects';
-import { EffectsRenderer } from './effects-renderer';
-import { drawCanvasAdjustments } from './adjustment-renderer';
-import { AspectFrameRenderer, imagePlacement, needsBlurFill } from './aspect-fill';
-import { captionTimelineIndex, clipTimelineIndex } from './timeline-index';
+import { compileProjectSequencePlan, SequenceCompositor, type VisualFrameSource } from './sequence-compositor';
+export { drawCanvasCaption } from './canvas-captions';
 
 function aborted(signal: AbortSignal) {
   if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
@@ -58,135 +50,6 @@ async function canvasPng(canvas: HTMLCanvasElement) {
   );
   return new Uint8Array(await blob.arrayBuffer());
 }
-export function drawCanvasCaption(
-  ctx: CanvasRenderingContext2D,
-  p: Project,
-  group: ReturnType<typeof captionGroups>[number],
-  time: number,
-  width: number,
-  height: number,
-) {
-  const appearance = captionAppearance(p.captions),
-    font = (width * appearance.size) / 100,
-    lineHeight = font * (appearance.lineHeight ?? 1.22);
-  const spacingContext = ctx as CanvasRenderingContext2D & { letterSpacing: string };
-  if (appearance.letterSpacing && !('letterSpacing' in ctx))
-    throw new Error('Letter spacing export needs a current browser version. Update your browser or reset letter spacing to 0.');
-  ctx.save();
-  ctx.font = `${appearance.italic ? 'italic ' : ''}${appearance.bold ? 700 : 400} ${font}px ${captionFontFamily(appearance.fontFamily)}`;
-  if ('letterSpacing' in ctx) spacingContext.letterSpacing = `${(appearance.letterSpacing ?? 0) * font}px`;
-  ctx.textBaseline = 'top';
-  ctx.lineJoin = 'round';
-  ctx.lineWidth = ((appearance.outline * width) / 1080) * 2;
-  const space = Math.max(0, ctx.measureText(' ').width + (appearance.wordSpacing ?? 0) * font);
-  const emoji = captionEmoji(p, group),
-    layout = captionLayout(p);
-  const display = emoji
-    ? [...group, { ...group.at(-1)!, id: 'emoji', text: emoji, important: false }]
-    : group;
-  const align = appearance.align ?? 'center';
-  const boxed = (appearance.boxOpacity ?? 0) > 0;
-  const padX = boxed ? ((appearance.boxPadding ?? 4) + 12) * width / 1080 : 0;
-  const padY = boxed ? (appearance.boxPadding ?? 4) * width / 1080 : 0;
-  const columnWidth = width * layout.width / 100;
-  const contentWidth = Math.max(1, columnWidth - padX * 2);
-  const columnLeft = width * layout.x / 100 - columnWidth / 2;
-  const rows: { word: (typeof group)[number]; width: number }[][] = [[]];
-  let rowWidth = 0;
-  for (const word of display) {
-    const size = ctx.measureText(word.text).width;
-    if (rowWidth + space + size > contentWidth && rows.at(-1)!.length) {
-      rows.push([]);
-      rowWidth = 0;
-    }
-    if (rows.at(-1)!.length) rowWidth += space;
-    rows.at(-1)!.push({ word, width: size });
-    rowWidth += size;
-  }
-  const rowWidths = rows.map((row) => row.reduce((n, w) => n + w.width, 0) + space * (row.length - 1));
-  const textWidth = align === 'justify' ? contentWidth : Math.min(contentWidth, Math.max(...rowWidths));
-  const blockWidth = textWidth + padX * 2;
-  const blockLeft = align === 'left' || align === 'justify' ? columnLeft
-    : align === 'right' ? columnLeft + columnWidth - blockWidth : width * layout.x / 100 - blockWidth / 2;
-  const blockHeight = rows.length * lineHeight + padY * 2;
-  const top =
-    p.captions.position === 'custom'
-      ? (height * layout.y) / 100 - blockHeight / 2
-      : p.captions.position === 'top'
-        ? (height * appearance.margin) / 100
-        : p.captions.position === 'center'
-          ? (height - blockHeight) / 2
-          : height * (1 - appearance.margin / 100) - blockHeight;
-
-  if (boxed) {
-    const boxX = blockLeft, boxY = top, boxW = blockWidth, boxH = blockHeight;
-    const radius = Math.min((appearance.boxRadius ?? 8) * width / 1080, boxH / 2);
-
-    ctx.save();
-    ctx.globalAlpha = appearance.boxOpacity ?? 0;
-    ctx.fillStyle = appearance.boxColor ?? '#000000';
-    if (typeof ctx.roundRect === 'function') {
-      ctx.beginPath();
-      ctx.roundRect(boxX, boxY, boxW, boxH, radius);
-      ctx.fill();
-    } else {
-      ctx.fillRect(boxX, boxY, boxW, boxH);
-    }
-    ctx.restore();
-  }
-
-  for (const [index, row] of rows.entries()) {
-    const justify = align === 'justify' && index < rows.length - 1 && row.length > 1;
-    const gap = justify ? space + Math.max(0, textWidth - rowWidths[index]) / (row.length - 1) : space;
-    let x = blockLeft + padX + (align === 'right' ? textWidth - rowWidths[index]
-      : align === 'center' ? (textWidth - rowWidths[index]) / 2 : 0);
-    for (const { word, width: wordWidth } of row) {
-      const isSpoken = time >= word.timelineStart && time < word.timelineEnd;
-      const isKeyword = word.important && isSpoken;
-      const anim = appearance.animation ?? 'pop';
-      const active = isKeyword || (anim !== 'none' && isSpoken);
-      ctx.fillStyle = active
-        ? appearance.speakerColors
-          ? (p.speakers.find((s) => s.id === word.speakerId)?.color ?? appearance.accent)
-          : appearance.accent
-        : appearance.color;
-      ctx.strokeStyle = appearance.outlineColor;
-      ctx.save();
-      if (appearance.shadow !== false) {
-        ctx.shadowColor = 'rgba(0,0,0,0.8)';
-        ctx.shadowBlur = width * 4 / 1080;
-        ctx.shadowOffsetY = width * 2 / 1080;
-      }
-      let scale = 1;
-      let offsetY = 0;
-      if (active) {
-        if (p.captions.preset === 'Brainrot') {
-          scale = 1 + p.captions.intensity * 0.002;
-        } else if (anim === 'pop') {
-          scale = 1.15;
-        } else if (anim === 'bounce') {
-          offsetY = -lineHeight * 0.12;
-          scale = 1.08;
-        } else if (anim === 'glow') {
-          ctx.shadowColor = ctx.fillStyle as string;
-          ctx.shadowBlur = Math.round(width * 0.02);
-        }
-      }
-      ctx.translate(x + wordWidth / 2, top + padY + index * lineHeight + lineHeight / 2 + offsetY);
-      ctx.scale(scale, scale);
-      if (appearance.outline > 0) ctx.strokeText(word.text, -wordWidth / 2, -font / 2);
-      ctx.fillText(word.text, -wordWidth / 2, -font / 2);
-      if (word.id !== 'emoji') {
-        const thickness = Math.max(1, font * 0.045);
-        if (appearance.underline) ctx.fillRect(-wordWidth / 2, font * 0.45, wordWidth, thickness);
-        if (appearance.strikethrough) ctx.fillRect(-wordWidth / 2, font * 0.03, wordWidth, thickness);
-      }
-      ctx.restore();
-      x += wordWidth + gap;
-    }
-  }
-  ctx.restore();
-}
 /** Draw at exact output frame times; keep only a few encoded frames in flight. */
 export async function renderCanvasVideo(
   p: Project,
@@ -205,7 +68,8 @@ export async function renderCanvasVideo(
   canvas.height = height;
   const ctx = canvas.getContext('2d', { alpha: false })!;
   const videos = new Map<string, HTMLVideoElement>();
-  const clips = clipTimelineIndex(p), captions = captionTimelineIndex(p);
+  const { plan, sequenceId } = compileProjectSequencePlan(p);
+  const compositor = new SequenceCompositor(p);
   await document.fonts.load(`700 ${width * 0.1}px Noto`);
   aborted(signal);
   await document.fonts.load(`400 ${width * 0.1}px Noto`);
@@ -215,8 +79,6 @@ export async function renderCanvasVideo(
     segments: string[] = [],
     pendingImages: string[] = [];
   let encoder: VideoEncoder | undefined, encoderError: Error | undefined;
-  let effectRenderer: EffectsRenderer | undefined;
-  let aspectRenderer: AspectFrameRenderer | undefined;
   const config: VideoEncoderConfig = {
     codec: 'avc1.640034',
     width,
@@ -250,10 +112,7 @@ export async function renderCanvasVideo(
   }
   // Closing the encoder rejects pending flushes instead of draining queued frames on cancel.
   const releaseRenderer = () => {
-    effectRenderer?.dispose();
-    effectRenderer = undefined;
-    aspectRenderer?.dispose();
-    aspectRenderer = undefined;
+    compositor.dispose();
     if (encoder && encoder.state !== 'closed') encoder.close();
     for (const video of videos.values()) {
       video.removeAttribute('src');
@@ -291,77 +150,29 @@ export async function renderCanvasVideo(
   };
   try {
     aborted(signal);
+    const sourceFrame: VisualFrameSource = async (layer) => {
+      const clip = layer.clip;
+      let video = videos.get(clip.mediaId);
+      if (!video) {
+        const url = mediaUrls.get(clip.mediaId);
+        if (!url) throw new Error('Relink missing source media before export.');
+        video = document.createElement('video');
+        video.muted = true;
+        video.playsInline = true;
+        video.preload = 'auto';
+        videos.set(clip.mediaId, video);
+        await videoEvent(video, 'loadeddata', signal, () => { video!.src = url; video!.load(); });
+      }
+      const source = Math.min(video.duration - 0.001, Math.max(0, layer.sourceTime));
+      if (Math.abs(video.currentTime - source) > 0.0001)
+        await videoEvent(video, 'seeked', signal, () => { video!.currentTime = source; });
+      return { image: video, width: video.videoWidth, height: video.videoHeight };
+    };
     for (let frame = 0; frame < frames; frame++) {
       aborted(signal);
       if (encoderError) throw encoderError;
       const time = frame / fps;
-      ctx.fillStyle = '#090d10';
-      ctx.fillRect(0, 0, width, height);
-      const active = clips.at(time);
-      for (const activeClip of active) {
-        const clip = requireMediaClip(activeClip);
-        let video = videos.get(clip.mediaId);
-        if (!video) {
-          const url = mediaUrls.get(clip.mediaId);
-          if (!url) throw new Error('Relink missing source media before export.');
-          video = document.createElement('video');
-          video.muted = true;
-          video.playsInline = true;
-          video.preload = 'auto';
-          videos.set(clip.mediaId, video);
-          await videoEvent(video, 'loadeddata', signal, () => {
-            video!.src = url;
-            video!.load();
-          });
-        }
-        const source = Math.min(
-          video.duration - 0.001,
-          Math.max(0, clip.sourceStart + (time - clip.start) * clip.properties.speed),
-        );
-        if (Math.abs(video.currentTime - source) > 0.0001)
-          await videoEvent(video, 'seeked', signal, () => {
-            video!.currentTime = source;
-          });
-        const props = transformAt(clip as MotionClip, time, p.settings.width, p.settings.height, p.settings.fillMode);
-        const sourceSize = { width: video.videoWidth, height: video.videoHeight };
-        const frameSize = { width, height };
-        ctx.save();
-        ctx.translate(
-          width / 2 + (props.x * width) / p.settings.width,
-          height / 2 + (props.y * height) / p.settings.height,
-        );
-        ctx.rotate((props.rotation * Math.PI) / 180);
-        ctx.scale(props.scale, props.scale);
-        ctx.globalAlpha = props.opacity;
-        const crop = props.crop / 100;
-        ctx.beginPath();
-        ctx.rect(
-          -width / 2 + width * crop,
-          -height / 2 + height * crop,
-          width * (1 - crop * 2),
-          height * (1 - crop * 2),
-        );
-        ctx.clip();
-        let image: CanvasImageSource = hasVisualEffects(clip.effects)
-          ? (effectRenderer ??= new EffectsRenderer()).draw(video, video.videoWidth, video.videoHeight, clip.effects!)
-          : video;
-        let placement = imagePlacement(sourceSize, frameSize, p.settings.fillMode);
-        if (needsBlurFill(sourceSize, frameSize, p.settings.fillMode)) {
-          image = (aspectRenderer ??= new AspectFrameRenderer()).draw(image, sourceSize, frameSize, p.settings.fillMode);
-          placement = { x: 0, y: 0, width, height };
-        }
-        ctx.drawImage(
-          image,
-          placement.x - width / 2,
-          placement.y - height / 2,
-          placement.width,
-          placement.height,
-        );
-        ctx.restore();
-      }
-      drawCanvasAdjustments(ctx, p.adjustments, time);
-      const caption = captions.first(time);
-      if (caption) drawCanvasCaption(ctx, p, caption, time, width, height);
+      await compositor.draw(ctx, plan.frameAt(sequenceId, time), sourceFrame, signal);
       if (encoder) {
         const videoFrame = new VideoFrame(canvas, {
           timestamp: Math.round(time * 1e6),

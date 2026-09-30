@@ -105,6 +105,23 @@ the original checkout; no install or extra dev server is needed.
 - 28 focused source/plan/sequence/batch/file tests passed in 1.05 s, one active
   worker; source type-check passed. Clone-call checks cover actual import/insertion.
   No real media/model/render/browser/build workload was started.
+- 3df0899 saved/pushed that metadata-only validation/insertion memory increment.
+- Shared actual recursive canvas visual composition is now wired to renderCanvasVideo:
+  complete local child fill/motion/tracking/effects/grades/captions precede parent
+  group effects/fill/transforms/crop/opacity; root grades/captions follow. Source
+  providers receive instance paths/local media clocks; sequential original-file
+  export decoding preserves repeated placements. Native frames keep their existing
+  interval-index capture without inactive timeline clones/new nested duration caps.
+- The unchanged caption drawer moved to canvas-captions.ts (body comparison passed).
+  Child surfaces are reused by depth, unused backings shrink, cancellation/disposal
+  frees effects/aspect/child resources. The child pool explicitly limits 64M pixels
+  and 16,384px per side; root/decoder/GPU costs are separate. Export keeps native/
+  projected density; preview mode follows viewport density; no silent quality cut.
+- 43 focused tests across five suites passed in 1.31 s, one active worker; final
+  source type-check passed. Tests use recording canvas/fake shader/decoder interfaces;
+  no actual footage/GPU/codec/model/browser/build workload was launched. Live preview
+  drivers, real hierarchical audio, child text/sidecar rollup and insertion UI are
+  still pending. MP4's entry source guard stays until the real audio path is ready.
 
 ## Next lightweight step
 
@@ -118,11 +135,13 @@ Project size mismatch is fixed; do not repeat it. Nested reference/time plan exi
 do not rebuild it or confuse copied Shorts with live references. Continue in the
 managed codex/nested-sequences worktree, not the stable main checkout. The canonical
 source model/helpers/operations already exist; do not repeat that migration.
-Next build actual recursive child visual composition shared by main/proposed
-preview and export, then real hierarchical audio windows/gains/fades/ducking and
-caption/text consumers, followed by insertion/navigation UI. Remove the temporary
-requireMediaClip guards only as real recursive consumers replace them; never
-filter/drop refs or substitute placeholders. See docs/nested-sequences.md.
+Shared recursive canvas visuals now exist and the export visual renderer uses them;
+do not rebuild that compositor or the caption drawer. Next implement actual main/
+proposed preview drivers with memoized plans, independent instance clocks/proxies,
+completed-frame publication and real hierarchical audio windows/gains/fades/ducking,
+then caption/text rollup and insertion/navigation UI. Remove requireMediaClip guards
+only as the matching real consumer replaces them; MP4 still needs real audio first.
+Never filter/drop refs or substitute placeholders. See docs/nested-sequences.md.
 Graph import/insertion cloning is fixed; do not repeat that refactor. Inspect actual
 render-plan snapshot/index memory costs before enabling on long tracked projects.
 Preserve full P2 scope and do not merge this incomplete feature into main yet.

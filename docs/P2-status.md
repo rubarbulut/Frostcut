@@ -227,6 +227,14 @@ rendering must be updated together for visual features.
   plans still take stable snapshots, after full-graph rejection. 28 focused tests
   passed in 1.05 s, one active worker; source type-check passed. Real memory/playback
   measurements and recursive consumers remain pending on the development branch.
+- Recursive canvas visual composition is now connected to renderCanvasVideo on
+  that branch. It retains local child fill/motion/tracking/effects/grades/captions,
+  then parent group effects/fill/transforms/opacity, with sequential real source
+  decoding and reused child canvases. Native frames avoid inactive timeline clones.
+  43 focused tests passed in 1.31 s, one active worker; final type-check passed.
+  Tests record drawing calls, not real GPU/media pixels. Main/proposed preview
+  drivers, real hierarchical audio, text rollup and insertion UI remain pending;
+  MP4 still rejects references at entry. This increment does not close P2.
 
 ## Transcript chapter delivery
 

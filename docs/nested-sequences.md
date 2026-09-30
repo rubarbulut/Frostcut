@@ -4,9 +4,11 @@ Existing Shorts/parts remain independent sequence copies. The new
 `nested-sequence-plan.ts` implements an actual reference graph and hierarchical
 time plan; it does not turn those copies into nested edits. The development branch
 `codex/nested-sequences` now adds the canonical source model, persistence and edit
-operations. Recursive visual/audio consumption and insertion UI remain pending.
-Native decoders still reject references explicitly. This branch is not a complete
-nested feature and must not be merged as one yet. Main retains the earlier plan.
+operations. Recursive canvas visual composition is now connected to the canvas
+video renderer. Live preview, hierarchical audio and insertion UI remain pending;
+the MP4 entry point still rejects references until their audio is implemented.
+This branch is not a complete nested feature and must not be merged as one yet.
+Main retains the earlier plan.
 
 ## Source-model increment on the development branch
 
@@ -26,8 +28,8 @@ nested feature and must not be merged as one yet. Main retains the earlier plan.
   Batch preflight now sees the complete current graph even when exporting only
   selected parts. File-only tracking/reframe/beat/caption actions stay on native
   media; reference source captions are edited in their source sequence.
-- Native preview/export entry points currently call `requireMediaClip` and reject
-  sequence placements. Replace these guards with recursive consumers; do not
+- Native main/proposed preview and the MP4 entry point still call `requireMediaClip`
+  and reject sequence placements. Replace these guards with recursive consumers; do not
   filter/drop reference clips to obtain a successful output. New insertion and
   creation UI is not exposed yet. Child caption rendering/rollup and real audio
   envelopes/effects are still required.
@@ -59,6 +61,45 @@ dependencies; no install/model download or extra dev server was started.
   one active worker; source type-check passed. Includes clone-call checks on real
   import/insertion, shared cycle/depth rejection and stable old render snapshots.
   No media/model/render/browser/build workload was started.
+
+## Recursive canvas composition increment
+
+- `sequence-compositor.ts` draws the actual hierarchical plan with a source-frame
+  provider that receives local/media clocks and the full instance path. Complete
+  child frames retain their own fill, motion/tracking, visual effects, adjustment
+  grades, translated/local captions and styling. Parent masks/chroma, frame fill,
+  transforms/crop and group opacity run after child composition. Root grades and
+  captions then run in their existing order. Audio-only/hidden branches do not
+  decode visual frames; shortened children leave an empty interval.
+- `renderCanvasVideo` now uses that compositor and actual original-file decoding.
+  Export draws/seeks sequentially, so the existing per-file decoder can supply
+  independent clocks for repeated placements without simultaneous seek conflicts.
+  Native clips use the existing interval-index capture and avoid cloning unrelated
+  inactive timelines or inheriting new nested duration restrictions. Caption
+  drawing moved unchanged into `canvas-captions.ts`; the original export remains
+  available, and a source comparison confirmed the function body is unchanged.
+- One child canvas per depth is reused across placements/frames. Unused deeper
+  backing sizes shrink to 1px; dispose/cancel releases retained child/effect/aspect
+  resources. One effect renderer and one aspect surface are shared by sequential
+  drawing. The child surface pool has a 64-megapixel / 16,384px-per-side explicit
+  limit; this is not a total browser/GPU memory limit. Root, aspect, shader textures,
+  decoders and encoded output have separate costs/device limits.
+- Export retains at least the native child raster density and enough pixels for
+  parent output/zoom. Preview mode uses projected viewport density. Resource-limit
+  failures are explicit; export does not silently drop layers or lower resolution.
+  Logical child dimensions control aspect placement, avoiding false blur from
+  fractional raster rounding. Full nested plan snapshot costs still need review.
+- 43 focused compositor/plan/fill/adjustment/tracking tests passed in 1.31 s across
+  five suites with one active worker; final source type-check passed. Nine new
+  compositor tests execute real drawing orchestration/caption/layout functions with
+  recording canvas contexts and a fake shader/decoder boundary, covering native
+  behavior, hierarchy/order, repeated clocks, grouping/styles, blur, gaps/visibility,
+  raster budgets, cancellation/concurrency and cleanup. No actual video, shader/GPU,
+  codec, AI, browser suite or production build ran; pixel/media QA is pending.
+- This increment does not expose nested editing: main/proposed live preview still
+  needs an instance-aware decoder/compositor driver with completed-frame publication.
+  Actual hierarchical audio and text/sidecar rollup remain required before removing
+  the MP4 source guard or adding insertion UI. Do not export a silent approximation.
 
 ## Implemented reference plan
 
@@ -113,10 +154,10 @@ browser suite or production build was started.
 3. Add sequence creation/duplication and explicit insert/nest/navigation controls.
    Show the source sequence and editable range, retain independent placements and
    make child-edit propagation apparent. Do not label copied clips as nested.
-4. Implement shared recursive child composition in main/proposed preview and canvas
-   export, with bounded reusable canvases. Preserve child fill/filters/captions and
-   group the result before parent transforms, masks/chroma, opacity and fill.
-   Each branch needs instance-specific source decoding/proxy time.
+4. Shared recursive canvas composition/export visual decoding are implemented.
+   Connect main/proposed live previews to this compositor, with memoized edit-time
+   plans, instance-specific source clocks/proxies and atomic publication of completed
+   frames. Preserve existing preview quality/controls and actual audio routing.
 5. Compile real audio windows/gains/fades/ducking/voice processing through parent
    envelopes and speeds, for both actual playback and export. Routing flags alone
    are insufficient. Define nested caption text/sidecar export alongside visual
