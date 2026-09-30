@@ -254,6 +254,18 @@ rendering must be updated together for visual features.
   outputs, live preview and remaining nested consumers are still pending. No real
   media/FFmpeg/GPU/AI/browser/build workload ran; P2 remains open.
 
+- The development branch now has the actual live visual driver in
+  sequence-preview-frames.ts: edit-time plan, independent instance decoder/proxy
+  clocks/rates, atomic publication and one latest queued frame. Discontinuous seeks
+  cancel old waits; continuous playback avoids per-tick pause/play. Gap/inactive
+  sources, cancellation/disposal, unsupported rates and sticky failures are handled.
+  27 driver/compositor/nested-parts tests passed in 851 ms, one active worker;
+  source type-check passed. Twelve new tests inspect real plans and fake decoder/
+  compositor interfaces. No actual decode/playback/GPU/media/AI/build job ran.
+  Main/proposed UI still requires real hierarchical audio and controller ownership;
+  the visual-only driver is not mounted and does not deliver usable nested playback.
+  Actual source frame timing/pixels/memory/audio/output acceptance remains open.
+
 ## Transcript chapter delivery
 
 - Creator tools → Chapters offers manual editing, a non-model transcript structure

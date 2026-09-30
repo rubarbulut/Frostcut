@@ -167,6 +167,52 @@ dependencies; no install/model download or extra dev server was started.
   batch codec/pixel/mix acceptance remains open; these checks prove source/model/
   filter preparation, not decoded output or usable live nested editing.
 
+## Live visual driver increment
+
+- `sequence-preview-frames.ts` now drives the actual recursive compositor in
+  preview mode. One controller compiles one stable edit-time graph, owns one
+  scratch canvas and serializes asynchronous composition. It copies a completed
+  scratch frame to the display canvas once; source loading/partial child drawing
+  never becomes a displayed frame. Paused obsolete seeks are discarded; normal
+  playback can publish completed frames while coalescing only the newest next tick.
+- Each real visible media placement owns a muted decoder keyed by its complete
+  instance path, so repeated child/file placements keep independent source times
+  and ancestor speed products. The supplied resolver chooses an existing original
+  or preview-proxy blob URL; the driver never creates files/proxies or starts a
+  media-engine job. URL changes replace only the affected placement sources.
+- Explicit epochs identify seeks, playback restarts and quality/source changes.
+  Discontinuous requests abort pending media waits before processing the newest
+  request; normal playback ticks avoid repeated pause/play and exact seeks unless
+  drift exceeds the existing preview's 150ms correction threshold. Paused seeking
+  uses the exact requested currentTime. Loaded durations/dimensions and seek results
+  are checked; unsupported combined rates fail without silent clamping, while an
+  explicit paused epoch can still scrub at any clip speed. This uses HTML media
+  seeking/rate/play-promise behavior described in the
+  [HTML Standard](https://html.spec.whatwg.org/multipage/media.html#dom-media-playbackrate).
+- Inactive/hidden/out-of-child-range placements release decoder sources promptly.
+  Dispose aborts current/queued work, pauses and unloads all owned videos, disposes
+  compositor resources and shrinks scratch storage. Source/load/play failures stop
+  retries on animation ticks; a new explicit epoch can retry. The driver does not
+  own or revoke shared original/proxy URLs. Target viewport dimensions have explicit
+  16,384px side/64M-pixel bounds; this is not a bound on total decoder/GPU memory.
+- Twelve new tests use real graph/frame plans plus fake media/compositor interfaces
+  to inspect source commands, independent clocks/rates, no repeated plan clones,
+  continuous playback, seek coalescing/cancellation, atomic publication, proxies,
+  inactive/gap cleanup, pending play/load/seek disposal, errors/timeouts and retry.
+  27 tests across driver/compositor/nested-parts passed in 851 ms, one active worker;
+  source type-check passed after the driver changes. No real video decode/playback,
+  GPU, audio, model, FFmpeg, browser suite or production build was started.
+- This driver is not yet mounted by main/proposed previews, and its videos are
+  intentionally visual-only. Their current media-only guards remain until real
+  hierarchical audio buses and UI ownership are connected. The owner must memoize
+  the controller per edit/draft, observe media/quality revisions and viewport/fonts,
+  increment epochs on discontinuities, handle failures/stop playback and dispose
+  on replacement/unmount. Add actual audio-window indexes (crossfade handles exceed
+  visual ranges), original-source audio/probe availability, independent audio clocks,
+  local envelopes, nonlinear group voice processing and shared mute/real metering.
+  Source currentTime checks do not prove encoded frame PTS/presentation accuracy;
+  real decoder, timing, pixels, playback and memory acceptance remains pending.
+
 ## Implemented reference plan
 
 - A `SequenceReferenceClip` has a real child sequence ID and editable parent
@@ -224,9 +270,11 @@ browser suite or production build was started.
    Show the source sequence and editable range, retain independent placements and
    make child-edit propagation apparent. Do not label copied clips as nested.
 4. Shared recursive canvas composition/export visual decoding are implemented.
-   Connect main/proposed live previews to this compositor, with memoized edit-time
-   plans, instance-specific source clocks/proxies and atomic publication of completed
-   frames. Preserve existing preview quality/controls and actual audio routing.
+   The actual independent source/atomic-publication visual driver now exists in
+   sequence-preview-frames.ts. Connect main/proposed live previews with memoized
+   controller ownership, draft edits, viewport/font/media/quality revisions and
+   seek epochs once real hierarchical audio works. Preserve existing preview
+   quality/controls and actual audio routing; do not expose silent nested playback.
 5. Actual hierarchical export audio filters/routing are implemented. Connect live
    playback to real hierarchical buses, gains/fades/ducking and local clock rates,
    including source audio availability and nonlinear group processing. Define child

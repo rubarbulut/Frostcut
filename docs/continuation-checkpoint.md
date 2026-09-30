@@ -148,6 +148,18 @@ the original checkout; no install or extra dev server is needed.
   roundtrip, later child edits and gap silence. No actual decode/playback/media/
   FFmpeg/GPU/model/browser/build job ran. Real decoded parts/batch output is pending.
 
+- sequence-preview-frames.ts now implements the actual recursive visual driver:
+  stable edit-time graph, independent full-path original/proxy decoders, composed
+  rates, one in-flight/latest queued frame and atomic completed-frame publication.
+  Discontinuous requests abort old waits, while continuous ticks retain playback.
+  Inactive/gap sources unload; dispose/cancel/failure release resources, explicit
+  epochs retry failed sources and unsupported playback rates fail without clamping.
+- 27 focused driver/compositor/nested-parts tests passed in 851 ms, one active
+  worker; source type-check passed after driver changes. Twelve new tests use real
+  frame plans and fake media/compositor interfaces, not actual footage or GPU.
+  No decode/playback/audio/FFmpeg/model/browser/build job ran. The driver is not
+  yet mounted in either preview; real hierarchical audio and UI ownership remain.
+
 ## Next lightweight step
 
 Motion tracking's planned source/UI integration is implemented, not a future task.
@@ -161,10 +173,15 @@ do not rebuild it or confuse copied Shorts with live references. Continue in the
 managed codex/nested-sequences worktree, not the stable main checkout. The canonical
 source model/helpers/operations already exist; do not repeat that migration.
 Shared recursive canvas visuals now exist and the export visual renderer uses them;
-do not rebuild that compositor or the caption drawer. Next implement actual main/
-proposed preview drivers with memoized plans, independent instance clocks/proxies,
-completed-frame publication and real hierarchical Web Audio buses/windows/gains/
-fades/ducking, then caption/text rollup and insertion/navigation UI. Actual export
+do not rebuild that compositor or the caption drawer. The actual visual source/
+publication driver now exists in sequence-preview-frames.ts; do not repeat it.
+Next implement indexed hierarchical audio windows (including crossfade handles),
+actual original-source audio availability and real Web Audio buses/local envelopes/
+nonlinear group processing. Then mount main/proposed previews with memoized visual/
+audio controller ownership, draft edits, seek epochs, viewport/font/media/quality
+revision handling, mute/meter/error/cleanup controls. Keep guards until both routes
+work; do not expose visual-only/silent nested playback. Follow with caption/text
+rollup and insertion/navigation UI. Actual export
 audio graph/MP4 routing now exist; do not rebuild them or restore the blanket MP4
 guard. Main/proposed preview source guards must only be removed as real drivers
 replace them. Inspect sequence-audio.ts, media.ts and the feature note first.
