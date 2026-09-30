@@ -1,13 +1,13 @@
-import { isAudioClip, isLocked, type Project } from './model';
+import { isAudioClip, isLocked, isMediaClip, type Project } from './model';
 import { validClipTracking, type ClipTracking, type MotionTrackingPoint } from './tracking-data';
 
 export function setClipTracking(p: Project, clipId: string, tracking: ClipTracking | undefined): Project {
   const c = p.clips.find((clip) => clip.id === clipId);
-  if (!c || isAudioClip(p, c) || isLocked(p, c)) return p;
+  if (!c || !isMediaClip(c) || isAudioClip(p, c) || isLocked(p, c)) return p;
   const media = p.media.find((m) => m.id === c.mediaId);
   if (tracking !== undefined && (!media || !validClipTracking(tracking, media.duration)))
     throw new Error('Tracking points or source range are invalid.');
-  return { ...p, clips: p.clips.map((clip) => clip.id === clipId
+  return { ...p, clips: p.clips.map((clip) => clip.id === clipId && isMediaClip(clip)
     ? { ...clip, tracking: tracking ? structuredClone(tracking) : undefined } : clip) };
 }
 

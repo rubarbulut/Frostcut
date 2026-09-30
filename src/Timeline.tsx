@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useTimelineNavigation } from './timeline-navigation';
 import { timelineBeats } from './audio-tools';
+import { clipTrimLimit, requireClipSource } from './clip-source';
 import { useEditor, mediaThumbnails, audioWaveforms } from './store';
 import {
   type Clip,
@@ -37,6 +38,7 @@ import {
   uid,
   timecode,
   isAudioClip,
+  isMediaClip,
 } from './model';
 export function deleteSelected(ripple = false) {
   const adjustment = useEditor.getState().adjustmentSelection;
@@ -169,7 +171,7 @@ export default function Timeline() {
       ids = multi.includes(c.id) ? multi : [c.id];
     const move = (event: PointerEvent) => {
       const delta = (event.clientX - initialX) / zoom,
-        m = snapshot.media.find((m) => m.id === c.mediaId)!;
+        m = { ...requireClipSource(snapshot, c), duration: clipTrimLimit(snapshot, c) };
       let start = Math.max(0, c.start + delta),
         sourceStart = c.sourceStart,
         sourceEnd = c.sourceEnd;
@@ -529,7 +531,7 @@ export default function Timeline() {
                 )
                 .map((original) => {
                   const c = drag?.id === original.id ? { ...original, ...drag } : original,
-                    m = p.media.find((m) => m.id === c.mediaId)!;
+                    m = requireClipSource(p, c);
                   return (
                     <div
                       role="button"
@@ -560,7 +562,7 @@ export default function Timeline() {
                                 <span
                                   key={i}
                                   style={{
-                                    backgroundImage: mediaThumbnails.has(c.mediaId)
+                                    backgroundImage: isMediaClip(c) && mediaThumbnails.has(c.mediaId)
                                       ? `url("${mediaThumbnails.get(c.mediaId)}")`
                                       : undefined,
                                     backgroundSize: 'cover',
@@ -607,7 +609,7 @@ export default function Timeline() {
                                 <i
                                   key={i}
                                   style={{
-                                    height: `${(audioWaveforms.get(c.mediaId)?.[Math.floor((c.sourceStart + (i / ((clipDuration(c) * zoom) / 4)) * (c.sourceEnd - c.sourceStart)) * 10)] ?? 0) * 90 + 4}%`,
+                                    height: `${((isMediaClip(c) ? audioWaveforms.get(c.mediaId)?.[Math.floor((c.sourceStart + (i / ((clipDuration(c) * zoom) / 4)) * (c.sourceEnd - c.sourceStart)) * 10)] : undefined) ?? 0) * 90 + 4}%`,
                                   }}
                                 />
                               ),

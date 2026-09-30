@@ -2,11 +2,13 @@ import { duration, type Project } from './model';
 import { estimatedMegabytes } from './export-settings';
 import { sequenceViews } from './sequences';
 import { zipEntryNames } from './zip';
+import { sourceMediaIds } from './clip-source';
 
 /** Metadata-only preflight: never decode source files or start the media engine. */
 export function batchPlan(p: Project, ids: string[], available: { has: (id: string) => boolean }) {
   const chosen = new Set(ids);
-  const sequences = sequenceViews(p).filter((s) => chosen.has(s.id));
+  const allSequences = sequenceViews(p);
+  const sequences = allSequences.filter((s) => chosen.has(s.id));
   const errors: string[] = [];
   if (!sequences.length) errors.push('Select at least one part.');
   if (sequences.length !== chosen.size)
@@ -15,12 +17,12 @@ export function batchPlan(p: Project, ids: string[], available: { has: (id: stri
     sequences.map((s, index) => `${String(index + 1).padStart(2, '0')}-${s.name}.mp4`),
   );
   const entries = sequences.map((sequence, index) => {
-    const project = { ...p, ...sequence };
+    const project = { ...p, ...sequence, activeSequenceId: sequence.id, sequences: allSequences };
     const seconds = duration(project);
     const issues: string[] = [];
     if (!sequence.clips.length || !Number.isFinite(seconds) || seconds <= 0)
       issues.push('This part has no playable timeline.');
-    const missing = [...new Set(sequence.clips.map((c) => c.mediaId))].filter(
+    const missing = sourceMediaIds(project).filter(
       (id) => !available.has(id),
     );
     if (missing.length)

@@ -1,4 +1,5 @@
 import { isAudioClip, type AspectFillMode, type AspectRatio, type Project } from './model';
+import { clipSource } from './clip-source';
 
 export type FrameSize = { width: number; height: number };
 export const frameFillMode = (mode?: AspectFillMode): AspectFillMode => mode ?? 'fit';
@@ -34,7 +35,7 @@ export function blurBackdrop(source: FrameSize, frame: FrameSize) {
 }
 export function needsAspectRenderer(p: Project, frame: FrameSize = p.exportSettings) {
   return frameFillMode(p.settings.fillMode) !== 'fit' && p.clips.some((c) => {
-    const media = p.media.find((m) => m.id === c.mediaId);
+    const media = clipSource(p, c);
     return media && !isAudioClip(p, c) && !p.tracks.find((t) => t.id === c.trackId)?.hidden && differentAspect(media, frame);
   });
 }

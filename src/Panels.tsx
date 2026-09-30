@@ -42,6 +42,8 @@ import { CaptionAppearance } from './CaptionAppearance';
 import { TransformControls } from './TransformControls';
 import { VisualEffectsControls } from './VisualEffectsControls';
 import { MotionTrackingControls } from './MotionTrackingControls';
+import { clipTrimLimit } from './clip-source';
+import { isMediaClip } from './model';
 import { AudioTools } from './AudioTools';
 import { CaptionLanguage } from './SubtitleTools';
 import { useShallow } from 'zustand/react/shallow';
@@ -672,7 +674,7 @@ export function PropertiesPanel() {
                 <b>{isAudioClip(p, clip) ? 'Source audio' : 'Transform'}</b>
                 {locked && <span>Track locked</span>}
               </div>
-              {!isAudioClip(p, clip) && <MotionTrackingControls key={clip.id} clip={clip} />}
+              {!isAudioClip(p, clip) && isMediaClip(clip) && <MotionTrackingControls key={clip.id} clip={clip} />}
               <fieldset disabled={locked}>
                 {!isAudioClip(p, clip) && <TransformControls clip={clip} />}
                 {!isAudioClip(p, clip) && <VisualEffectsControls key={clip.id} clip={clip} />}
@@ -702,7 +704,7 @@ export function PropertiesPanel() {
                     </select>
                   </Field>
                 )}
-                <AudioTools key={clip.id} clip={clip} />
+                {isMediaClip(clip) && <AudioTools key={clip.id} clip={clip} />}
                 <div className="property-divider" />
 
                 <div className="section-heading">
@@ -767,12 +769,12 @@ export function PropertiesPanel() {
                         onChange={(e) => {
                           const n = +e.target.value,
                             cur = useEditor.getState().project,
-                            m = cur.media.find((m) => m.id === clip.mediaId)!;
+                            limit = clipTrimLimit(cur, clip);
                           if (
                             !Number.isFinite(n) ||
                             n < 0 ||
                             (key === 'sourceStart' && n >= clip.sourceEnd) ||
-                            (key === 'sourceEnd' && (n <= clip.sourceStart || n > m.duration))
+                            (key === 'sourceEnd' && (n <= clip.sourceStart || n > limit))
                           )
                             return;
                           const next = structuredClone(cur);

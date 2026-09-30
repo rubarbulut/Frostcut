@@ -1,11 +1,18 @@
 import {
   applyOperations,
+  clipEnd,
+  defaultProps,
+  duration,
+  isSequenceClip,
   isLocked,
   uid,
   type Project,
   type ProjectSequence,
   type Suggestion,
+  type SequenceClip,
 } from './model';
+import { sourceSequence } from './clip-source';
+import { NestedSequencePlan, validSequenceReference } from './nested-sequence-plan';
 
 export function sequenceSnapshot(p: Project, id: string, name: string): ProjectSequence {
   return structuredClone({
@@ -102,9 +109,63 @@ export function createShortSequences(project: Project, suggestions: Suggestion[]
 }
 export function removeSequence(project: Project, id: string): Project {
   if (!project.sequences || project.sequences.length < 2) return project;
+  const parents = sequenceReferences(project, id);
+  if (parents.length) throw new Error(`This sequence is used by ${parents.map((s) => s.name).join(', ')}. Remove those placements first.`);
   const p =
     project.activeSequenceId === id
       ? switchSequence(project, project.sequences.find((s) => s.id !== id)!.id)
       : syncSequence(project);
   return { ...p, sequences: p.sequences!.filter((s) => s.id !== id) };
+}
+
+export function sequenceReferences(p: Project, id: string) {
+  return sequenceViews(p).filter((s) => s.id !== id && s.clips.some((c) => isSequenceClip(c) && c.sequenceId === id));
+}
+
+/** Create a real editable workspace; copied references keep their live child identity. */
+export function createSequence(project: Project, name: string, duplicateId?: string): Project {
+  const clean = name.trim();
+  if (!clean || clean.length > 80) throw new Error('Use a sequence name from 1 to 80 characters.');
+  let p = syncSequence(project);
+  const originalId = p.activeSequenceId ?? uid();
+  p = { ...p, activeSequenceId: originalId,
+    sequences: p.sequences ?? [sequenceSnapshot(p, originalId, 'Original edit')] };
+  if (p.sequences!.length >= 30) throw new Error('This project supports up to 30 sequences. Remove an unused sequence first.');
+  const source = duplicateId ? sourceSequence(p, duplicateId) : undefined;
+  if (duplicateId && !source) throw new Error('Choose an existing sequence to duplicate.');
+  const id = uid();
+  let created: ProjectSequence;
+  if (source) {
+    const groups = new Map<string, string>();
+    const copy = structuredClone(source);
+    created = { ...copy, id, name: clean, clips: copy.clips.map((clip) => {
+      const group = clip.groupId;
+      if (group && !groups.has(group)) groups.set(group, uid());
+      return { ...clip, id: uid(), groupId: group ? groups.get(group) : undefined };
+    }), suggestions: [], publishing: undefined };
+  } else {
+    created = sequenceSnapshot({ ...p, clips: [], tracks: p.tracks.map((t) => ({ ...t, locked: false, muted: false, hidden: false })),
+      suggestions: [], publishing: undefined, subtitleVariants: undefined, chapters: undefined, adjustments: [] }, id, clean);
+  }
+  return switchSequence({ ...p, sequences: [...p.sequences!, created] }, id);
+}
+
+export function insertSequenceReference(project: Project, sequenceId: string, options: {
+  start?: number; sourceStart?: number; sourceEnd?: number; trackId?: string;
+} = {}): Project {
+  const p = syncSequence(project), source = sourceSequence(p, sequenceId);
+  if (!source) throw new Error('Choose an existing source sequence.');
+  if (p.activeSequenceId === sequenceId) throw new Error('A sequence cannot be inserted into itself.');
+  const seconds = Math.max(0, ...source.clips.map(clipEnd));
+  if (seconds < 0.001) throw new Error('The source sequence has no playable timeline.');
+  const trackId = options.trackId ?? p.tracks.find((t) => t.kind === 'video')?.id;
+  if (!trackId || !p.tracks.some((t) => t.id === trackId)) throw new Error('Choose an existing target track.');
+  const reference: SequenceClip = { id: uid(), sequenceId, trackId, start: options.start ?? duration(p),
+    sourceStart: options.sourceStart ?? 0, sourceEnd: options.sourceEnd ?? seconds, properties: { ...defaultProps } };
+  if (isLocked(p, reference)) throw new Error('Unlock the target track and linked audio before inserting a sequence.');
+  if (!validSequenceReference(reference) || reference.sourceEnd > seconds)
+    throw new Error('Choose a source range inside this sequence and a supported timeline position.');
+  const next = { ...p, clips: [...p.clips, reference] };
+  new NestedSequencePlan(sequenceViews(next)); // Also rejects indirect cycles through inactive edits.
+  return syncSequence(next);
 }

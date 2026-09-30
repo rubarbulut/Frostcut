@@ -1,5 +1,7 @@
 import { animatedProperties, type KeyframeTracks } from './motion';
 import { validClipTracking, type ClipTracking } from './tracking-data';
+import { clipTrimLimit, sourceSequence } from './clip-source';
+import { NestedSequencePlan, validSequenceReference } from './nested-sequence-plan';
 import type { SavedAnimation } from './animation-presets';
 import {
   translatedWords,
@@ -97,7 +99,7 @@ export type ClipProps = {
   crop: number;
   animation: string;
 };
-export type Clip = {
+export type ClipBase = {
   effects?: VisualEffects;
   audioRole?: 'music' | 'voice';
   autoDuck?: boolean;
@@ -106,7 +108,6 @@ export type Clip = {
   keyframes?: KeyframeTracks;
   tracking?: ClipTracking;
   id: string;
-  mediaId: string;
   trackId: string;
   start: number;
   sourceStart: number;
@@ -117,6 +118,13 @@ export type Clip = {
   /** Source-time caption overrides belonging only to this timeline instance. */
   captionWords?: Word[];
 };
+export type MediaClip = ClipBase & { mediaId: string; sequenceId?: never };
+export type SequenceClip = Omit<ClipBase, 'tracking' | 'captionWords'> & {
+  sequenceId: string; mediaId?: never; tracking?: never; captionWords?: never;
+};
+export type Clip = MediaClip | SequenceClip;
+export const isMediaClip = (clip: Clip): clip is MediaClip => typeof clip.mediaId === 'string' && clip.sequenceId === undefined;
+export const isSequenceClip = (clip: Clip): clip is SequenceClip => typeof clip.sequenceId === 'string' && clip.mediaId === undefined;
 export type Track = {
   id: string;
   name: string;
@@ -356,14 +364,14 @@ export function detachAudio(p: Project, id: string): Project {
   const next = structuredClone(p),
     original = next.clips.find((c) => c.id === id)!;
   original.audioDetached = true;
-  next.clips.push({
+  const detached: Clip = {
     ...structuredClone(clip),
     id: uid(),
     trackId: 'A1',
     groupId: undefined,
     audioDetached: undefined,
     audioRole: 'voice',
-    captionWords: [],
+    captionWords: undefined,
     keyframes: undefined,
     tracking: undefined,
     properties: {
@@ -373,7 +381,9 @@ export function detachAudio(p: Project, id: string): Project {
       fadeIn: clip.properties.fadeIn,
       fadeOut: clip.properties.fadeOut,
     },
-  });
+  };
+  if (isMediaClip(detached)) detached.captionWords = [];
+  next.clips.push(detached);
   return next;
 }
 export const timecode = (t: number, decimals = false) => {
@@ -565,9 +575,9 @@ export function applyOperations(project: Project, ops: Operation[], reason?: str
         if (op.trackId) c.trackId = op.trackId;
       }
       if (op.type === 'trim') {
-        const m = p.media.find((m) => m.id === c.mediaId)!;
-        c.sourceStart = Math.max(0, Math.min(op.sourceStart, m.duration - 0.05));
-        c.sourceEnd = Math.max(c.sourceStart + 0.05, Math.min(op.sourceEnd, m.duration));
+        const limit = clipTrimLimit(p, c);
+        c.sourceStart = Math.max(0, Math.min(op.sourceStart, limit - 0.05));
+        c.sourceEnd = Math.max(c.sourceStart + 0.05, Math.min(op.sourceEnd, limit));
       }
       if (op.type === 'speed') c.properties.speed = Math.max(0.25, Math.min(4, op.speed));
     }
@@ -586,6 +596,7 @@ export type TimelineWord = Word & {
 };
 export function timelineWords(p: Project): TimelineWord[] {
   return sortedClips(p)
+    .filter(isMediaClip)
     .filter((c) => !isAudioClip(p, c) && !p.tracks.find((t) => t.id === c.trackId)?.hidden)
     .flatMap((c) =>
       (c.captionWords ?? p.transcripts.find((t) => t.mediaId === c.mediaId)?.words ?? [])
@@ -627,6 +638,9 @@ export function captionAt(p: Project, time: number) {
     : undefined;
 }
 export function validateProject(value: unknown): Project {
+  return validateProjectData(value);
+}
+function validateProjectData(value: unknown, referenceIds?: ReadonlySet<string>): Project {
   // A file is untrusted input: validate the full nested model before loading it.
   const p = value as Project;
   const fail = () => {
@@ -635,6 +649,7 @@ export function validateProject(value: unknown): Project {
   const finite = (v: unknown, low = 0, high = 86400) =>
     typeof v === 'number' && Number.isFinite(v) && v >= low && v <= high;
   const string = (v: unknown) => typeof v === 'string' && v.length < 100000;
+  const sequenceIds = referenceIds ?? new Set(Array.isArray(p?.sequences) ? p.sequences.map((s) => s?.id) : []);
   try {
     if (
       !p ||
@@ -850,9 +865,10 @@ export function validateProject(value: unknown): Project {
       )
         fail();
     for (const c of p.clips) {
-      const m = p.media.find((m) => m.id === c.mediaId);
+      const nested = isSequenceClip(c), m = isMediaClip(c) ? p.media.find((m) => m.id === c.mediaId) : undefined;
+      const sourceDuration = nested ? 86400 : m?.duration ?? 0;
       if (
-        !m ||
+        (nested ? !sequenceIds.has(c.sequenceId) || !validSequenceReference(c) : !isMediaClip(c) || !m) ||
         !string(c.id) ||
         !p.tracks.some((t) => t.id === c.trackId) ||
         (c.audioDetached !== undefined && typeof c.audioDetached !== 'boolean') ||
@@ -861,12 +877,12 @@ export function validateProject(value: unknown): Project {
         (c.voiceEnhance !== undefined && typeof c.voiceEnhance !== 'boolean') ||
         !finite(c.start) ||
         !finite(c.sourceStart) ||
-        !finite(c.sourceEnd, c.sourceStart + 0.001, m.duration + 0.1)
+        !finite(c.sourceEnd, c.sourceStart + 0.001, sourceDuration + (nested ? 0 : 0.1))
       )
         fail();
-      if (c.captionWords !== undefined) validateWords(c.captionWords, m!.duration);
+      if (c.captionWords !== undefined) validateWords(c.captionWords, sourceDuration);
       if (c.effects !== undefined && !validVisualEffects(c.effects)) fail();
-      if (c.tracking !== undefined && (isAudioClip(p, c) || !validClipTracking(c.tracking, m!.duration))) fail();
+      if (c.tracking !== undefined && (nested || isAudioClip(p, c) || !validClipTracking(c.tracking, sourceDuration))) fail();
       if (c.keyframes !== undefined) {
         if (
           !c.keyframes ||
@@ -882,7 +898,7 @@ export function validateProject(value: unknown): Project {
           if (!Array.isArray(frames) || frames.length > 258) fail();
           frames.forEach((frame, i) => {
             if (
-              !finite(frame.time, 0, m!.duration) ||
+              !finite(frame.time, 0, sourceDuration) ||
               !finite(
                 frame.value,
                 key === 'scale' ? 0.1 : key === 'opacity' ? 0 : -10000,
@@ -1028,7 +1044,7 @@ export function validateProject(value: unknown): Project {
         fail();
       p.sequences = p.sequences.map((s) => {
         if (!string(s.id) || !string(s.name) || !s.name.trim() || s.name.length > 80) fail();
-        const checked = validateProject({
+        const checked = validateProjectData({
           ...p,
           settings: s.settings,
           clips: s.clips,
@@ -1042,7 +1058,7 @@ export function validateProject(value: unknown): Project {
           suggestions: [],
           sequences: undefined,
           activeSequenceId: undefined,
-        });
+        }, sequenceIds);
         return {
           id: s.id,
           name: s.name,
@@ -1058,6 +1074,8 @@ export function validateProject(value: unknown): Project {
           suggestions: [],
         };
       });
+      if (!referenceIds && (p.clips.some(isSequenceClip) || p.sequences.some((s) => s.clips.some(isSequenceClip))))
+        new NestedSequencePlan(p.sequences.map((s) => sourceSequence(p, s.id)!));
     } else if (p.activeSequenceId !== undefined) fail();
     // Suggestions are regenerated from the validated timeline; never trust imported operations.
     p.suggestions = [];

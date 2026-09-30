@@ -1,4 +1,4 @@
-import { clipAudible, clipEnd, isAudioClip, type Clip, type Project } from './model';
+import { clipAudible, clipEnd, isAudioClip, isMediaClip, type Clip, type Project } from './model';
 
 /** Percussive onset peaks, in source seconds. No fabricated evenly-spaced beat grid. */
 export function detectBeats(samples: Float32Array, sampleRate = 16000): number[] {
@@ -31,6 +31,7 @@ export function detectBeats(samples: Float32Array, sampleRate = 16000): number[]
 
 export function timelineBeats(p: Project, excluded: string[] = []) {
   return p.clips
+    .filter(isMediaClip)
     .filter((c) => isAudioClip(p, c) && !excluded.includes(c.id))
     .flatMap((c) =>
       (p.beats?.[c.mediaId] ?? [])

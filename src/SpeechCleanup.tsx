@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Play, Scissors } from 'lucide-react';
 import { Modal, Field } from './components';
 import { mediaUrls, useEditor } from './store';
-import { duration, timecode } from './model';
+import { duration, timecode, isMediaClip } from './model';
 import {
   applySpeechCleanup,
   cleanupRanges,
@@ -73,7 +73,7 @@ export function SpeechCleanup({ onClose }: { onClose: () => void }) {
         Filler vocabulary: English & Turkish. Nothing is selected automatically. Estimated word
         timing needs a careful listen.
       </p>
-      {preview && clip && (
+      {preview && clip && isMediaClip(clip) && (
         <div className="cleanup-preview">
           <b>{preview.later ? 'Later take · comparison' : 'Selected passage · proposed removal'}</b>
           {mediaUrls.has(clip.mediaId) ? (

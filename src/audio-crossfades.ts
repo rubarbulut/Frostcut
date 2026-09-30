@@ -1,7 +1,8 @@
 import { clipAudible, clipDuration, clipEnd, isAudioClip, type Clip, type Project } from './model';
 import { createDuckGain, duckGain } from './audio-tools';
+import { requireClipSource } from './clip-source';
 export function audioWindow(p: Project, c: Clip) {
-  const asset = p.media.find((m) => m.id === c.mediaId)!;
+  const asset = requireClipSource(p, c);
   const audible = (clip: Clip) => clipAudible(p, clip);
   const audioTrack = (clip: Clip) => (isAudioClip(p, clip) ? clip.trackId : 'A1');
   const previous = p.clips.find(
@@ -24,7 +25,7 @@ export function audioWindow(p: Project, c: Clip) {
     Math.min(
       0.015,
       clipDuration(clip) / 4,
-      Math.max(0, p.media.find((m) => m.id === clip.mediaId)!.duration - clip.sourceEnd) /
+      Math.max(0, requireClipSource(p, clip).duration - clip.sourceEnd) /
         clip.properties.speed,
     );
   const pre = previous ? before(c) : 0,

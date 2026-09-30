@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
-import { isLocked, timecode, type Clip, type Project } from './model';
+import { isLocked, timecode, type MediaClip as Clip, type Project } from './model';
 import { mediaUrls, useEditor } from './store';
 import { Field, Modal } from './components';
 import { NumberField } from './CaptionTextControls';

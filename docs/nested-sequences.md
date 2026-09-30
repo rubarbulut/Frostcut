@@ -2,9 +2,44 @@
 
 Existing Shorts/parts remain independent sequence copies. The new
 `nested-sequence-plan.ts` implements an actual reference graph and hierarchical
-time plan; it does not turn those copies into nested edits. References are not
-exposed in the editor, accepted by the persisted Project model, or rendered yet.
-This foundation does not deliver the P2 feature.
+time plan; it does not turn those copies into nested edits. The development branch
+`codex/nested-sequences` now adds the canonical source model, persistence and edit
+operations. Recursive visual/audio consumption and insertion UI remain pending.
+Native decoders still reject references explicitly. This branch is not a complete
+nested feature and must not be merged as one yet. Main retains the earlier plan.
+
+## Source-model increment on the development branch
+
+- `Clip` now has exclusive real media or sequence identity (`MediaClip`/`SequenceClip`).
+  No file/media entry is generated for a sequence. Shared source metadata reads
+  current active edits and caches metadata per immutable Project object; source
+  dependency traversal collects actual descendant files with cycle/missing guards.
+- Project JSON/save/open validation accepts references and checks active/inactive
+  graphs. Native project validation is preserved; graph compilation only runs when
+  references occur. Clone/split/move/trim/speed, source gaps, linked-audio detachment,
+  ordinary persistence and actual store Undo/Redo retain reference identity.
+- Creation/duplication/insertion operations exist, with names/count/range checks,
+  target/linked-audio locks and direct/indirect cycle rejection. Duplicated native
+  data is copied independently while sequence placements keep their child binding.
+  Referenced source deletion fails with parent names; the picker displays the error.
+- Timeline/inspector/preview handles use source dimensions/names/trim bounds.
+  Batch preflight now sees the complete current graph even when exporting only
+  selected parts. File-only tracking/reframe/beat/caption actions stay on native
+  media; reference source captions are edited in their source sequence.
+- Native preview/export entry points currently call `requireMediaClip` and reject
+  sequence placements. Replace these guards with recursive consumers; do not
+  filter/drop reference clips to obtain a successful output. New insertion and
+  creation UI is not exposed yet. Child caption rendering/rollup and real audio
+  envelopes/effects are still required.
+- Checks: 26 source/plan/sequence/batch/file tests passed in 1.08 s (five suites);
+  10 native crossfade/tracking tests passed in 559 ms (two suites); 24 source/native
+  plan/caption/detach tests passed in 924 ms (four suites). All used one active worker.
+  Final source type-check passed. Overlapping suite counts are not additive. No
+  real media, AI model, browser, render or production build was started.
+
+Worktree: `C:/Users/Arenb/.codex/worktrees/nested-sequences/Videoeditor`.
+Its ignored node_modules is a junction to the original checkout's installed
+dependencies; no install/model download or extra dev server was started.
 
 ## Implemented reference plan
 
@@ -47,14 +82,14 @@ browser suite or production build was started.
 
 ## Required implementation before exposing nested references
 
-1. Extend the real Clip source model to distinguish media from sequence references.
-   Replace direct media-ID assumptions with source helpers throughout timeline,
-   inspector, operations, validation, import/export and relinking. Do not create
-   placeholder files/assets to make existing media code accept a reference.
-2. Persist and validate the entire graph, including active edits/inactive sequences.
-   Insert/edit operations need lock/cycle checks, source duration/settings helpers,
-   clone/split/move/trim/speed preservation, undo and referenced-sequence removal
-   protection. References must survive parts and batch sequence selection.
+1. Source model/persistence/edit operations are implemented on the development
+   branch. Complete remaining direct media consumers with actual recursive source
+   handling; preserve native paths and never create fake assets/files.
+2. Finish integration/acceptance of lock/history/removal/source-gap behavior in UI.
+   Verify references survive parts and batch outputs, beyond metadata preflight.
+   Review graph snapshot costs before enabling it on large tracked projects;
+   compilation still clones sequence data. Duplicate creation avoids a second
+   unnecessary clip clone, but no real memory/performance measurement was made.
 3. Add sequence creation/duplication and explicit insert/nest/navigation controls.
    Show the source sequence and editable range, retain independent placements and
    make child-edit propagation apparent. Do not label copied clips as nested.

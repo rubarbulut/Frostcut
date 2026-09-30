@@ -32,6 +32,7 @@ describe('batch preflight without reading or rendering media', () => {
       id: 'audio',
       trackId: 'A1',
       mediaId: 'music',
+      sequenceId: undefined,
     });
     expect(batchPlan(p, ids, new Set(['media'])).errors).toEqual([
       `${p.sequences![3].name}: Relink: music`,

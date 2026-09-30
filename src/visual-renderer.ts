@@ -1,6 +1,7 @@
 import type { FFmpeg } from '@ffmpeg/ffmpeg';
 import { captionGroups, duration, type Project } from './model';
 import { transformAt, type MotionClip } from './motion';
+import { requireMediaClip } from './clip-source';
 import { captionAppearance } from './caption-style';
 import { captionFontFamily } from './caption-typography';
 import { mediaUrls } from './store';
@@ -297,7 +298,8 @@ export async function renderCanvasVideo(
       ctx.fillStyle = '#090d10';
       ctx.fillRect(0, 0, width, height);
       const active = clips.at(time);
-      for (const clip of active) {
+      for (const activeClip of active) {
+        const clip = requireMediaClip(activeClip);
         let video = videos.get(clip.mediaId);
         if (!video) {
           const url = mediaUrls.get(clip.mediaId);

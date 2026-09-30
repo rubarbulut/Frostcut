@@ -89,7 +89,7 @@ export function SequencePicker() {
       selectCaption: s.selectCaption,
     })),
   );
-  const [remove, setRemove] = useState(false);
+  const [remove, setRemove] = useState(false), [error, setError] = useState('');
   if (!p.sequences?.length) return null;
   const current = p.sequences.find((s) => s.id === p.activeSequenceId)!;
   function reset() {
@@ -122,7 +122,7 @@ export function SequencePicker() {
         className="icon"
         aria-label="Remove current sequence"
         disabled={p.sequences.length < 2}
-        onClick={() => setRemove(true)}
+        onClick={() => { setError(''); setRemove(true); }}
       >
         <Trash2 size={14} />
       </button>
@@ -131,6 +131,7 @@ export function SequencePicker() {
           <p className="modal-intro">
             “{current.name}” will be removed from this project. You can undo this edit.
           </p>
+          {error && <p role="alert" className="tracking-error">{error}</p>}
           <div className="modal-footer">
             <button className="text-button" onClick={() => setRemove(false)}>
               Keep sequence
@@ -138,9 +139,10 @@ export function SequencePicker() {
             <button
               className="danger"
               onClick={() => {
-                commit(removeSequence(p, current.id), 'Remove sequence');
-                reset();
-                setRemove(false);
+                try {
+                  commit(removeSequence(p, current.id), 'Remove sequence');
+                  reset(); setRemove(false);
+                } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not remove this sequence.'); }
               }}
             >
               Remove sequence

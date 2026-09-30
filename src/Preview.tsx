@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, useCallback, useMemo, Fragment } from 'rea
 import { Play, Pause, SkipBack, SkipForward, Maximize, Film, Cat } from 'lucide-react';
 import { useEditor, mediaUrls } from './store';
 import {
-  type Clip,
+  type MediaClip as Clip,
+  isMediaClip,
   duration,
   clipEnd,
   timecode,
@@ -23,6 +24,7 @@ import { AdjustmentComposite } from './AdjustmentComposite';
 import { frameAspectRatio, frameFillMode, frameObjectFit, needsBlurFill } from './aspect-fill';
 import { AudioPeakMeter } from './AudioPeakMeter';
 import { captionTimelineIndex, clipTimelineIndex } from './timeline-index';
+import { requireMediaClip } from './clip-source';
 import { ensureProxy, previewSource, proxyStatus, type PreviewQuality } from './proxies';
 function VideoLayer({
   clip,
@@ -36,7 +38,7 @@ function VideoLayer({
   onDegrade: (id: string) => void;
 }) {
   const draft = useEditor((s) => s.previewClip);
-  if (draft?.id === clip.id) clip = draft;
+  if (draft?.id === clip.id && isMediaClip(draft)) clip = draft;
   const ref = useRef<HTMLVideoElement>(null),
     p = useEditor((s) => s.project),
     playing = useEditor((s) => s.playing),
@@ -300,9 +302,9 @@ export default function Preview({
               .map((c) => (
                 <VideoLayer
                   key={c.id}
-                  clip={c}
+                  clip={requireMediaClip(c)}
                   quality={quality}
-                  degraded={degraded.includes(c.mediaId)}
+                  degraded={isMediaClip(c) && degraded.includes(c.mediaId)}
                   onDegrade={onDegrade}
                 />
               ))}

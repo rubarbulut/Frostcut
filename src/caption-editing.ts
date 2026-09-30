@@ -1,5 +1,6 @@
 import { type Project, type TimelineWord, type Word, clipEnd, timelineWords, uid } from './model';
 import { markKeywords } from './ai';
+import { requireMediaClip } from './clip-source';
 export type CaptionDraft = { text: string; start: number; end: number; speakerId: string };
 export function transcriptGroups(p: Project): TimelineWord[][] {
   const groups: TimelineWord[][] = [];
@@ -41,6 +42,7 @@ export function editCaption(
 ): Project {
   const clip = p.clips.find((c) => c.id === clipId);
   if (!clip) throw new Error('Choose a video clip first.');
+  requireMediaClip(clip);
   if (p.tracks.find((t) => t.id === clip.trackId)?.locked)
     throw new Error('Unlock this video track to edit its captions.');
   const { start, end, speakerId } = draft,
@@ -100,6 +102,7 @@ export function removeCaption(p: Project, clipId: string, ids: string[]): Projec
   const next = structuredClone(p),
     clip = next.clips.find((c) => c.id === clipId);
   if (!clip) throw new Error('This clip is no longer on the timeline.');
+  requireMediaClip(clip);
   if (p.tracks.find((t) => t.id === clip.trackId)?.locked)
     throw new Error('Unlock this video track to edit its captions.');
   clip.captionWords = (

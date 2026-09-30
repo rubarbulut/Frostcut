@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Wand2, Radio, Sparkles } from 'lucide-react';
-import { type Clip, isAudioClip, isLocked, timecode } from './model';
+import { type MediaClip as Clip, isMediaClip, isAudioClip, isLocked, timecode } from './model';
 import { useEditor, mediaFiles, audioWaveforms } from './store';
 import { extractAudio } from './media';
 import { analysisWindows, rmsEnvelope } from './audio-analysis';
@@ -31,7 +31,7 @@ export function AudioTools({ clip }: { clip: Clip }) {
     beats = p.beats?.[clip.mediaId] ?? [];
   const patch = (changes: Partial<Clip>) =>
     commit(
-      { ...p, clips: p.clips.map((c) => (c.id === clip.id ? { ...c, ...changes } : c)) },
+      { ...p, clips: p.clips.map((c) => (c.id === clip.id && isMediaClip(c) ? { ...c, ...changes } : c)) },
       'Audio processing',
     );
   async function analyze() {

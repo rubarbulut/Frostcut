@@ -10,7 +10,12 @@ delivery and record concrete evidence rather than assumed completion.
 
 Commit and push are authorized. Antigravity also works in this checkout: inspect
 status/log and preserve unrelated edits. Stage explicit files, not the whole tree.
-Repository: https://github.com/rubarbulut/Frostcut, branch main.
+Repository: https://github.com/rubarbulut/Frostcut. Stable branch: main.
+This copy is the managed development worktree at
+`C:/Users/Arenb/.codex/worktrees/nested-sequences/Videoeditor`, branch
+`codex/nested-sequences`, based on 5b58934. Keep full nested work here until
+its production consumers are complete. node_modules is an ignored junction to
+the original checkout; no install or extra dev server is needed.
 
 ## Current state
 
@@ -81,6 +86,16 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
   routing flags and indexed timing, with missing/cycle/depth/expansion guards.
   Eight focused tests passed in 434 ms; source type-check passed. Not exposed in
   editor, not yet a persisted/rendered feature. See docs/nested-sequences.md.
+- Source-model increment is now implemented in this worktree: exclusive native
+  media/sequence Clip types; live source metadata/dependencies; validated active/
+  inactive graph JSON; creation/duplication/insertion operations; lock/cycle/removal
+  guards; split/move/trim/speed/history and real linked-audio detachment; timeline/
+  inspector/handles and complete-graph batch metadata. No synthetic file/media IDs.
+- 26 source/plan/sequence/batch/file tests passed in 1.08 s; 10 native crossfade/
+  tracking tests passed in 559 ms; 24 source/native plan/caption/detach tests passed
+  in 924 ms. One active worker; counts overlap. Final source type-check passed.
+  Real media/model/render/browser/build never ran. Native preview/export still
+  explicitly require media clips; recursive consumers and insertion UI are pending.
 
 ## Next lightweight step
 
@@ -91,12 +106,16 @@ and rendered output acceptance open until heavier checks are permitted. Source
 times are video.currentTime after seek, not a claim of encoded PTS precision.
 The 50,000-point independent layer preserves baseline keys; native cap258 stays.
 Project size mismatch is fixed; do not repeat it. Nested reference/time plan exists;
-do not rebuild it or confuse copied Shorts with live references. Next extend the
-real source model/consumers toward full nested editing using the six requirements
-in docs/nested-sequences.md. Media clips and sequence references need distinct
-source identity; no fake media IDs/files. Do not expose imported nested clips
-before all production consumers support them. Inspect snapshot/index memory costs
-before enabling the new plan on long tracked projects. Preserve full P2 scope.
+do not rebuild it or confuse copied Shorts with live references. Continue in the
+managed codex/nested-sequences worktree, not the stable main checkout. The canonical
+source model/helpers/operations already exist; do not repeat that migration.
+Next build actual recursive child visual composition shared by main/proposed
+preview and export, then real hierarchical audio windows/gains/fades/ducking and
+caption/text consumers, followed by insertion/navigation UI. Remove the temporary
+requireMediaClip guards only as real recursive consumers replace them; never
+filter/drop refs or substitute placeholders. See docs/nested-sequences.md.
+Inspect graph snapshot/index memory costs before enabling on long tracked projects.
+Preserve full P2 scope and do not merge this incomplete feature into main yet.
 Use only code and tiny pixel/unit checks while the user animates. Real footage,
 browser and export QA is deferred. Nested sequences remains in full P2 scope.
 

@@ -1,19 +1,16 @@
-import { clipEnd, type Clip, type ProjectSequence, type Track } from './model';
+import { clipEnd, isMediaClip, isSequenceClip, type Clip, type MediaClip, type SequenceClip, type ProjectSequence, type Track } from './model';
 import { animatedProperties, type AnimatedProperty } from './motion';
 import { TimelineIndex } from './timeline-index';
 import { validVisualEffects } from './visual-effects';
 
 /** A real editable sequence reference, not a copied timeline or synthetic media file. */
-export type SequenceReferenceClip = Omit<Clip, 'mediaId' | 'tracking' | 'captionWords' | 'audioRole' | 'autoDuck' | 'voiceEnhance'> & {
-  sequenceId: string;
-  mediaId?: never;
-};
-export type SequencePlanClip = Clip | SequenceReferenceClip;
+export type SequenceReferenceClip = SequenceClip;
+export type SequencePlanClip = Clip;
 export type SequencePlanNode = Omit<ProjectSequence, 'clips'> & { clips: SequencePlanClip[] };
 export const MAX_SEQUENCE_DEPTH = 8;
 export const MAX_SEQUENCE_FRAME_LAYERS = 2048;
 export const isSequenceReference = (clip: SequencePlanClip): clip is SequenceReferenceClip =>
-  'sequenceId' in clip;
+  isSequenceClip(clip);
 const finite = (n: unknown, min = 0, max = 86400): n is number =>
   typeof n === 'number' && Number.isFinite(n) && n >= min && n <= max;
 const string = (s: unknown): s is string => typeof s === 'string' && !!s && s.length <= 1000;
@@ -57,7 +54,7 @@ type FrameLayerBase = {
   instancePath: readonly string[];
 };
 export type SequenceFrameLayer = FrameLayerBase & (
-  | { kind: 'media'; clip: Clip }
+  | { kind: 'media'; clip: MediaClip }
   | { kind: 'sequence'; clip: SequenceReferenceClip; frame: SequenceFramePlan }
 );
 export type SequenceFramePlan = {
@@ -80,6 +77,7 @@ export class NestedSequencePlan {
       const snapshot = structuredClone(sequence), tracks = new Map(snapshot.tracks.map((t) => [t.id, t]));
       const ids = new Set<string>();
       for (const clip of snapshot.clips) {
+        if (!isMediaClip(clip) && !isSequenceClip(clip)) throw new Error('A clip needs exactly one media or sequence source.');
         if (!string(clip.id) || ids.has(clip.id) || !tracks.has(clip.trackId)) throw new Error('Sequence clips need unique IDs and existing tracks.');
         ids.add(clip.id);
         if (isSequenceReference(clip) && !validSequenceReference(clip)) throw new Error('The nested sequence clip has invalid source timing or transforms.');

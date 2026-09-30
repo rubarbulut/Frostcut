@@ -11,7 +11,7 @@ import {
   clipEnd,
   duration,
   timecode,
-  type Clip,
+  type MediaClip as Clip,
   type Project,
   type Operation,
   isAudioClip,
@@ -23,6 +23,7 @@ import { captionAppearance } from './caption-style';
 import { captionTypography, captionBoxStyle, captionDecoration } from './caption-typography';
 import { captionEmoji, captionLayout } from './caption-layout';
 import { captionTimelineIndex, clipTimelineIndex } from './timeline-index';
+import { requireMediaClip } from './clip-source';
 export function OperationsPreview({
   project,
   operations,
@@ -149,7 +150,7 @@ export function EditPreview({
           <AdjustmentComposite layers={p.adjustments} time={time}>
           {clips.at(time)
             .map((c) => (
-              <ProposedLayer key={c.id} p={p} clip={c} time={time} playing={playing} />
+              <ProposedLayer key={c.id} p={p} clip={requireMediaClip(c)} time={time} playing={playing} />
             ))}
           </AdjustmentComposite>
           {caption && (

@@ -3,6 +3,7 @@ import { clipEnd, isLocked, isAudioClip } from './model';
 import { baseTransformAt, setAnimatedValue, transformAt } from './motion';
 import { dragClipProperties } from './clip-drag';
 import { visualBounds } from './aspect-fill';
+import { requireClipSource } from './clip-source';
 export function TransformHandles() {
   const { project: p, selected, playhead, previewClip } = useEditor();
   const original = p.clips.find(
@@ -14,7 +15,7 @@ export function TransformHandles() {
   const clip = previewClip?.id === original.id ? previewClip : original,
     props = transformAt(clip, playhead, p.settings.width, p.settings.height, p.settings.fillMode),
     base = baseTransformAt(clip, playhead, p.settings.width, p.settings.height);
-  const asset = p.media.find((m) => m.id === clip.mediaId)!,
+  const asset = requireClipSource(p, clip),
     bounds = visualBounds(asset, p.settings, p.settings.fillMode);
   return (
     <div

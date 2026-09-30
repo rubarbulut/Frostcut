@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { isAudioClip, isLocked, type Project } from './model';
+import { isAudioClip, isLocked, isMediaClip, type Project } from './model';
 import { useEditor, mediaUrls } from './store';
 import { detectFacePath, reframeClip } from './reframe';
 import { EditPreview } from './EditPreview';
 import { Field } from './components';
 export function AutoReframe() {
   const { project: p, selected, commit, setPlaying } = useEditor();
-  const candidates = p.clips.filter((c) => !isAudioClip(p, c));
+  const candidates = p.clips.filter(isMediaClip).filter((c) => !isAudioClip(p, c));
   const [id, setId] = useState(
     selected.find((id) => candidates.some((c) => c.id === id)) ?? candidates[0]?.id ?? '',
   );

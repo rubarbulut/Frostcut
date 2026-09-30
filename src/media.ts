@@ -1,4 +1,5 @@
 import { FFmpeg, FFFSType } from '@ffmpeg/ffmpeg';
+import { requireMediaClip } from './clip-source';
 import {
   type Project,
   type MediaAsset,
@@ -288,7 +289,8 @@ export async function exportMp4(
   onProgress: (message: string, value?: number) => void,
 ): Promise<Blob> {
   if (!p.clips.length) throw new Error('Add a video before exporting.');
-  for (const c of p.clips)
+  const mediaClips = p.clips.map(requireMediaClip);
+  for (const c of mediaClips)
     if (!mediaFiles.has(c.mediaId)) throw new Error('Relink missing media before exporting.');
   return withEngine(signal, onProgress, async (ff) => {
     const files: string[] = [],
@@ -323,12 +325,12 @@ export async function exportMp4(
         '-i',
         `anullsrc=r=48000:cl=stereo:d=${number(total)}`,
       ];
-      const mediaIds = [...new Set(p.clips.map((c) => c.mediaId))];
+      const mediaIds = [...new Set(mediaClips.map((c) => c.mediaId))];
       const inputPaths = new Map<string, string>();
       for (const [i, id] of mediaIds.entries())
         inputPaths.set(id, await mountSource(ff, mediaFiles.get(id)!, `/input${i}`));
       // One input per clip keeps trim timestamps independent, including duplicated clips.
-      for (const c of p.clips) {
+      for (const c of mediaClips) {
         const window = audioWindow(p, c);
         args.push(
           '-ss',
@@ -342,7 +344,7 @@ export async function exportMp4(
       const filters: string[] = [],
         audios: string[] = ['[1:a]'];
       let base = '0:v';
-      const ordered = [...p.clips].sort(
+      const ordered = [...mediaClips].sort(
         (a, b) =>
           p.tracks.findIndex((t) => t.id === b.trackId) -
           p.tracks.findIndex((t) => t.id === a.trackId),

@@ -31,6 +31,7 @@ import {
 import { Modal, Field, Range } from './components';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { readProjectFile } from './project-file';
+import { clipSource, clipTrimLimit } from './clip-source';
 import {
   useEditor,
   registerMedia,
@@ -908,7 +909,7 @@ export default function App() {
                           seek(c.start);
                         }}
                       >
-                        {i + 1}. {p.media.find((m) => m.id === c.mediaId)?.name}
+                        {i + 1}. {clipSource(p, c)?.name}
                         <small>{timecode(clipDuration(c))}</small>
                       </button>
                       <button
@@ -954,7 +955,7 @@ export default function App() {
                     <Range
                       label="Trim end"
                       min={selectedClip.sourceStart + 0.1}
-                      max={p.media.find((m) => m.id === selectedClip.mediaId)!.duration}
+                      max={clipTrimLimit(p, selectedClip)}
                       step={0.1}
                       value={selectedClip.sourceEnd}
                       onChange={(value) => {
