@@ -17,8 +17,8 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
 Nested sequence source-model work is saved/pushed as ae6997d on
 `codex/nested-sequences`, in the attached managed worktree:
 `C:/Users/Arenb/.codex/worktrees/nested-sequences/Videoeditor`.
-Latest saved/pushed increment: 5e6d969, recursive canvas visual composition wired to
-the canvas video renderer. Continue from that branch's current HEAD, not ae6997d.
+Latest saved/pushed increment: 178c8ae, hierarchical audio wired into actual nested
+MP4 export code. Continue from that branch's current HEAD, not ae6997d.
 Use that directory and its current docs/nested-sequences.md for continuing code.
 Main retains the prior working editor and timing-plan foundation. Do not recreate
 the worktree, repeat the model migration, or merge this incomplete feature yet.
@@ -61,12 +61,26 @@ suites, one active worker; final type-check passed. Tests use recording canvases
 fake shader/decoder boundaries: no real GPU/codec/media/AI/browser/build job ran.
 
 Shared recursive canvas visuals/export decoding now exist; do not rebuild them.
-Next connect main/proposed live previews with memoized plans, instance-specific
-decoder/proxy clocks and completed-frame publication, real hierarchical audio
-envelopes/windows/gains/fades/ducking, then child text/sidecar rollup and insertion/
-navigation UI. Main/proposed preview and the MP4 entry point still reject references;
-MP4's guard must stay until real nested audio is ready. Replace guards with real
-consumers, never filter/drop references or produce a silent approximation.
+178c8ae builds actual hierarchical audio filters: local child mixes, independent
+parent trim/speed/voice/gain/duck/fade/sample-delay stages and shared child bus splits.
+MP4 now uses real descendant files, checked ffprobe reports, those filters and the
+recursive visual renderer before AAC/final mux. The MP4 source guard is replaced;
+main/proposed previews still reject references. Fixed child-gap audio bounds/silence,
+negative crossfade handles, descendant speech mapping and known-no-audio ducking.
+Both export paths now omit disabled zero-duration fade stages (upstream fallback
+sample-fade behavior checked). Native export otherwise retains its existing path.
+21 focused audio tests passed in 833 ms across four suites, one active worker;
+final type-check passed. No actual sound/FFmpeg/decode/GPU/AI/browser/build job ran;
+real filter, timing, perceived mix and decoded MP4 acceptance remain unverified.
+
+Next audit parts/Shorts source context: callers that strip sequences before applying
+reference trim/assembly must preserve real source metadata. Then connect main/
+proposed live previews with memoized plans, instance decoder/proxy clocks, completed
+frame publication and real hierarchical Web Audio buses/gains/fades/ducking. Add
+child text/sidecar rollup and insertion/navigation UI after those consumers work.
+Do not rebuild the export graph or restore its blanket source guard; inspect
+sequence-audio.ts, media.ts and the worktree feature note. Never drop refs or replace
+real audio processing with a silent approximation. Full P2 scope remains open.
 Import/insertion cloning is fixed; do not repeat it. Review actual render-plan
 snapshot/index memory costs before enabling on long tracked projects.
 Complete feature code before merging to main; real media acceptance stays pending

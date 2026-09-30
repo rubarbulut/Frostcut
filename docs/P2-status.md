@@ -233,6 +233,13 @@ rendering must be updated together for visual features.
   one active worker; final type-check passed. No actual GPU/media/codec/model run.
   Live preview drivers, real hierarchical audio, text/sidecar rollup and insertion
   UI remain pending. MP4 still rejects references at entry; P2 remains open.
+- 178c8ae wires actual hierarchical audio export into MP4 on the development branch:
+  local child mixes, independent parent rate/trim/voice/gain/duck/fade/delay stages,
+  shared child buses and checked real source audio reports. Fixed child-gap bounds,
+  negative handles, descendant speech/no-audio ducking and disabled fade emission.
+  21 focused tests passed in 833 ms, one active worker; final type-check passed.
+  No actual media/audio/FFmpeg/GPU/model run. Live preview, parts/Shorts source-context
+  audit, child text/sidecar rollup, insertion UI and decoded-output QA remain open.
 
 ## Transcript chapter delivery
 
