@@ -129,7 +129,7 @@ export function createEqualPartSequences(
         }),
       }));
     if (format === 'shorts') {
-      next.settings = { ...next.settings, preset: 'YouTube Shorts', width: 1080, height: 1920 };
+      next.settings = { ...next.settings, preset: 'YouTube Shorts', aspectRatio: '9:16', width: 1080, height: 1920 };
       next.exportSettings = { ...next.exportSettings, width: 1080, height: 1920 };
     }
     return sequenceSnapshot(

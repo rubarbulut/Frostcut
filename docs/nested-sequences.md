@@ -143,6 +143,30 @@ dependencies; no install/model download or extra dev server was started.
   clocks/proxies and hierarchical Web Audio buses, child text/sidecars and insertion/
   navigation UI. Do not claim preview/export audio parity from string/metadata tests.
 
+## Parts/Shorts source-context increment
+
+- Fixed actual reference trim operations in `createShortSequences`: the derived
+  timeline reads its original project's real child metadata without deep-cloning
+  every saved sequence into every Short. Native operations retain their current
+  source context; absent child sources still fail. The resulting Short rejoins
+  the original complete graph and keeps live child IDs, including later edits.
+- Shorts now bake preset keys on the original source clock before trim, keep-range
+  and assembly, matching existing equal-part behavior. This preserves motion for
+  both native clips and parent groups instead of restarting it at each cut.
+  Explicit existing keys, clip controls and child local animation stay intact.
+  Both portrait creation paths now store the correct 9:16 aspect metadata.
+- Inspected `BatchExport.run`: it already uses `switchSequence(snapshot, id)` and
+  retains the complete child graph. No replacement/fake batch renderer was added.
+  Six new tiny integration checks use that same switch and the actual frame/audio
+  plan compilers after save/open; they cover nested trim/source bounds, keep/assemble
+  clocks and motion, independent placement bus splits, equal parts, child edit
+  propagation, missing real-file preflight and shortened child visual/audio gaps.
+- 18 tests passed across nested-parts/sequences/equal-parts/batch-plan in 900 ms,
+  one active worker; final source type-check passed. No real video decode/playback,
+  sound, MP4/batch/FFmpeg/GPU/AI/browser/build job was run. Actual exported parts and
+  batch codec/pixel/mix acceptance remains open; these checks prove source/model/
+  filter preparation, not decoded output or usable live nested editing.
+
 ## Implemented reference plan
 
 - A `SequenceReferenceClip` has a real child sequence ID and editable parent
@@ -188,9 +212,10 @@ browser suite or production build was started.
    branch. Complete remaining direct media consumers with actual recursive source
    handling; preserve native paths and never create fake assets/files.
 2. Finish integration/acceptance of lock/history/removal/source-gap behavior in UI.
-   Verify references survive parts and batch outputs, beyond metadata preflight.
-   Audit operations that strip the sequence workspace before applying parts/Shorts
-   edits: source metadata must stay available to real reference trim/assembly.
+   Actual parts/Shorts source operations and batch sequence switching now preserve
+   real child context; focused frame/audio compiler checks cover their preparation.
+   Verify references survive real decoded parts and batch outputs, beyond those
+   metadata/filter tests. Live preview remains required before UI exposure.
    Review render-plan snapshot costs before enabling it on large tracked projects;
    render compilation still clones sequence data. Validation now skips those
    snapshots/indexes; insertion and duplication avoid unnecessary extra timeline

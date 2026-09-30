@@ -509,7 +509,8 @@ export function deleteRange(p: Project, start: number, end: number, ripple = tru
   }
   return next;
 }
-export function applyOperations(project: Project, ops: Operation[], reason?: string): Project {
+/** Derived timelines can read real child metadata without cloning the saved workspace. */
+export function applyOperations(project: Project, ops: Operation[], reason?: string, sourceContext?: Project): Project {
   let p = structuredClone(project);
   for (const op of ops) {
     if (op.type === 'delete-range') p = deleteRange(p, op.start, op.end, op.ripple ?? true);
@@ -575,7 +576,7 @@ export function applyOperations(project: Project, ops: Operation[], reason?: str
         if (op.trackId) c.trackId = op.trackId;
       }
       if (op.type === 'trim') {
-        const limit = clipTrimLimit(p, c);
+        const limit = clipTrimLimit(isSequenceClip(c) && !p.sequences && sourceContext ? sourceContext : p, c);
         c.sourceStart = Math.max(0, Math.min(op.sourceStart, limit - 0.05));
         c.sourceEnd = Math.max(c.sourceStart + 0.05, Math.min(op.sourceEnd, limit));
       }

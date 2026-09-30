@@ -13,6 +13,7 @@ import {
 } from './model';
 import { sourceSequence } from './clip-source';
 import { validateSequenceGraph, validSequenceReference } from './nested-sequence-plan';
+import { presetKeyframes } from './motion';
 
 export function sequenceSnapshot(p: Project, id: string, name: string): ProjectSequence {
   return structuredClone({
@@ -83,11 +84,16 @@ export function createShortSequences(project: Project, suggestions: Suggestion[]
   const sequences = p.sequences ?? [sequenceSnapshot(p, originalId, 'Original edit')];
   if (sequences.length + suggestions.length > 30)
     throw new Error('This project supports up to 30 sequences. Remove an unused sequence first.');
+  // Keep preset motion on its original source clock when cutting/assembling a Short.
+  const clips = p.clips.map((c) => !c.keyframes && c.properties.animation !== 'None'
+    ? { ...c, keyframes: presetKeyframes(c, c.properties.animation, p.settings.width, p.settings.height) }
+    : c);
   const created = suggestions.map((s, index) => {
     const next = applyOperations(
-      { ...p, sequences: undefined, activeSequenceId: undefined },
+      { ...p, clips, sequences: undefined, activeSequenceId: undefined },
       s.operations,
       s.reason,
+      p,
     );
     next.suggestions = [];
     next.chapters = undefined;
@@ -95,7 +101,7 @@ export function createShortSequences(project: Project, suggestions: Suggestion[]
       throw new Error(
         'This suggestion contains no footage after its cuts. Analyze again with lower silence sensitivity.',
       );
-    next.settings = { ...next.settings, preset: 'YouTube Shorts', width: 1080, height: 1920 };
+    next.settings = { ...next.settings, preset: 'YouTube Shorts', aspectRatio: '9:16', width: 1080, height: 1920 };
     next.exportSettings = { ...next.exportSettings, width: 1080, height: 1920 };
     next.captions = { ...next.captions, enabled: true, safeArea: true };
     return sequenceSnapshot(

@@ -137,6 +137,17 @@ the original checkout; no install or extra dev server is needed.
   not actual sound/FFmpeg output. No decode/playback/FFmpeg/GPU/AI/browser/build job
   ran. Real codec/filter/mix/timing/output acceptance is deferred, not satisfied.
 
+- Parts/Shorts source-context audit is now implemented: actual Short trim reads
+  original real child bounds without cloning the full saved workspace; all created
+  edits retain the live graph. Preset keys are baked before Short cuts/assembly
+  (native and reference groups), preventing animation restart. Both portrait paths
+  store 9:16 metadata. Actual BatchExport already switches with the complete graph.
+- 18 focused tests across nested-parts/sequences/equal-parts/batch-plan passed in
+  900 ms, one active worker; final source type-check passed. Six new checks cover
+  real source operations, frame clocks/audio filters, equal-part/batch preparation,
+  roundtrip, later child edits and gap silence. No actual decode/playback/media/
+  FFmpeg/GPU/model/browser/build job ran. Real decoded parts/batch output is pending.
+
 ## Next lightweight step
 
 Motion tracking's planned source/UI integration is implemented, not a future task.
@@ -157,9 +168,10 @@ fades/ducking, then caption/text rollup and insertion/navigation UI. Actual expo
 audio graph/MP4 routing now exist; do not rebuild them or restore the blanket MP4
 guard. Main/proposed preview source guards must only be removed as real drivers
 replace them. Inspect sequence-audio.ts, media.ts and the feature note first.
-Audit parts/Shorts operation source context too: callers that strip sequences before
-trim/assembly must retain the real reference source graph. Metadata-only batch checks
-do not prove those edit/export routes. Keep that work in scope before exposure.
+Parts/Shorts operation source context and motion are now fixed; batch switching
+retains the graph and small actual frame/audio compiler checks passed. Do not
+repeat that source-context fix or treat it as real decoded parts/batch acceptance.
+Keep eventual output QA in scope before exposure. See src/nested-parts.test.ts.
 Never filter/drop refs or substitute placeholders. See docs/nested-sequences.md.
 Graph import/insertion cloning is fixed; do not repeat that refactor. Inspect actual
 render-plan snapshot/index memory costs before enabling on long tracked projects.
