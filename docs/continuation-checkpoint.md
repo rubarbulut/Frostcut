@@ -52,18 +52,23 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
   one-frame transfer/cancellation. Twelve tests passed in 357 ms with one worker;
   source type-check passed. No real video job or AI workload was launched.
   This is not exposed in the editor or marked delivered: see docs/motion-tracking.md.
+- 3317da2 saved and pushed that matcher/worker foundation. The worktree was clean
+  at the user's latest credit-limit checkpoint request. No media/model job is running.
 
 ## Next lightweight step
 
 Continue full motion tracking from the implemented core, not from scratch:
-add an original-local-media frame provider with exact source times, abortable
+add an original-local-media frame provider with reported source times, abortable
 load/seek and cleanup, then region selection/progress/cancel/result review and
-stale-result guards. Apply measured positions explicitly as editable source-time
-X/Y motion with Fit/Crop/Blur and existing transforms accounted for. The current
-schema caps each keyframe track at 258 entries: do not truncate/approximate paths
-to fit. Coordinate any cap expansion with binary-search interpolation and bounded
-keyframe-list rendering. Preserve lock/undo/save/sequence/split behavior and both
-preview/export paths. See docs/motion-tracking.md for remaining requirements.
+stale-result guards. Keep measured source-time points in a separate optional clip
+tracking layer, with binary-search interpolation and a bounded point editor. This
+preserves existing animation keys and avoids truncating tracking to the native
+258-key animation limit. Compose source-region translation compensation with
+Fit/Crop/Blur geometry and existing scale/rotation in shared preview/export motion.
+Disabled or out-of-range tracking must preserve the original motion exactly.
+Do not invent points after target loss. Preserve lock/undo/save/sequence/split
+behavior and both preview/export paths. This design is recorded, not implemented
+yet. See docs/motion-tracking.md for remaining requirements.
 Use only code and tiny pixel/unit checks while the user animates. Real footage,
 browser and export QA is deferred. Nested sequences remains in full P2 scope.
 
