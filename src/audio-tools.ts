@@ -80,6 +80,30 @@ export function duckGain(p: Project, c: Clip, time: number) {
   return gain;
 }
 
+/** Compile merged speech once; seek directly to the next release boundary. */
+export function createDuckGain(p: Project, c: Clip): (time: number) => number {
+  if (!c.autoDuck || c.audioRole !== 'music') return () => 1;
+  const ranges = speechRanges(p, c.id);
+  return (time) => {
+    let low = 0, high = ranges.length;
+    while (low < high) {
+      const mid = (low + high) >>> 1;
+      if (ranges[mid].end + 0.3 < time) low = mid + 1;
+      else high = mid;
+    }
+    let gain = 1;
+    // Usually one candidate; keep exact minimum semantics at floating-point boundaries.
+    for (let i = low; i < ranges.length; i++) {
+      const r = ranges[i];
+      if (time < r.start - 0.15) break;
+      const envelope = time < r.start ? (r.start - time) / 0.15
+        : time <= r.end ? 0 : (time - r.end) / 0.3;
+      gain = Math.min(gain, 0.25 + 0.75 * envelope);
+    }
+    return gain;
+  };
+}
+
 export function audioEffectsFilter(p: Project, c: Clip, timelineStart: number) {
   const effects = c.voiceEnhance
     ? 'highpass=f=80,lowpass=f=8000,acompressor=threshold=0.125:ratio=3:attack=10:release=100:makeup=1.5,'

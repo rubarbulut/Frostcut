@@ -14,11 +14,10 @@ import {
   type Clip,
   type Project,
   type Operation,
-  clipAudible,
   isAudioClip,
 } from './model';
 import { transformAt } from './motion';
-import { audioGainAt, audioWindow } from './audio-crossfades';
+import { createClipAudioPlan } from './audio-crossfades';
 import { usePreviewAudio } from './preview-audio';
 import { captionAppearance } from './caption-style';
 import { captionTypography, captionBoxStyle, captionDecoration } from './caption-typography';
@@ -50,7 +49,8 @@ function ProposedLayer({
 }) {
   const ref = useRef<HTMLVideoElement>(null),
     props = transformAt(clip, time, p.settings.width, p.settings.height);
-  const window = audioWindow(p, clip),
+  const audio = useMemo(() => createClipAudioPlan(p, clip), [p, clip]),
+    window = audio.window,
     track = p.tracks.find((t) => t.id === clip.trackId)!;
   const audible = time >= window.timelineStart && time < window.timelineStart + window.duration;
   const previewRate = useEditor((s) => s.previewRate);
@@ -64,7 +64,7 @@ function ProposedLayer({
     transform: `translate(${(props.x / p.settings.width) * 100}%, ${(props.y / p.settings.height) * 100}%) rotate(${props.rotation}deg) scale(${props.scale})`,
     clipPath: `inset(${props.crop}%)`,
   };
-  usePreviewAudio(ref, audioGainAt(p, clip, time), playing && audible, clip.voiceEnhance);
+  usePreviewAudio(ref, audio.gainAt(time), playing && audible, clip.voiceEnhance);
   useEffect(() => {
     const video = ref.current;
     if (!video) return;
@@ -82,7 +82,7 @@ function ProposedLayer({
         src={mediaUrls.get(clip.mediaId)}
         playsInline
         preload="auto"
-        muted={!audible || !clipAudible(p, clip)}
+        muted={!audible || !audio.audible}
         style={{
           ...effectStyle,
           visibility: active && !withEffects && !withBlur ? 'visible' : 'hidden',

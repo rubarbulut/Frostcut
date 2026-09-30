@@ -164,6 +164,16 @@ rendering must be updated together for visual features.
   source type-check passed. Actual browser audio verification remains pending.
   See [preview-audio-meter.md](preview-audio-meter.md).
 
+## Preview audio planning performance
+
+- Both previews memoize clip audio windows/ducking plans per edit instead of
+  finding neighbours and rebuilding transcript speech intervals on each frame.
+  Time evaluation preserves the original source handles, fades and gain values.
+- Thirteen plan/crossfade/audio-tool tests passed in 754 ms using one worker;
+  source type-check passed. Five new tests include exact original-helper
+  equivalence and construction-only lookup checks. Browser/audio benchmarking
+  remains pending. See [clip-audio-plans.md](clip-audio-plans.md).
+
 ## Transcript chapter delivery
 
 - Creator tools → Chapters offers manual editing, a non-model transcript structure

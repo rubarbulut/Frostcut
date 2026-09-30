@@ -1,5 +1,5 @@
 import { clipAudible, clipDuration, clipEnd, isAudioClip, type Clip, type Project } from './model';
-import { duckGain } from './audio-tools';
+import { createDuckGain, duckGain } from './audio-tools';
 export function audioWindow(p: Project, c: Clip) {
   const asset = p.media.find((m) => m.id === c.mediaId)!;
   const audible = (clip: Clip) => clipAudible(p, clip);
@@ -65,4 +65,29 @@ export function audioGainAt(p: Project, c: Clip, time: number) {
       ),
     )
   );
+}
+
+export type ClipAudioPlan = {
+  readonly window: ReturnType<typeof audioWindow>;
+  readonly audible: boolean;
+  readonly gainAt: (time: number) => number;
+};
+
+/** Edit-dependent timing/speech data; no media decoding or playhead-dependent cache. */
+export function createClipAudioPlan(p: Project, c: Clip): ClipAudioPlan {
+  const window = audioWindow(p, c), audible = clipAudible(p, c);
+  const volume = c.properties.volume, duckAt = audible ? createDuckGain(p, c) : () => 1;
+  return {
+    window, audible,
+    gainAt(time) {
+      if (!audible) return 0;
+      const local = time - window.timelineStart;
+      if (local < 0 || local >= window.duration) return 0;
+      return volume * duckAt(time) * Math.max(0, Math.min(
+        1,
+        local / Math.max(0.0001, window.fadeIn),
+        (window.duration - local) / Math.max(0.0001, window.fadeOut),
+      ));
+    },
+  };
 }

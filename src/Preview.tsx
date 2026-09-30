@@ -7,14 +7,13 @@ import {
   clipEnd,
   timecode,
   isAudioClip,
-  clipAudible,
   changeAspectRatio,
 } from './model';
 import { captionEmoji, captionLayout } from './caption-layout';
 import { captionAppearance } from './caption-style';
 import { captionTypography, captionBoxStyle, captionDecoration } from './caption-typography';
 import { transformAt } from './motion';
-import { audioGainAt, audioWindow } from './audio-crossfades';
+import { createClipAudioPlan } from './audio-crossfades';
 import { usePreviewAudio } from './preview-audio';
 import { TransformHandles } from './TransformHandles';
 import { PlaybackSpeed } from './PlaybackSpeed';
@@ -52,7 +51,8 @@ function VideoLayer({
       ? mediaUrls.get(clip.mediaId)
       : previewSource(asset, quality, degraded).url,
     source = clip.sourceStart + (time - clip.start) * clip.properties.speed;
-  const window = audioWindow(p, clip),
+  const audio = useMemo(() => createClipAudioPlan(p, clip), [p, clip]),
+    window = audio.window,
     audioActive = time >= window.timelineStart && time < window.timelineStart + window.duration;
   const props = transformAt(clip, time, p.settings.width, p.settings.height);
   const withEffects = !isAudioClip(p, clip) && hasVisualEffects(clip.effects);
@@ -63,7 +63,7 @@ function VideoLayer({
     transform: `translate(${(props.x / p.settings.width) * 100}%,${(props.y / p.settings.height) * 100}%) rotate(${props.rotation}deg) scale(${props.scale})`,
     clipPath: `inset(${props.crop}%)`,
   };
-  usePreviewAudio(ref, audioGainAt(p, clip, time), playing && audioActive, clip.voiceEnhance);
+  usePreviewAudio(ref, audio.gainAt(time), playing && audioActive, clip.voiceEnhance);
   useEffect(() => {
     const v = ref.current;
     if (!v) return;
@@ -124,7 +124,7 @@ function VideoLayer({
         src={url}
         playsInline
         preload="metadata"
-        muted={!audioActive || !clipAudible(p, clip)}
+        muted={!audioActive || !audio.audible}
         style={{
           ...effectStyle,
           visibility:

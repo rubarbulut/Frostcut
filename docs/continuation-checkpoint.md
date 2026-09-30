@@ -40,18 +40,23 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
   Sampling stops when no preview media is active or when muted. Seven focused
   tests passed in 202 ms, source type-check passed; browser audio review pending.
   See docs/preview-audio-meter.md. No real audio/video workload was launched.
+- 9ee9917 saved and pushed the actual audio-meter delivery.
+- Current audio-plan delivery memoizes windows and compiled transcript ducking
+  envelopes in both previews. Thirteen tests passed in 754 ms with one worker,
+  including five new plan tests; type-check passed. Actual browser/audio
+  performance measurement is pending. See docs/clip-audio-plans.md.
 
 ## Next lightweight step
 
-Cache preview audio timing/ducking plans per edit: VideoLayer/ProposedLayer call
-audioWindow directly and again through audioGainAt on every playhead tick, while
-duckGain rebuilds and sorts all transcript speech ranges for each music tick.
-Separate edit-dependent planning from time-dependent evaluation, preserve real
-crossfade/fade/duck values and arbitrary seeking, and compare against current
-functions in a brief regression check. Avoid new decoded audio buffers. Then
-reconsider the next pending P2 feature that can be implemented without model or
-render workloads (nested sequences is a likely candidate, but requires complete
-timing/audio/caption/render integration and cycle protection).
+Start P2 motion tracking with real local region matching, not generated positions
+or a model placeholder. Tracking must run only on explicit user action, process
+one bounded source frame at a time off the UI thread, detect low-texture/lost or
+ambiguous targets, preserve source timestamps, support cancellation and review,
+and produce editable source-time keyframes consumed by existing preview/export.
+Code and tiny deterministic pixel-array checks can be done while the user is
+animating; real source-video tracking/render QA remains deferred. Do not claim
+the feature delivered at algorithm-only or worker-only stages. Nested sequences
+remains in full P2 scope and needs complete composite/audio/caption semantics.
 
 ## Remaining scope and review
 
