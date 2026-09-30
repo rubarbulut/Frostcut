@@ -1,4 +1,4 @@
-import { isAudioClip, type AspectFillMode, type Project } from './model';
+import { isAudioClip, type AspectFillMode, type AspectRatio, type Project } from './model';
 
 export type FrameSize = { width: number; height: number };
 export const frameFillMode = (mode?: AspectFillMode): AspectFillMode => mode ?? 'fit';
@@ -7,6 +7,13 @@ export const frameObjectFit = (mode?: AspectFillMode): 'contain' | 'cover' =>
 export function differentAspect(source: FrameSize, frame: FrameSize) {
   return Math.abs(source.width * frame.height - source.height * frame.width) >
     Math.max(source.width * frame.height, source.height * frame.width) * 1e-6;
+}
+/** Dimensions are authoritative, including sequences made from an older preset. */
+export function frameAspectRatio(frame: FrameSize): AspectRatio | undefined {
+  return (['16:9', '9:16', '1:1', '4:5'] as const).find((ratio) => {
+    const [width, height] = ratio.split(':').map(Number);
+    return !differentAspect(frame, { width, height });
+  });
 }
 export function needsBlurFill(source: FrameSize, frame: FrameSize, mode?: AspectFillMode) {
   return frameFillMode(mode) === 'blur-background' && differentAspect(source, frame);

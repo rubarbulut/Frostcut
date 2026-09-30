@@ -82,7 +82,7 @@ Still required: actual preview/export pixels for overlapping non-neutral grades;
 caption exclusion; boundary frames; slider/drag/cancel/lock and keyboard behavior;
 reload/part/batch playback; unsupported-filter handling and production build.
 
-An existing aspect-fill mismatch was found by source inspection: the preview's
-blurred background is not synchronized/rendered by the export path. Resolve that
-shared compositing issue before claiming complete preview/export parity. Existing
-chroma/mask final regressions from `P2-status.md` also remain open.
+The inspected aspect-fill mismatch now has a shared same-frame compositor and
+explicit Fit/Crop/Blur selection; see `aspect-fill.md`. Its actual combined
+preview/export pixel checks are still pending. Existing chroma/mask final
+regressions from `P2-status.md` also remain open.

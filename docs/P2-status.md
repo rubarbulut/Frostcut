@@ -25,7 +25,7 @@ Paid services, uploads, account connections and cloud compute are not silently e
 | Collaboration | Pending | Real sharing/synchronization, ownership/conflicts and project/media access; no fake participants or chat |
 | Cloud rendering | Pending | Configured remote worker, media transfer consent, job progress/cancel and playable returned output; no default paid service |
 
-The first delivery covers chroma key and static masks. While the user is gaming,
+The first delivery covers chroma key and static masks. While the user is gaming or doing animation work,
 work is limited to code, documentation and brief checks; longer browser/render
 regressions and new model workloads are deferred. This does not close P2.
 Integration features need a separately configured service/account or local provider;
@@ -124,9 +124,22 @@ rendering must be updated together for visual features.
 - 36 focused/regression tests passed in 1.42 seconds with one active worker;
   source type-check passed. These include 11 new adjustment tests. No browser
   render, model inference or production build was run while the user was gaming.
-- Actual pixels/export and interaction QA remain pending. Source review also found
-  an existing aspect-fill backdrop preview/export mismatch to resolve before final
-  parity verification. See [adjustment-layers.md](adjustment-layers.md).
+- Actual pixels/export and interaction QA remain pending. The source-inspected
+  aspect-fill mismatch now uses a shared same-frame compositor; combined pixel
+  verification is still required. See [adjustment-layers.md](adjustment-layers.md).
+
+## Shared frame fill follow-up
+
+- Preview, proposed preview and visual export share Fit/Crop/Blur geometry. Blur
+  reuses the active decoded source frame after clip effects, composites foreground
+  and background before clip opacity, and scales its radius with output dimensions.
+  Crop now covers the frame. Fill selection is saved and undoable.
+- The extra unsynchronized background video is removed. Preview canvas size is
+  bounded to the displayed viewport; paused playback redraws on demand. Aspect
+  buttons derive their state from actual dimensions rather than a stale preset.
+- Eight focused tests passed in 766 ms using one worker; source type-check passed.
+  Real browser/export fidelity and interaction checks remain pending;
+  see [aspect-fill.md](aspect-fill.md).
 
 ## Transcript chapter delivery
 

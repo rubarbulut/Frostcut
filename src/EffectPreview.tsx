@@ -64,7 +64,17 @@ export function EffectPreview({
         else animation = requestAnimationFrame(nextFrame);
       }
     };
-    drawFrame.current = draw;
+    drawFrame.current = () => {
+      // An effect can be disabled while the blur compositor remains mounted.
+      // Retry that explicit edit, not every frame of a failed renderer.
+      if (failed) {
+        renderer?.dispose();
+        renderer = undefined;
+        failed = false;
+        setError('');
+        nextFrame();
+      } else draw();
+    };
     video.addEventListener('loadeddata', draw);
     video.addEventListener('seeked', draw);
     const observer = frame ? new ResizeObserver(draw) : undefined;

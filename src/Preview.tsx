@@ -22,7 +22,7 @@ import { PlaybackSpeed } from './PlaybackSpeed';
 import { hasVisualEffects } from './visual-effects';
 import { EffectPreview } from './EffectPreview';
 import { AdjustmentComposite } from './AdjustmentComposite';
-import { frameFillMode, frameObjectFit, needsBlurFill } from './aspect-fill';
+import { frameAspectRatio, frameFillMode, frameObjectFit, needsBlurFill } from './aspect-fill';
 import { AudioPeakMeter } from './AudioPeakMeter';
 import { ensureProxy, previewSource, proxyStatus, type PreviewQuality } from './proxies';
 function VideoLayer({
@@ -223,15 +223,7 @@ export default function Preview({
             { label: '1:1', ratio: '1:1' as const, title: '1:1 Square (Instagram)' },
             { label: '4:5', ratio: '4:5' as const, title: '4:5 Social Portrait' },
           ].map((item) => {
-            const currentRatio =
-              p.settings.aspectRatio ||
-              (p.settings.width === 1920 && p.settings.height === 1080
-                ? '16:9'
-                : p.settings.width === 1080 && p.settings.height === 1080
-                  ? '1:1'
-                  : p.settings.width === 1080 && p.settings.height === 1350
-                    ? '4:5'
-                    : '9:16');
+            const currentRatio = frameAspectRatio(p.settings);
             return (
               <button
                 key={item.ratio}
@@ -251,7 +243,15 @@ export default function Preview({
         </span>
       </div>
       <div className="preview-quality">
-        <select aria-label="Frame fill" value={frameFillMode(p.settings.fillMode)} disabled={processing} onChange={(e) => commit({ ...p, settings: { ...p.settings, fillMode: e.target.value as NonNullable<typeof p.settings.fillMode> } }, 'Frame fill')}>
+        <select
+          aria-label="Frame fill"
+          value={frameFillMode(p.settings.fillMode)}
+          disabled={processing}
+          onChange={(e) => commit(
+            { ...p, settings: { ...p.settings, fillMode: e.target.value as NonNullable<typeof p.settings.fillMode> } },
+            'Frame fill',
+          )}
+        >
           <option value="fit">Fit · keep whole image</option>
           <option value="crop">Crop · fill frame</option>
           <option value="blur-background">Blur background</option>
