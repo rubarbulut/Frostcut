@@ -1,5 +1,7 @@
-import { type Project } from './model';
+import type { Project } from './model';
 import { createAss } from './media';
+import { isTurboEligible } from './turbo-eligibility';
+export { isTurboEligible, type TurboEligibility } from './turbo-eligibility';
 
 /**
  * Checks whether the local Turbo Hardware Export engine is running and accessible.
@@ -28,7 +30,13 @@ export async function tryTurboExport(
   signal: AbortSignal,
   onProgress: (message: string, value?: number) => void,
 ): Promise<Blob | null> {
-  // Check engine availability first
+  // Check strict eligibility first - preserve project semantics
+  const eligibility = isTurboEligible(project);
+  if (!eligibility.eligible) {
+    return null;
+  }
+
+  // Check engine availability
   const isAvailable = await checkTurboEngine();
   if (!isAvailable || signal.aborted) return null;
 
