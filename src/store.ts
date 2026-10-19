@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { set, get } from 'idb-keyval';
-import { createProject, type Project, type MediaAsset, type Clip, validateProject } from './model';
+import { createProject, type Project, type MediaAsset, type Clip, validateProject, duration } from './model';
 import { syncSequence } from './sequences';
 import { clearProxies } from './proxies';
 import type { CutOptions } from './ai';
@@ -89,6 +89,7 @@ type State = {
   load: (p: Project) => void;
   select: (ids: string[]) => void;
   seek: (time: number) => void;
+  stepFrames: (delta: number) => void;
   setPlaying: (value: boolean) => void;
   mediaChanged: () => void;
 };
@@ -118,7 +119,7 @@ export const useEditor = create<State>((setState, getState) => ({
   playing: false,
   previewRate: 1,
   setPreviewRate: (rate) => {
-    if (Number.isFinite(rate)) setState({ previewRate: Math.max(0.5, Math.min(4, rate)) });
+    if (Number.isFinite(rate)) setState({ previewRate: Math.max(-8, Math.min(8, rate)) });
   },
   saveStatus: 'Saved locally',
   mediaRevision: 0,
@@ -273,6 +274,16 @@ export const useEditor = create<State>((setState, getState) => ({
   },
   select: (selected) => setState({ selected, adjustmentSelection: undefined, previewAdjustment: undefined }),
   seek: (playhead) => setState({ playhead: Math.max(0, playhead) }),
+  stepFrames: (delta) => {
+    const s = getState();
+    const fps = s.project.settings.fps || 30;
+    const total = duration(s.project);
+    const currentFrame = Math.round(s.playhead * fps);
+    const maxFrame = Math.round(total * fps);
+    const targetFrame = Math.max(0, Math.min(maxFrame, currentFrame + delta));
+    const nextTime = Math.round((targetFrame / fps) * 1_000_000) / 1_000_000;
+    setState({ playhead: nextTime, playing: false });
+  },
   setPlaying: (playing) => setState({ playing }),
   mediaChanged: () => setState((s) => ({ mediaRevision: s.mediaRevision + 1 })),
 }));

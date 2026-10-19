@@ -25,6 +25,7 @@ import { frameAspectRatio, frameFillMode, frameObjectFit, needsBlurFill } from '
 import { AudioPeakMeter } from './AudioPeakMeter';
 import { captionTimelineIndex } from './timeline-index';
 import { ensureProxy, previewSource, proxyStatus, type PreviewQuality } from './proxies';
+import { gopReverseEngine } from './shuttle-controller';
 function VideoLayer({
   clip,
   quality,
@@ -64,7 +65,7 @@ function VideoLayer({
     transform: `translate(${(props.x / p.settings.width) * 100}%,${(props.y / p.settings.height) * 100}%) rotate(${props.rotation}deg) scale(${props.scale})`,
     clipPath: `inset(${props.crop}%)`,
   };
-  usePreviewAudio(ref, audio.gainAt(time), playing && audioActive, clip.voiceEnhance);
+  usePreviewAudio(ref, audio.gainAt(time), playing && audioActive && previewRate > 0, clip.voiceEnhance);
   useEffect(() => {
     const v = ref.current;
     if (!v) return;
@@ -90,13 +91,24 @@ function VideoLayer({
         };
       }
     }
-    v.playbackRate = clip.properties.speed * previewRate;
-    v.preservesPitch = true;
-    if (audioActive) {
-      if (Math.abs(v.currentTime - source) > 0.2 || !playing) v.currentTime = Math.max(0, source);
-      if (playing) v.play().catch(() => useEditor.getState().setPlaying(false));
-      else v.pause();
-    } else v.pause();
+    if (previewRate < 0) {
+      v.playbackRate = 1;
+      v.preservesPitch = true;
+      v.pause();
+      if (active && (Math.abs(v.currentTime - source) > 0.02 || !playing)) {
+        if (gopReverseEngine.shouldSeekVideoElement(source, v.currentTime, p.settings.fps, previewRate)) {
+          v.currentTime = Math.max(0, source);
+        }
+      }
+    } else {
+      v.playbackRate = Math.min(16, Math.max(0.25, clip.properties.speed * previewRate));
+      v.preservesPitch = true;
+      if (audioActive) {
+        if (Math.abs(v.currentTime - source) > 0.2 || !playing) v.currentTime = Math.max(0, source);
+        if (playing) v.play().catch(() => useEditor.getState().setPlaying(false));
+        else v.pause();
+      } else v.pause();
+    }
   }, [
     time,
     playing,
@@ -286,19 +298,38 @@ export default function Preview({
     : undefined;
   const status = activeAsset && proxyStatus.get(activeAsset.id);
   useEffect(() => {
-    if (!playing) return;
+    if (!playing) {
+      gopReverseEngine.reset();
+      return;
+    }
     let raf: number,
       last = performance.now();
     const tick = (now: number) => {
-      const s = useEditor.getState(),
-        next = s.playhead + ((now - last) / 1000) * s.previewRate;
+      const s = useEditor.getState();
+      const elapsed = (now - last) / 1000;
       last = now;
-      if (next >= duration(s.project)) {
-        s.seek(duration(s.project));
-        s.setPlaying(false);
-        return;
+      if (s.previewRate < 0) {
+        const next = gopReverseEngine.computeNextReversePlayhead(
+          s.playhead,
+          elapsed,
+          s.previewRate,
+          s.project.settings.fps,
+        );
+        if (next <= 0) {
+          s.seek(0);
+          s.setPlaying(false);
+          return;
+        }
+        s.seek(next);
+      } else {
+        const next = s.playhead + elapsed * s.previewRate;
+        if (next >= duration(s.project)) {
+          s.seek(duration(s.project));
+          s.setPlaying(false);
+          return;
+        }
+        s.seek(next);
       }
-      s.seek(next);
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);

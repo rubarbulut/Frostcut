@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { Modal, Field, Range } from './components';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
+import { handleShuttleDeckKeyboard } from './shuttle-controller';
 import { readProjectFile } from './project-file';
 import { tryTurboExport, checkTurboEngine } from './turbo-export';
 import {
@@ -263,12 +264,7 @@ export default function App() {
         e.preventDefault();
         deleteSelected(e.shiftKey);
       }
-      if (e.key === 'k') setPlaying(false);
-      if (e.key === 'l') setPlaying(true);
-      if (e.key === 'j') {
-        seek(Math.max(0, useEditor.getState().playhead - 2));
-        setPlaying(false);
-      }
+      if (handleShuttleDeckKeyboard(e)) return;
       if (e.key === '?') {
         e.preventDefault();
         setModal('shortcuts');
