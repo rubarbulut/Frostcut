@@ -52,6 +52,16 @@ https://frostcut-git-{branch-slug}-rubar.vercel.app/ . Real manual PR event exec
 72f0b84b-a955-4be9-9688-4a4c4996b58f passed 10/10; actual TestSprite V3 success.
 Need genuine
 new-commit core auto result on final head before merging; do not infer success.
+Commit a1aa503 genuinely auto-started core run 0d710c47-b2da-433f-9df6-b06854fbf780.
+Its pan case failed because the agent clicked minimap but could not prove required
+native drag/before-after viewport positions. Keep the real failure/history. Portal
+case 0858170e-2b51-493c-b535-236af80145be now asserts actual Playhead 0 -> minimap
+midpoint (10-14s) -> reset 0, unchanged baseline/Undo. Save & Run started one case.
+Quality now selects seven actual Chromium cases, adding existing real middle/Hand
+pan/cursor-anchored zoom and 4x playback/saved-speed tests. Backup JSON now explicitly
+checks edited tokens/exact source times/alignment before real reimport. Local list
+only confirmed seven, no browser launched. Read actual new cloud outcomes before
+claiming final pass. The prior a1aa503 Quality run39257442735 passed 233 + five cases.
 Prior substantive commit 7f1c924 automatically ran diagnostic execution 40ad35dd,
 which genuinely failed (2 pass, 2 fail, 8 blocked). Main is protected: strict required
 Quality checks App15368 and TestSprite V3 App2756476, enforce admins and conversation

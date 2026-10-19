@@ -92,7 +92,8 @@ semantics, run speech recognition, or verify media renders.
 
 [Quality run 39253972919](https://github.com/rubarbulut/Frostcut/actions/runs/39253972919)
 passed **233 unit tests in 38 files, production build and 5/5 real Chromium cases**
-(10.9 s for the browser cases). `playwright.hackathon.config.ts` selects:
+(10.9 s for the browser cases). The current `playwright.hackathon.config.ts`
+extends that selection to seven real scenarios; latest results are on the PR:
 
 1. Existing caption text/exact-time/add/drag/resize/Undo and file persistence.
 2. Existing invalid caption-time validation.
@@ -102,6 +103,13 @@ passed **233 unit tests in 38 files, production build and 5/5 real Chromium case
    rejection and retained edit, then save valid backup.
 5. Equal parts plus retained original: inspect actual downloaded JSON, reimport it,
    verify three saved sequences and original full duration.
+6. Actual middle-mouse and Hand-tool drags change scroll position without changing
+   Playhead/history; Ctrl-wheel zoom preserves the time under the cursor.
+7. Actual 4x video playback advances faster, while the downloaded project retains
+   clip speed 1 and contains no serialized preview-rate field.
+
+The backup case additionally asserts exact caption tokens, 0.5-4 s source timing
+and Right alignment inside the actual JSON before importing that file.
 
 The browser runner uses actual downloads and file inputs, no internal Zustand
 injection or mocked media. A first run had four passes and one test-selector
@@ -118,6 +126,17 @@ active trigger watches Vercel commit status and tests
 Merge gate is enabled. The manual PR event started
 [72f0b84b-a955-4be9-9688-4a4c4996b58f](https://www.testsprite.com/dashboard-v3/o/ee3a6b41-5680-5bdf-998e-5b37da0e18af/projects/2b7bdea7-7743-4036-96f1-3527e99a4ea3/execution/72f0b84b-a955-4be9-9688-4a4c4996b58f);
 it finished **10 passed, 0 failed, 0 blocked** and genuine TestSprite V3 status success on source `9fbecb8`.
+
+New commit `a1aa503` automatically started
+[0d710c47-b2da-433f-9df6-b06854fbf780](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/2b7bdea7-7743-4036-96f1-3527e99a4ea3/execution/0d710c47-b2da-433f-9df6-b06854fbf780),
+without a manual dispatch. Its panning case reported failure: the agent clicked
+the minimap, observed unchanged Undo/clip count/duration, but could not prove exact
+before/after viewport movement or the required mouse drag. That failure is retained.
+The portal navigation plan now explicitly records Playhead 0, clicks the real
+minimap center, asserts a 10-14 s value, then resets to 0 with exact edit baseline
+unchanged. This is a minimap assertion, not a claim to prove drag semantics.
+Real drag/scroll/zoom and playback isolation are separate required Chromium cases.
+The latest PR results must verify both paths; earlier 10/10 is not a newer-head pass.
 
 Main requires strict up-to-date **Quality checks** from GitHub Actions App 15368
 and **TestSprite V3** from genuine TestSprite App 2756476, including admins. The

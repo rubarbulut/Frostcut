@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import type { Project } from '../src/model';
 
 async function sample(page: Page) {
   await page.goto('/');
@@ -16,7 +17,7 @@ async function backup(page: Page) {
   const path = await download.path();
   expect(path).not.toBeNull();
   const text = await readFile(path!, 'utf8');
-  const project = JSON.parse(text);
+  const project = JSON.parse(text) as Project;
   expect(project.media).toHaveLength(1);
   expect(project.media[0].name).toMatch(/sample\.(mp4|webm)$/);
   expect(project.media[0].duration).toBeGreaterThanOrEqual(24);
@@ -37,6 +38,11 @@ test('hosted backup: downloads actual caption/style edits and reopens that file'
   await page.getByRole('combobox', { name: 'Text alignment', exact: true }).selectOption('right');
   const saved = await backup(page);
   expect(saved.project.name).toBe('Backup proof');
+  expect(saved.project.captions.appearance?.align).toBe('right');
+  const caption = saved.project.clips[0].captionWords?.slice(0, 3);
+  expect(caption?.map((word) => word.text).join(' ')).toBe('Saved caption proof.');
+  expect(caption?.[0].start).toBe(0.5);
+  expect(caption?.[2].end).toBe(4);
   // Changing the current edit proves file import rather than merely redisplaying autosave.
   await page.getByLabel('Project name', { exact: true }).fill('Unsaved different name');
   await page.getByRole('combobox', { name: 'Text alignment', exact: true }).selectOption('left');
@@ -80,9 +86,11 @@ test('hosted backup: equal parts and original survive an actual file roundtrip',
   const picker = page.getByLabel('Current sequence', { exact: true });
   await expect(picker.locator('option')).toHaveText(['Original edit', 'Part 01', 'Part 02', 'Part 03']);
   const saved = await backup(page);
-  expect(saved.project.sequences.map((s: { name: string }) => s.name))
+  expect(saved.project.sequences).toBeDefined();
+  const sequences = saved.project.sequences!;
+  expect(sequences.map((s) => s.name))
     .toEqual(['Original edit', 'Part 01', 'Part 02', 'Part 03']);
-  for (const part of saved.project.sequences.slice(1)) {
+  for (const part of sequences.slice(1)) {
     const end = Math.max(...part.clips.map((clip: {
       start: number; sourceStart: number; sourceEnd: number; properties: { speed: number };
     }) => clip.start + (clip.sourceEnd - clip.sourceStart) / clip.properties.speed));

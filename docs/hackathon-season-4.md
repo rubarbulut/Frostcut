@@ -41,6 +41,14 @@ public repository. This is a preparation/evidence record, **not a submitted entr
   [72f0b84b-a955-4be9-9688-4a4c4996b58f](https://www.testsprite.com/dashboard-v3/o/ee3a6b41-5680-5bdf-998e-5b37da0e18af/projects/2b7bdea7-7743-4036-96f1-3527e99a4ea3/execution/72f0b84b-a955-4be9-9688-4a4c4996b58f).
   It finished **10 passed, 0 failed, 0 blocked** and the genuine TestSprite V3
   status is success on source `9fbecb8`.
+- New commit `a1aa503` automatically started core execution
+  [0d710c47-b2da-433f-9df6-b06854fbf780](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/2b7bdea7-7743-4036-96f1-3527e99a4ea3/execution/0d710c47-b2da-433f-9df6-b06854fbf780).
+  Its pan case could not prove the required native gesture/viewport comparison.
+  The failure remains. Portal navigation now asserts an actual numeric minimap
+  Playhead change; the required Chromium selection adds genuine middle/Hand drag,
+  cursor-anchored wheel zoom and 4x playback/saved-speed checks (seven cases total).
+  Inspect latest PR results for this expanded selection and revised portal plan;
+  do not substitute the earlier 10/10 or five-case pass for a new-head result.
 - Main protection was enabled and API-read back: strict required **Quality checks**
   bound to GitHub Actions App **15368**, and **TestSprite V3** bound to the real
   TestSprite App **2756476**, including admins and conversation resolution. A real

@@ -27,6 +27,12 @@ portal suite on PR previews. Main requires **TestSprite V3** from TestSprite and
 **Quality checks** from GitHub Actions, with strict up-to-date checks including admins.
 The PR carries the authoritative results for its latest source revision.
 
+The first automatic core run on a new commit exposed inconclusive agent evidence
+for mouse panning. The required Chromium selection now also includes actual
+middle-mouse/Hand panning, cursor-anchored zoom and playback-rate isolation.
+The portal navigation case uses a visible minimap/Playhead comparison instead;
+its earlier failed execution is preserved. Newer results are recorded on the PR.
+
 The original 12-case diagnostic suite and all failed/blocked history are retained.
 Its first run exposed a real H.264 limitation in cloud Chromium. The added WebM
 sample preserves all 576 decoded video frames; the original MP4 stays unchanged.
