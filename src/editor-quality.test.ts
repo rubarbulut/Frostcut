@@ -7,6 +7,7 @@ import {
   updateMediaAsset,
   validateProject,
   changeAspectRatio,
+  defaultProps,
   type MediaAsset,
 } from './model';
 import { captionAppearance } from './caption-style';
@@ -331,6 +332,58 @@ describe('Video Editor Quality & Feature Control', () => {
       expect(preset.speed).toBeGreaterThan(0);
     }
   });
+
+  it('generates visual highlights cleanly when video has no speech or transcript', () => {
+    let p = createProject('Music Video Edit');
+    p.settings.noSpeech = true;
+    p.media.push({
+      id: 'm1',
+      name: 'music-broll.mp4',
+      duration: 60,
+      width: 1920,
+      height: 1080,
+      size: 5000000,
+      type: 'video/mp4',
+    });
+    p.clips.push(
+      {
+        id: 'c1',
+        mediaId: 'm1',
+        trackId: 'V1',
+        start: 0,
+        sourceStart: 0,
+        sourceEnd: 30,
+        properties: { ...defaultProps },
+      },
+      {
+        id: 'c2',
+        mediaId: 'm1',
+        trackId: 'V1',
+        start: 30,
+        sourceStart: 30,
+        sourceEnd: 60,
+        properties: { ...defaultProps },
+      },
+    );
+    // Project has zero transcripts
+    expect(p.transcripts).toHaveLength(0);
+
+    const highlights = highlightRanges(p, {
+      goal: 'Short-form clips',
+      count: 3,
+      length: 25,
+      pacing: 'Fast',
+      reorder: false,
+      composite: false,
+      sensitivity: 50,
+      noSpeech: true,
+    });
+
+    expect(highlights.length).toBeGreaterThanOrEqual(1);
+    expect(highlights[0].reason).toContain('Visual Pacing');
+    expect(highlights[0].text).toBeDefined();
+  });
 });
+
 
 

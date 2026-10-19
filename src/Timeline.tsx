@@ -23,6 +23,7 @@ import {
   Plus,
   Hand,
   Maximize2,
+  Music,
 } from 'lucide-react';
 import { useTimelineNavigation } from './timeline-navigation';
 import { timelineBeats } from './audio-tools';
@@ -101,6 +102,7 @@ export default function Timeline() {
     ),
     [zoom, setZoom] = useState(26),
     [snap, setSnap] = useState(true),
+    [snapBeats, setSnapBeats] = useState(true),
     [drag, setDrag] = useState<{
       id: string;
       start: number;
@@ -176,9 +178,10 @@ export default function Timeline() {
       let trimDelta = delta;
       if (kind !== 'move' && snap) {
         const edge = (kind === 'in' ? c.start : clipEnd(c)) + delta;
+        const beatPoints = snapBeats ? timelineBeats(snapshot, ids) : [];
         const candidates = [
           playhead,
-          ...timelineBeats(snapshot, ids),
+          ...beatPoints,
           ...snapshot.clips
             .filter((x) => !ids.includes(x.id))
             .flatMap((x) => [x.start, clipEnd(x)]),
@@ -189,10 +192,11 @@ export default function Timeline() {
         if (nearest !== undefined) trimDelta += nearest - edge;
       }
       if (kind === 'move' && snap) {
+        const beatPoints = snapBeats ? timelineBeats(snapshot, ids) : [];
         const points = [
           0,
           playhead,
-          ...timelineBeats(snapshot, ids),
+          ...beatPoints,
           ...snapshot.clips
             .filter((x) => !ids.includes(x.id))
             .flatMap((x) => [x.start, clipEnd(x)]),
@@ -347,6 +351,15 @@ export default function Timeline() {
             onClick={() => setSnap(!snap)}
           >
             <Magnet size={16} />
+          </button>
+          <button
+            className={`icon ${snapBeats ? 'active' : ''}`}
+            title="Snap to music beats"
+            aria-label="Toggle beat snapping"
+            aria-pressed={snapBeats}
+            onClick={() => setSnapBeats(!snapBeats)}
+          >
+            <Music size={15} />
           </button>
           <button
             className="icon"
@@ -553,6 +566,14 @@ export default function Timeline() {
                             {c.aiReason && '✦ '}
                             {m.name}
                           </span>
+                          {c.transition && (
+                            <span
+                              className="clip-transition-badge"
+                              title={`Transition: ${c.transition.type} (${c.transition.duration}s)`}
+                            >
+                              ⚡ {c.transition.type.replace('-', ' ')}
+                            </span>
+                          )}
                           <div className="filmstrip">
                             {Array.from(
                               { length: Math.min(20, Math.ceil((clipDuration(c) * zoom) / 70)) },

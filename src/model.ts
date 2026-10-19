@@ -175,6 +175,7 @@ export type Project = {
     transcriptionDevice?: 'auto' | 'cpu';
     aspectRatio?: AspectRatio;
     fillMode?: AspectFillMode;
+    noSpeech?: boolean;
   };
   media: MediaAsset[];
   tracks: Track[];
@@ -272,6 +273,7 @@ export function createProject(
       transcriptionQuality: 'balanced',
       aspectRatio: w === 1920 && h === 1080 ? '16:9' : '9:16',
       fillMode: 'blur-background',
+      noSpeech: false,
     },
     media: [],
     clips: [],

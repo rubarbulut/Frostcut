@@ -3,6 +3,7 @@ import { Play, Pause, SkipBack, SkipForward, Maximize, Film, Cat } from 'lucide-
 import { useEditor, mediaUrls } from './store';
 import {
   type Clip,
+  type Project,
   duration,
   clipEnd,
   timecode,

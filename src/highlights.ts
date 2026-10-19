@@ -188,12 +188,62 @@ export function targetLengthBounds(length: number, total: number) {
   return { min: Math.min(10, total), max: Math.min(60, total), target: Math.min(30, total) };
 }
 
+export function visualHighlightRanges(
+  p: Project,
+  opts: CutOptions,
+  bounds: { min: number; max: number; target: number },
+  total: number,
+) {
+  if (total <= 0) return [];
+  const candidates: { start: number; end: number; text: string; score: number; reason: string }[] = [];
+  const targetLen = bounds.target || 20;
+  const count = opts.count || Math.min(8, Math.max(1, Math.floor(total / targetLen)));
+  const step = Math.max(bounds.min || 4, Math.min(total / count, targetLen));
+
+  const cutPoints = p.clips.map((c) => c.start).filter((t) => t > 0.5 && t < total - 0.5);
+
+  let currentStart = 0;
+  let idx = 1;
+  const titles = [
+    '🎬 Cinematic Hook & Opening Pacing',
+    '🔥 Peak Action & Energy Highlight',
+    '💡 Dynamic Visual Transition',
+    '🎬 Visual Showcase Segment',
+    '⚡ Story Arc Peak Action',
+    '🎯 Outro & Climax Moment',
+  ];
+
+  while (currentStart < total - 1.5 && candidates.length < count) {
+    let idealEnd = Math.min(total, currentStart + step);
+    const nearbyCut = cutPoints.find((cp) => Math.abs(cp - idealEnd) <= 2.5);
+    if (nearbyCut && nearbyCut > currentStart + 3) {
+      idealEnd = nearbyCut;
+    }
+    const segDuration = idealEnd - currentStart;
+    if (segDuration >= (bounds.min || 2) || candidates.length === 0) {
+      const title = titles[(idx - 1) % titles.length] + ` (#${idx})`;
+      candidates.push({
+        start: Math.round(currentStart * 100) / 100,
+        end: Math.round(idealEnd * 100) / 100,
+        text: title,
+        score: Math.max(76, 92 - idx * 2),
+        reason: `${Math.round(segDuration)}s Visual Pacing · No speech required · Dynamic scene split`,
+      });
+      idx++;
+    }
+    currentStart = idealEnd;
+  }
+  return candidates;
+}
+
 export function highlightRanges(p: Project, opts: CutOptions) {
   const words = timelineWords(p),
     total = duration(p),
     bounds = targetLengthBounds(opts.length, total);
 
-  if (!words.length) return [];
+  if (!words.length || opts.noSpeech || p.settings.noSpeech) {
+    return visualHighlightRanges(p, opts, bounds, total);
+  }
 
   // Group words into semantic sentences / thought units rather than splitting arbitrarily at commas
   const groups: (typeof words)[] = [];

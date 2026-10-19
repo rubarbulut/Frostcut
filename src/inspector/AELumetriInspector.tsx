@@ -3,8 +3,6 @@ import { useEditor } from '../store';
 import { AdjustmentControls, addAdjustment } from '../AdjustmentControls';
 
 export function AELumetriInspector() {
-  const adjustments = useEditor((s) => s.project.adjustments ?? []);
-  const selected = useEditor((s) => s.adjustmentSelection);
 
   return (
     <div className="ae-lumetri-inspector">

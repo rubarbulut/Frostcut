@@ -43,16 +43,6 @@ export function AEInspector() {
     }
   }, [adjustmentSelection]);
 
-  // When a clip is newly selected, if user was on color and deselected layer, move to controls
-  useEffect(() => {
-    if (clip && !adjustmentSelection && tab === 'color') {
-      // Keep on color if adjustments exist, else switch to controls
-      if (!p.adjustments?.length) {
-        setTab('controls');
-      }
-    }
-  }, [clip?.id]);
-
   return (
     <aside className="properties-panel ae-inspector-panel">
       {/* Workspace Panel Tab Bar */}

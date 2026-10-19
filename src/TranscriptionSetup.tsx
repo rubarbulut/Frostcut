@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { MessageSquareText, Check, ShieldCheck, Film, Scissors, Layers } from 'lucide-react';
+import { MessageSquareText, Check, ShieldCheck, Film, Scissors, Layers, VolumeX } from 'lucide-react';
 import { Modal, Field } from './components';
 import { useEditor } from './store';
 import { languages, timecode } from './model';
@@ -76,6 +76,54 @@ export default function TranscriptionSetup({
       <p className="modal-intro">
         Extract synchronized words for instant viral subtitles. Processing runs locally on your device.
       </p>
+
+      {/* Quick Option: Non-Speech / Instrumental */}
+      <div
+        className="no-speech-selector-box"
+        style={{
+          margin: '0.5rem 0 0.85rem 0',
+          padding: '8px 12px',
+          borderRadius: '8px',
+          background: p.settings.noSpeech ? 'rgba(245, 158, 11, 0.12)' : 'rgba(255, 255, 255, 0.04)',
+          border: p.settings.noSpeech ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid rgba(255, 255, 255, 0.08)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <VolumeX size={17} style={{ color: p.settings.noSpeech ? '#fbbf24' : '#94a3b8', flexShrink: 0 }} />
+          <div>
+            <b style={{ fontSize: '12px', display: 'block', color: p.settings.noSpeech ? '#fbbf24' : '#f1f5f9' }}>
+              Videoda metin / konuşma yok mu?
+            </b>
+            <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+              Müzik, sessiz B-Roll veya montajlar için deşifreyi atla, görsel/tempo moduna geç.
+            </span>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="secondary"
+          style={{ whiteSpace: 'nowrap', fontSize: '11px', padding: '4px 9px', flexShrink: 0 }}
+          onClick={() => {
+            commit(
+              {
+                ...p,
+                settings: {
+                  ...p.settings,
+                  noSpeech: true,
+                },
+              },
+              'Set video as no-speech mode',
+            );
+            onClose();
+          }}
+        >
+          {p.settings.noSpeech ? '✓ Metinsiz Mod Aktif' : '🔇 Deşifreyi Atla (Metin Yok)'}
+        </button>
+      </div>
 
       {/* Transcription Scope Selector */}
       <div className="section-heading" style={{ marginTop: '0.25rem', marginBottom: '0.5rem' }}>

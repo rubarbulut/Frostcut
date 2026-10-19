@@ -59,8 +59,25 @@ function ChapterEditor({ onNavigate }: { onNavigate: () => void }) {
     setStatus('Reading transcript…');
     try {
       const blocks = chapterBlocks(p);
-      if (!blocks.length)
+      if (!blocks.length) {
+        if (total > 0 && p.clips.length > 0) {
+          const numChapters = Math.max(2, Math.min(count, 10));
+          const step = total / numChapters;
+          const items = Array.from({ length: numChapters }, (_, i) => ({
+            id: uid(),
+            start: Math.floor(i * step),
+            title: i === 0 ? 'Giriş (Intro)' : i === numChapters - 1 ? 'Kapanış (Outro)' : `Bölüm ${i + 1}`,
+          }));
+          setDraft({
+            source: 'manual',
+            sourceFingerprint: fingerprint,
+            items,
+          });
+          setStatus('Kliplere göre zaman bazlı bölümler oluşturuldu. Başlıkları dilediğin gibi düzenleyebilirsin.');
+          return;
+        }
         throw new Error('Transcribe or import subtitles for this timeline first.');
+      }
       const vectors =
         method === 'semantic'
           ? await chapterEmbeddings(

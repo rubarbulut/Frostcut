@@ -18,6 +18,7 @@ export type CutOptions = {
   reorder: boolean;
   composite: boolean;
   sensitivity: number;
+  noSpeech?: boolean;
 };
 const important = keywordPattern;
 export function markKeywords(words: Word[]) {

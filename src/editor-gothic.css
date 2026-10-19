@@ -1,939 +1,1313 @@
 /* ==========================================================================
-   FROSTCUT — THE GLACIAL SANCTUARY (GOTHIC WINTER EDITOR & WORKSPACE)
-   Overdetailed dark fantasy aesthetic: Obsidian bedrock, bioluminescent ice,
-   wrought-iron tracery, cathedral lancet arches, and glowing runes.
+   FROSTCUT — GLACIAL PRECISION EDITOR (THE HIGH-TECH CRYOGENIC WORKSPACE)
+   Aesthetic: Linear.app & Raycast style dark minimalism, 1px frosted glass,
+              electric ice cyan, razor-sharp typography, and ultra-snappy UI.
    ========================================================================== */
 
 :root {
-  --goth-abyss: #03060a;
-  --goth-deep: #060a12;
-  --goth-surface: #0a101d;
-  --goth-surface-card: rgba(12, 19, 34, 0.78);
-  --goth-glass: rgba(8, 14, 25, 0.82);
-  --goth-glass-hover: rgba(14, 24, 42, 0.9);
+  --ed-bg: #030508;
+  --ed-deep: #05080e;
+  --ed-surface: #0a0f18;
+  --ed-card: rgba(12, 18, 30, 0.72);
+  --ed-card-hover: rgba(16, 26, 44, 0.9);
+  --ed-glass: rgba(8, 14, 24, 0.85);
 
-  --goth-cyan: #38bdf8;
-  --goth-cyan-glow: #67e8f9;
-  --goth-frost: #a5f3fc;
-  --goth-ice-white: #f0f9ff;
-  
-  --goth-silver: #94a3b8;
-  --goth-silver-bright: #e2e8f0;
-  --goth-iron: #334155;
-  --goth-iron-dark: #1e293b;
-  
-  --goth-amber: #f59e0b;
-  --goth-amber-glow: #fbbf24;
-  --goth-amethyst: #a855f7;
+  --ed-cyan: #38bdf8;
+  --ed-cyan-glow: #67e8f9;
+  --ed-ice-white: #f8fafc;
+  --ed-ice-subtle: #bae6fd;
+  --ed-emerald: #34d399;
+  --ed-amber: #fbbf24;
+  --ed-purple: #c084fc;
 
-  --goth-border: rgba(125, 211, 252, 0.18);
-  --goth-border-hover: rgba(125, 211, 252, 0.48);
-  --goth-border-heavy: rgba(125, 211, 252, 0.3);
-  --goth-border-iron: rgba(148, 163, 184, 0.2);
+  --ed-text: #f8fafc;
+  --ed-text-muted: #94a3b8;
+  --ed-text-dim: #64748b;
 
-  --font-gothic-display: 'Cinzel Decorative', 'Cinzel', serif;
-  --font-gothic: 'Cinzel', 'Times New Roman', Georgia, serif;
+  --ed-border: rgba(255, 255, 255, 0.08);
+  --ed-border-cyan: rgba(56, 189, 248, 0.25);
+  --ed-border-hover: rgba(56, 189, 248, 0.55);
+
+  --font-ui: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
 }
 
-/* ==========================================================================
-   GLOBAL GOTHIC SCROLLBARS & ACCENTS
-   ========================================================================== */
-::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
-}
-::-webkit-scrollbar-track {
-  background: rgba(3, 6, 10, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-}
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #1e293b 0%, #38bdf8 50%, #1e293b 100%);
-  border-radius: 4px;
-  border: 1px solid rgba(125, 211, 252, 0.35);
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #38bdf8 0%, #67e8f9 50%, #38bdf8 100%);
-  box-shadow: 0 0 14px rgba(103, 232, 249, 0.6);
-}
-
-::selection {
-  background: rgba(56, 189, 248, 0.3);
-  color: #f0f9ff;
-  text-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
-}
-
-/* ==========================================================================
-   MAIN EDITOR SHELL (THE GLACIAL CITADEL)
-   ========================================================================== */
+/* Base Editor Shell */
 .editor {
-  background-color: var(--goth-abyss) !important;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--ed-bg) !important;
   background-image: 
-    radial-gradient(ellipse 90% 40% at 50% 0%, rgba(14, 116, 144, 0.18), transparent 60%),
-    radial-gradient(ellipse 60% 40% at 85% 90%, rgba(56, 189, 248, 0.07), transparent 70%),
-    radial-gradient(circle at 10% 80%, rgba(30, 41, 59, 0.3), transparent 60%),
-    linear-gradient(180deg, #05080e 0%, #070c14 45%, #030508 100%) !important;
+    radial-gradient(ellipse 90% 40% at 50% 0%, rgba(14, 165, 233, 0.1), transparent 60%),
+    linear-gradient(180deg, #030508 0%, #06090e 50%, #020406 100%) !important;
+  font-family: var(--font-ui) !important;
+  color: var(--ed-text) !important;
   position: relative;
+  user-select: none;
 }
 
-.editor::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 28px 28px;
-  opacity: 0.35;
-  z-index: 1;
+/* Precision Scrollbars */
+.editor *::-webkit-scrollbar,
+.timeline-scroll::-webkit-scrollbar,
+.ae-inspector-content::-webkit-scrollbar,
+.asset-list::-webkit-scrollbar,
+.sfx-panel::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.editor *::-webkit-scrollbar-track,
+.timeline-scroll::-webkit-scrollbar-track,
+.ae-inspector-content::-webkit-scrollbar-track,
+.asset-list::-webkit-scrollbar-track,
+.sfx-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.editor *::-webkit-scrollbar-thumb,
+.timeline-scroll::-webkit-scrollbar-thumb,
+.ae-inspector-content::-webkit-scrollbar-thumb,
+.asset-list::-webkit-scrollbar-thumb,
+.sfx-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
+.editor *::-webkit-scrollbar-thumb:hover,
+.timeline-scroll::-webkit-scrollbar-thumb:hover,
+.ae-inspector-content::-webkit-scrollbar-thumb:hover,
+.asset-list::-webkit-scrollbar-thumb:hover,
+.sfx-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.4);
 }
 
 /* ==========================================================================
-   EDITOR HEADER (THE OBSIDIAN ARCHTRAVE)
+   EDITOR HEADER (THE ULTRA-SLICK CONTROL DECK)
    ========================================================================== */
 .editor-header {
-  height: 58px !important;
-  min-height: 58px !important;
-  background: rgba(6, 10, 18, 0.86) !important;
-  backdrop-filter: blur(28px) !important;
-  -webkit-backdrop-filter: blur(28px) !important;
-  border-bottom: 1px solid var(--goth-border-heavy) !important;
-  box-shadow: 
-    0 1px 0 rgba(255, 255, 255, 0.08) inset,
-    0 10px 30px rgba(0, 0, 0, 0.7),
-    0 0 25px rgba(56, 189, 248, 0.08) !important;
-  padding: 0 20px !important;
-  position: relative;
+  height: 52px !important;
+  min-height: 52px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 16px !important;
+  background: rgba(6, 10, 18, 0.88) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border-bottom: 1px solid var(--ed-border) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
   z-index: 100;
+  gap: 12px;
 }
 
-/* Brand pill with gothic crest & snowflake */
+.header-left-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Brand Pill */
 .editor-header .brand-pill {
-  padding: 5px 10px !important;
-  border-radius: 8px !important;
-  background: rgba(12, 19, 34, 0.6) !important;
-  border: 1px solid var(--goth-border) !important;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-  gap: 10px !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
 
 .editor-header .brand-pill:hover {
-  background: rgba(16, 27, 48, 0.85) !important;
-  border-color: var(--goth-cyan) !important;
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35) !important;
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .editor-header .brand-logo-icon {
-  width: 30px !important;
-  height: 30px !important;
-  border-radius: 8px !important;
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.3) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
-  border: 1px solid var(--goth-border-hover) !important;
-  color: var(--goth-cyan-glow) !important;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3) !important;
-  transition: transform 0.4s ease;
-}
-
-.editor-header .brand-pill:hover .brand-logo-icon {
-  transform: rotate(60deg) scale(1.08);
-  box-shadow: 0 0 22px rgba(103, 232, 249, 0.6) !important;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.25) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid var(--ed-border-cyan);
+  display: grid;
+  place-items: center;
+  color: var(--ed-cyan);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
 }
 
 .editor-header .brand-title {
-  font-family: var(--font-gothic) !important;
-  font-size: 17px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.5px !important;
-  background: linear-gradient(135deg, #ffffff 40%, var(--goth-frost) 100%) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: #ffffff;
 }
 
-/* Project Title Pill: Engraved Stone Tablet */
+/* Project Name Input Capsule */
 .editor-header .project-title-pill {
-  background: rgba(10, 16, 28, 0.75) !important;
-  border: 1px solid var(--goth-border) !important;
-  border-radius: 6px !important;
-  padding: 4px 12px !important;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6) !important;
-  transition: all 0.25s ease !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(12, 18, 30, 0.65);
+  border: 1px solid var(--ed-border);
+  border-radius: 7px;
+  padding: 4px 10px;
+  transition: all 0.2s ease;
 }
 
 .editor-header .project-title-pill:focus-within {
-  border-color: var(--goth-cyan) !important;
-  box-shadow: 0 0 15px rgba(56, 189, 248, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+  border-color: var(--ed-cyan);
+  box-shadow: 0 0 0 1px var(--ed-cyan), 0 0 12px rgba(56, 189, 248, 0.25);
+  background: rgba(16, 25, 42, 0.9);
 }
 
 .editor-header .project-name-input {
-  font-family: var(--font-gothic) !important;
-  font-size: 13px !important;
-  letter-spacing: 0.3px !important;
-  color: var(--goth-silver-bright) !important;
-  font-weight: 600 !important;
+  background: transparent;
+  border: none;
+  color: #f1f5f9;
+  font-size: 12px;
+  font-weight: 600;
+  max-width: 140px;
+  padding: 1px 0;
+  outline: none;
 }
 
 .editor-header .save-status-pill {
-  color: #34d399 !important;
-  font-size: 10px !important;
-  letter-spacing: 0.6px !important;
-  font-weight: 700 !important;
-  text-transform: uppercase !important;
-  background: rgba(16, 185, 129, 0.12) !important;
-  padding: 2px 6px !important;
-  border-radius: 4px !important;
-  border: 1px solid rgba(52, 211, 153, 0.25) !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: #34d399;
+  font-weight: 600;
+  background: rgba(52, 211, 153, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
 }
 
 /* Aspect Ratio Pill */
 .editor-header .format-indicator-pill {
-  background: rgba(12, 19, 34, 0.7) !important;
-  border: 1px solid var(--goth-border-iron) !important;
-  border-radius: 6px !important;
-  color: var(--goth-frost) !important;
-  font-family: monospace !important;
-  font-weight: 700 !important;
-  transition: all 0.2s ease !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(12, 18, 30, 0.65);
+  border: 1px solid var(--ed-border);
+  border-radius: 7px;
+  padding: 5px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ed-cyan);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .editor-header .format-indicator-pill:hover {
-  border-color: var(--goth-cyan) !important;
-  background: rgba(20, 32, 54, 0.8) !important;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25) !important;
+  background: rgba(20, 32, 54, 0.85);
+  border-color: var(--ed-cyan);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
 }
 
 /* ==========================================================================
-   CENTER ACTION RELICS: FROST SLICE, CHRONO SHARDS, RUNIC SCRIBE
+   CENTER ACTION COMMAND PILLS (AUTO CUT, MAGIC SHORTS, TRANSCRIBE)
    ========================================================================== */
 .editor-header .header-center-actions {
   display: flex;
-  gap: 8px;
   align-items: center;
+  gap: 8px;
 }
 
 .editor-header .action-pill-btn {
-  background: rgba(10, 16, 29, 0.8) !important;
-  border: 1px solid var(--goth-border) !important;
-  border-radius: 8px !important;
-  color: var(--goth-silver-bright) !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.2px !important;
-  padding: 6px 14px !important;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-  position: relative;
-  overflow: hidden;
-}
-
-.editor-header .action-pill-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.2), transparent);
-  transition: left 0.6s ease;
-}
-
-.editor-header .action-pill-btn:hover:not(:disabled)::before {
-  left: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border-radius: 8px;
+  background: rgba(12, 18, 30, 0.75);
+  border: 1px solid var(--ed-border);
+  color: var(--ed-text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .editor-header .action-pill-btn:hover:not(:disabled) {
-  border-color: var(--goth-cyan) !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.25) !important;
-  color: #fff !important;
+  background: rgba(20, 32, 54, 0.95);
+  border-color: var(--ed-border-cyan);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
 }
 
-/* Auto Cut - Frost Slice */
+.editor-header .action-pill-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .editor-header .action-pill-btn.auto-cut {
-  border-color: rgba(56, 189, 248, 0.3) !important;
+  border-color: rgba(56, 189, 248, 0.25);
 }
 .editor-header .action-pill-btn.auto-cut svg {
-  color: var(--goth-cyan-glow) !important;
+  color: var(--ed-cyan);
 }
 
-/* Long to Shorts - Chrono Shards */
 .editor-header .action-pill-btn.magic-shorts {
-  border-color: rgba(168, 85, 247, 0.35) !important;
+  border-color: rgba(245, 158, 11, 0.25);
 }
 .editor-header .action-pill-btn.magic-shorts svg {
-  color: var(--goth-amethyst) !important;
-}
-.editor-header .action-pill-btn.magic-shorts:hover:not(:disabled) {
-  border-color: var(--goth-amethyst) !important;
-  box-shadow: 0 4px 18px rgba(168, 85, 247, 0.35) !important;
+  color: #fbbf24;
 }
 
-/* Primary Export: The Glacial Forge */
-.editor-header .header-btn-export.primary-export {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #075985 100%) !important;
-  border: 1px solid var(--goth-cyan-glow) !important;
-  border-radius: 8px !important;
-  box-shadow: 
-    0 0 16px rgba(56, 189, 248, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
-  color: #ffffff !important;
-  font-family: var(--font-gothic) !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.6px !important;
-  text-transform: uppercase !important;
-  padding: 7px 18px !important;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+.editor-header .action-pill-btn.transcribe {
+  border-color: rgba(168, 85, 247, 0.25);
+}
+.editor-header .action-pill-btn.transcribe svg {
+  color: #c084fc;
 }
 
-.editor-header .header-btn-export.primary-export:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
-  box-shadow: 
-    0 0 28px rgba(103, 232, 249, 0.6),
-    0 4px 14px rgba(0, 0, 0, 0.6) !important;
-  transform: translateY(-2px) scale(1.02) !important;
-}
-
-/* ==========================================================================
-   WORKSPACE ARCHITECTURE (3 CATHEDRAL N挙げS)
-   ========================================================================== */
-.editor-workspace {
-  background: transparent !important;
-  border-bottom: 1px solid var(--goth-border) !important;
-}
-
-/* Sequence Picker Bar */
-.sequence-picker {
-  background: rgba(7, 11, 19, 0.88) !important;
-  border-bottom: 1px solid var(--goth-border) !important;
-  padding: 6px 20px !important;
-  backdrop-filter: blur(12px) !important;
-}
-.sequence-picker select,
-.sequence-picker input {
-  background: rgba(12, 18, 30, 0.9) !important;
-  border: 1px solid var(--goth-border) !important;
-  color: var(--goth-silver-bright) !important;
-  border-radius: 5px !important;
-}
-
-/* ==========================================================================
-   LEFT PANEL (THE ARCHIVE & RELIQUARY)
-   ========================================================================== */
-.left-panel {
-  background: rgba(6, 10, 18, 0.75) !important;
-  backdrop-filter: blur(20px) !important;
-  border-right: 1px solid var(--goth-border) !important;
+/* Right Group: Icons & Export */
+.editor-header .header-right-group {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
-/* Gothic Lancet Arched Tab Bar */
-.left-panel .panel-tabs {
-  background: rgba(4, 7, 13, 0.9) !important;
-  border-bottom: 1px solid var(--goth-border) !important;
-  padding: 8px 6px 0 6px !important;
-  gap: 3px !important;
+.history-pill-group {
   display: flex;
-  overflow-x: auto;
-}
-
-.left-panel .panel-tabs button {
-  background: transparent !important;
-  border: 1px solid transparent !important;
-  border-bottom: none !important;
-  border-top-left-radius: 7px !important;
-  border-top-right-radius: 7px !important;
-  color: var(--goth-silver) !important;
-  font-family: var(--font-gothic) !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.3px !important;
-  padding: 8px 10px !important;
-  transition: all 0.2s ease !important;
-  position: relative;
-}
-
-.left-panel .panel-tabs button:hover {
-  color: var(--goth-frost) !important;
-  background: rgba(15, 23, 42, 0.6) !important;
-}
-
-.left-panel .panel-tabs button.active {
-  background: rgba(12, 19, 34, 0.95) !important;
-  border-color: var(--goth-border-heavy) !important;
-  color: #fff !important;
-  box-shadow: 
-    0 -3px 12px rgba(56, 189, 248, 0.2),
-    inset 0 1px 0 var(--goth-cyan) !important;
-}
-
-.left-panel .panel-tabs button.active::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 20%;
-  right: 20%;
-  height: 2px;
-  background: var(--goth-cyan-glow);
-  box-shadow: 0 0 8px var(--goth-cyan);
-}
-
-/* Media Cards: Thaw On Hover */
-.asset-item {
-  background: rgba(12, 19, 34, 0.65) !important;
-  border: 1px solid var(--goth-border) !important;
-  border-radius: 8px !important;
-  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  align-items: center;
+  background: rgba(12, 18, 30, 0.6);
+  border: 1px solid var(--ed-border);
+  border-radius: 7px;
   overflow: hidden;
 }
 
-.asset-item:hover {
-  background: rgba(16, 26, 46, 0.85) !important;
-  border-color: var(--goth-cyan) !important;
-  box-shadow: 0 4px 18px rgba(56, 189, 248, 0.25) !important;
-  transform: translateY(-2px);
+.history-pill-group .header-icon-btn {
+  border: none;
+  border-radius: 0;
+  background: transparent;
 }
 
-.asset-item .asset-duration-tag {
-  background: rgba(3, 6, 12, 0.85) !important;
-  border: 1px solid rgba(125, 211, 252, 0.3) !important;
-  color: var(--goth-frost) !important;
-  font-family: monospace !important;
+.history-pill-group .header-icon-btn:first-child {
+  border-right: 1px solid var(--ed-border);
+}
+
+.editor-header .header-icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--ed-border);
+  color: var(--ed-text-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.editor-header .header-icon-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.editor-header .header-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Turbo GPU Status Badge */
+.editor-header .turbo-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  color: #34d399;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.turbo-zap {
+  animation: edGpuPulse 2s ease-in-out infinite;
+}
+
+@keyframes edGpuPulse {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 4px rgba(52, 211, 153, 0.6)); }
+  50% { opacity: 0.65; filter: none; }
+}
+
+/* High-Impact Export Button */
+.editor-header .header-export-btn.primary-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 18px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border: 1px solid var(--ed-cyan);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.editor-header .header-export-btn.primary-export:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.6);
+  transform: translateY(-1px);
+}
+
+.editor-header .header-export-btn.primary-export:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ==========================================================================
+   SEQUENCE PICKER BAR
+   ========================================================================== */
+.sequence-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px;
+  background: rgba(6, 10, 18, 0.85);
+  border-bottom: 1px solid var(--ed-border);
+  min-height: 40px;
+  backdrop-filter: blur(12px);
+  color: var(--ed-text-muted);
+  font-size: 12px;
+}
+
+.sequence-picker select {
+  background: rgba(12, 18, 30, 0.85);
+  border: 1px solid var(--ed-border);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sequence-picker select:hover,
+.sequence-picker select:focus {
+  border-color: var(--ed-border-cyan);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+}
+
+.sequence-picker input {
+  background: rgba(12, 18, 30, 0.6);
+  border: 1px solid var(--ed-border);
+  border-radius: 6px;
+  color: #f1f5f9;
+  font-size: 12px;
+  padding: 4px 10px;
+  outline: none;
+}
+
+.sequence-picker input:focus {
+  border-color: var(--ed-cyan);
+  box-shadow: 0 0 0 1px var(--ed-cyan);
+}
+
+.sequence-picker span {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ed-text-dim);
+}
+
+.sequence-picker .icon {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ed-text-dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 5px;
+  transition: all 0.15s ease;
+}
+
+.sequence-picker .icon:hover:not(:disabled) {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* ==========================================================================
+   WORKSPACE ARCHITECTURE (3-COLUMN COCKPIT)
+   ========================================================================== */
+.editor-workspace {
+  display: grid;
+  grid-template-columns: 260px minmax(320px, 1fr) 280px;
+  flex: 1;
+  min-height: 280px;
+  overflow: hidden;
+  background: transparent;
+}
+
+/* ==========================================================================
+   LEFT PANEL (MEDIA, FORMAT, CAPTIONS, COVER, POST KIT, SFX, TRANSCRIPT)
+   ========================================================================== */
+.left-panel {
+  background: rgba(6, 10, 18, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid var(--ed-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.left-panel .panel-tabs {
+  background: rgba(4, 7, 13, 0.92);
+  border-bottom: 1px solid var(--ed-border);
+  padding: 4px 4px;
+  gap: 2px;
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  min-height: 42px;
+  align-items: center;
+}
+
+.left-panel .panel-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.left-panel .panel-tabs button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--ed-text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 6px 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.left-panel .panel-tabs button:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.left-panel .panel-tabs button.active {
+  background: rgba(56, 189, 248, 0.12) !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+  color: var(--ed-cyan) !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
+}
+
+/* Media Panel Inner Styling */
+.media-panel {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.media-panel .panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  height: auto;
+}
+
+.media-panel .panel-title span {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ed-text-dim);
+}
+
+.media-panel .count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ed-cyan);
+  background: rgba(56, 189, 248, 0.1);
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--ed-border-cyan);
+}
+
+.media-import-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.import-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 14px 8px;
+  border-radius: 9px;
+  background: rgba(12, 18, 30, 0.55);
+  border: 1px dashed var(--ed-border-cyan);
+  color: var(--ed-text);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: center;
+}
+
+.import-zone:hover {
+  background: rgba(16, 26, 44, 0.85);
+  border-color: var(--ed-cyan);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.2);
+  transform: translateY(-1px);
+}
+
+.import-zone b {
+  font-size: 11px;
+  color: #fff;
+}
+
+.import-zone span {
+  font-size: 9.5px;
+  color: var(--ed-text-dim);
+}
+
+/* Media Search & Filter Chips */
+.media-organizer-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.media-search-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(12, 18, 30, 0.7);
+  border: 1px solid var(--ed-border);
+  border-radius: 7px;
+  padding: 5px 9px;
+  color: var(--ed-text-muted);
+}
+
+.media-search-input:focus-within {
+  border-color: var(--ed-cyan);
+  box-shadow: 0 0 0 1px var(--ed-cyan);
+}
+
+.media-search-input input {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 11.5px;
+  width: 100%;
+  outline: none;
+}
+
+.media-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.filter-chip {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--ed-border);
+  border-radius: 5px;
+  padding: 3px 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ed-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.filter-chip.active {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: var(--ed-border-cyan);
+  color: var(--ed-cyan);
+}
+
+/* Asset Cards */
+.asset-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.asset-card {
+  background: rgba(10, 16, 26, 0.75) !important;
+  border: 1px solid var(--ed-border) !important;
+  border-radius: 9px !important;
+  padding: 8px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer;
+}
+
+.asset-card:hover {
+  background: rgba(14, 24, 40, 0.9) !important;
+  border-color: var(--ed-border-hover) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 12px rgba(56, 189, 248, 0.15) !important;
+}
+
+.asset-card.is-starred {
+  border-color: rgba(250, 204, 21, 0.35) !important;
+}
+
+.asset-thumbnail {
+  position: relative;
+  width: 100%;
+  height: 90px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #020408;
+  display: grid;
+  place-items: center;
+  color: var(--ed-text-dim);
+}
+
+.asset-thumbnail video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.asset-thumbnail span {
+  position: absolute;
+  bottom: 4px;
+  right: 5px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hover-scrub-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--ed-cyan);
+  box-shadow: 0 0 6px var(--ed-cyan);
+}
+
+.asset-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.asset-card-header b {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #f1f5f9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asset-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.asset-btn {
+  background: transparent;
+  border: none;
+  color: var(--ed-text-dim);
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  transition: all 0.15s ease;
+}
+
+.asset-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.asset-btn.star.active {
+  color: #facc15;
+}
+
+.asset-btn.delete:hover {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.asset-card small {
+  font-size: 10px;
+  color: var(--ed-text-dim);
+  font-family: var(--font-mono);
 }
 
 /* ==========================================================================
    CENTER PANEL & VIDEO PREVIEW (THE FROST MIRROR)
    ========================================================================== */
 .center-panel {
-  background: radial-gradient(circle at 50% 50%, rgba(10, 16, 28, 0.6), rgba(3, 5, 9, 0.95)) !important;
-  position: relative;
+  background: #020408;
   display: flex;
   flex-direction: column;
+  position: relative;
+  min-height: 0;
 }
 
 .preview-viewport-bar {
-  background: rgba(7, 11, 19, 0.8) !important;
-  border-bottom: 1px solid var(--goth-border) !important;
-  backdrop-filter: blur(10px) !important;
-  padding: 6px 16px !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px;
+  background: rgba(6, 10, 18, 0.88);
+  border-bottom: 1px solid var(--ed-border);
+  min-height: 38px;
+}
+
+.viewport-left-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sequence-indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.7);
+}
+
+.sequence-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #e2e8f0;
 }
 
 .viewport-ratio-chip {
-  background: rgba(12, 19, 34, 0.8) !important;
-  border: 1px solid var(--goth-border) !important;
-  border-radius: 6px !important;
-  color: var(--goth-silver-bright) !important;
-  font-family: monospace !important;
-  font-weight: 700 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(12, 18, 30, 0.75);
+  border: 1px solid var(--ed-border);
+  border-radius: 5px;
+  padding: 2px 7px;
+  color: var(--ed-cyan);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.viewport-ratio-chip:hover {
+  border-color: var(--ed-cyan);
+  background: rgba(20, 32, 54, 0.8);
 }
 
 .safe-area-toggle-pill {
-  background: rgba(12, 19, 34, 0.8) !important;
-  border: 1px solid var(--goth-border) !important;
-  border-radius: 6px !important;
-  color: var(--goth-silver) !important;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(12, 18, 30, 0.7);
+  border: 1px solid var(--ed-border);
+  border-radius: 5px;
+  padding: 2px 8px;
+  font-size: 10.5px;
+  color: var(--ed-text-muted);
+  cursor: pointer;
 }
 
-/* Preview Canvas Enclosed in Ornate Gothic Frame */
+/* Video Canvas Preview Frame */
 .preview {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   position: relative;
+  min-height: 0;
+  background: #020408;
+}
+
+.preview .frame {
+  flex: 1;
   display: grid;
   place-items: center;
+  position: relative;
+  overflow: hidden;
+  padding: 12px;
 }
 
 .preview video,
 .preview canvas {
   border-radius: 8px;
-  box-shadow: 
-    0 0 0 1px var(--goth-border-heavy),
-    0 15px 45px rgba(0, 0, 0, 0.8),
-    0 0 40px rgba(14, 116, 144, 0.2) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 0 1px var(--ed-border);
 }
 
-/* Suggestion Banner: Arcane Discovery Talisman */
-.suggestion-banner {
-  background: linear-gradient(135deg, rgba(88, 28, 135, 0.75) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
-  border: 1px solid rgba(168, 85, 247, 0.5) !important;
-  border-radius: 9px !important;
-  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.35) !important;
-  color: #f3e8ff !important;
-  font-family: var(--font-gothic) !important;
+/* Safe Margin Overlay */
+.safe-area {
+  position: absolute;
+  inset: 12% 8% 18% 8%;
+  border: 1px dashed rgba(56, 189, 248, 0.45);
+  border-radius: 8px;
+  pointer-events: none;
+  box-shadow: inset 0 0 20px rgba(56, 189, 248, 0.05);
+}
+
+.safe-area span {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: rgba(56, 189, 248, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Transport Controls Bar */
+.preview .transport {
+  background: rgba(6, 10, 18, 0.94) !important;
+  border-top: 1px solid var(--ed-border) !important;
+  backdrop-filter: blur(20px) !important;
+  padding: 8px 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  min-height: 48px;
+}
+
+.preview .transport .timecode {
+  font-family: var(--font-mono) !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
-  letter-spacing: 0.3px !important;
-  transition: all 0.3s ease !important;
+  color: var(--ed-cyan) !important;
+  letter-spacing: 0.02em;
 }
 
-.suggestion-banner:hover {
-  box-shadow: 0 6px 28px rgba(168, 85, 247, 0.55) !important;
-  transform: translateY(-2px);
-  border-color: #c084fc !important;
+.preview .transport .timecode span {
+  color: var(--ed-text-dim) !important;
+  font-weight: 500;
+}
+
+.preview .transport .play-button {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50% !important;
+  background: var(--ed-cyan) !important;
+  border: none !important;
+  color: #020408 !important;
+  display: grid !important;
+  place-items: center !important;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.5) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer;
+}
+
+.preview .transport .play-button:hover:not(:disabled) {
+  transform: scale(1.08) !important;
+  box-shadow: 0 0 26px rgba(56, 189, 248, 0.75) !important;
+}
+
+.preview .transport .icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ed-text-muted);
+  cursor: pointer;
+  display: inline-grid;
+  place-items: center;
+  transition: all 0.15s ease;
+}
+
+.preview .transport .icon:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Audio Peak Meter */
+.audio-peak-meter {
+  background: rgba(10, 16, 26, 0.85);
+  border: 1px solid var(--ed-border);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.meter-fill {
+  background: linear-gradient(90deg, #38bdf8 0%, #67e8f9 60%, #34d399 80%, #f59e0b 100%);
 }
 
 /* ==========================================================================
-   RIGHT PANEL (PROPERTIES & ADJUSTMENT FORGE)
+   RIGHT PANEL (PROPERTIES / INSPECTOR & AE INSPECTOR SUITE)
    ========================================================================== */
-.properties-panel {
-  background: rgba(6, 10, 18, 0.75) !important;
+.properties-panel,
+.ae-inspector-panel {
+  background: rgba(6, 10, 18, 0.8) !important;
   backdrop-filter: blur(20px) !important;
-  border-left: 1px solid var(--goth-border) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-left: 1px solid var(--ed-border) !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
 }
 
-.properties-panel .panel-tabs {
-  background: rgba(4, 7, 13, 0.9) !important;
-  border-bottom: 1px solid var(--goth-border) !important;
-  padding: 8px 6px 0 6px !important;
-  gap: 3px !important;
+.ae-panel-tabs {
+  background: rgba(4, 7, 13, 0.95) !important;
+  border-bottom: 1px solid var(--ed-border) !important;
 }
 
-.properties-panel .panel-tabs button.active {
-  background: rgba(12, 19, 34, 0.95) !important;
-  border-color: var(--goth-border-heavy) !important;
+.ae-tab-btn {
+  color: var(--ed-text-muted) !important;
+}
+
+.ae-tab-btn:hover {
   color: #fff !important;
-  box-shadow: 
-    0 -3px 12px rgba(56, 189, 248, 0.2),
-    inset 0 1px 0 var(--goth-cyan) !important;
 }
 
-/* Inputs, Selects & Sliders */
+.ae-tab-btn.active {
+  color: var(--ed-cyan) !important;
+  border-bottom-color: var(--ed-cyan) !important;
+  background: rgba(56, 189, 248, 0.06) !important;
+}
+
+.ae-clip-header {
+  background: rgba(8, 14, 24, 0.9) !important;
+  border-bottom: 1px solid var(--ed-border) !important;
+}
+
 .field span {
-  font-family: var(--font-gothic) !important;
-  font-size: 11px !important;
-  letter-spacing: 0.3px !important;
-  color: var(--goth-silver) !important;
-  text-transform: uppercase !important;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ed-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .field input,
 .field select,
 .field textarea {
-  background: rgba(10, 16, 29, 0.85) !important;
-  border: 1px solid var(--goth-border) !important;
+  background: rgba(10, 16, 28, 0.85) !important;
+  border: 1px solid var(--ed-border) !important;
   border-radius: 6px !important;
-  color: var(--goth-silver-bright) !important;
-  transition: all 0.2s ease !important;
+  color: #f1f5f9 !important;
 }
 
 .field input:focus,
 .field select:focus,
 .field textarea:focus {
-  border-color: var(--goth-cyan) !important;
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.3) !important;
-  outline: none !important;
+  border-color: var(--ed-cyan) !important;
+  box-shadow: 0 0 0 1px var(--ed-cyan) !important;
+  outline: none;
 }
 
-/* Gothic Range Sliders: Frost Channel & Ice Thumb */
-.range-field input[type='range'] {
-  accent-color: var(--goth-cyan) !important;
+/* Range input sliders in Inspector */
+input[type="range"] {
+  accent-color: var(--ed-cyan);
 }
 
 /* ==========================================================================
-   THE ICEFORGE TIMELINE (LANES, TRACKS & RUNIC PLAYHEAD)
+   THE PRECISION TIMELINE (TOOLBAR, TRACKS, RULER, PLAYHEAD)
    ========================================================================== */
 .timeline-panel {
-  background: rgba(4, 7, 13, 0.95) !important;
-  border-top: 1px solid var(--goth-border-heavy) !important;
-  box-shadow: 0 -10px 35px rgba(0, 0, 0, 0.8) !important;
+  background: #03060a !important;
+  border-top: 1px solid var(--ed-border) !important;
+  position: relative;
 }
 
-/* Timeline Toolbar: Wrought Iron Blacksmith Tools */
 .timeline-toolbar {
-  background: rgba(7, 11, 19, 0.9) !important;
-  border-bottom: 1px solid var(--goth-border) !important;
+  background: rgba(6, 10, 18, 0.95) !important;
+  border-bottom: 1px solid var(--ed-border) !important;
   padding: 6px 16px !important;
   gap: 8px !important;
+  min-height: 42px;
 }
 
-.timeline-toolbar button {
-  background: rgba(12, 19, 34, 0.7) !important;
-  border: 1px solid var(--goth-border-iron) !important;
+.timeline-toolbar .tool-group button,
+.timeline-toolbar button.icon {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid var(--ed-border) !important;
   border-radius: 6px !important;
-  color: var(--goth-silver-bright) !important;
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  color: var(--ed-text-muted) !important;
+  transition: all 0.15s ease !important;
 }
 
-.timeline-toolbar button:hover {
-  background: rgba(20, 32, 54, 0.9) !important;
-  border-color: var(--goth-cyan) !important;
+.timeline-toolbar .tool-group button:hover,
+.timeline-toolbar button.icon:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08) !important;
   color: #fff !important;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3) !important;
-  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.18) !important;
 }
 
-.timeline-toolbar button.active {
-  background: rgba(14, 116, 144, 0.4) !important;
-  border-color: var(--goth-cyan-glow) !important;
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.4) !important;
+.timeline-toolbar .tool-group button.active,
+.timeline-toolbar button.icon.active {
+  background: rgba(56, 189, 248, 0.15) !important;
+  border-color: var(--ed-cyan) !important;
+  color: var(--ed-cyan) !important;
 }
 
-/* Timeline Ruler */
-.timeline-ruler {
-  background: rgba(6, 10, 18, 0.95) !important;
-  border-bottom: 1px solid var(--goth-border) !important;
-  font-family: monospace !important;
-  color: var(--goth-silver) !important;
-}
-
-/* Track Labels (V1, A1, Captions) */
 .timeline-label {
-  background: rgba(6, 10, 17, 0.95) !important;
-  border-right: 1px solid var(--goth-border) !important;
-  border-bottom: 1px solid var(--goth-border) !important;
-  font-family: var(--font-gothic) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.1em !important;
+  color: var(--ed-text-dim) !important;
+  font-weight: 700;
+}
+
+.timeline-label span {
+  color: var(--ed-cyan) !important;
+}
+
+.zoom-control {
+  color: var(--ed-text-dim) !important;
+}
+
+.zoom-control input[type="range"] {
+  accent-color: var(--ed-cyan);
+}
+
+/* Track Header Column */
+.track-labels {
+  background: rgba(6, 10, 18, 0.96) !important;
+  border-right: 1px solid var(--ed-border) !important;
+}
+
+.ruler-label {
+  background: rgba(6, 10, 18, 0.98) !important;
+  border-bottom: 1px solid var(--ed-border) !important;
+  font-family: var(--font-mono) !important;
   font-size: 11px !important;
   font-weight: 700 !important;
-  letter-spacing: 0.5px !important;
-  color: var(--goth-silver-bright) !important;
+  color: var(--ed-cyan) !important;
+}
+
+.track-label {
+  border-bottom: 1px solid var(--ed-border) !important;
+  background: rgba(6, 10, 18, 0.85);
+}
+
+.track-label b {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 700;
 }
 
 /* Timeline Lanes */
 .timeline-lanes {
-  background-color: #04060b !important;
+  background-color: #030508 !important;
   background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px) !important;
-  background-size: 100% 44px, 20px 100% !important;
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px) !important;
+  background-size: 100% 44px !important;
 }
 
-/* Video Clips: Frozen Obsidian Tablets */
+.ruler {
+  background: rgba(6, 10, 18, 0.95) !important;
+  border-bottom: 1px solid var(--ed-border) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 9.5px !important;
+  color: var(--ed-text-dim) !important;
+}
+
+.ruler span {
+  color: var(--ed-text-dim) !important;
+}
+
+/* Beat Markers */
+.beat-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(56, 189, 248, 0.35);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Video Clips */
 .timeline-clip {
-  background: linear-gradient(180deg, #162438 0%, #0d1726 100%) !important;
-  border: 1px solid rgba(125, 211, 252, 0.28) !important;
-  border-radius: 5px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
-  color: var(--goth-ice-white) !important;
+  background: linear-gradient(180deg, #0e1e32 0%, #08121f 100%) !important;
+  border: 1px solid rgba(56, 189, 248, 0.28) !important;
+  border-radius: 6px !important;
+  color: #f1f5f9 !important;
   font-size: 11px !important;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+  font-weight: 500 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .timeline-clip:hover {
-  border-color: var(--goth-cyan) !important;
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35) !important;
+  border-color: var(--ed-cyan) !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35) !important;
 }
 
 .timeline-clip.selected {
   border-color: #ffffff !important;
-  box-shadow: 
-    0 0 18px rgba(56, 189, 248, 0.7),
-    inset 0 0 8px rgba(103, 232, 249, 0.3) !important;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.7), inset 0 0 10px rgba(56, 189, 248, 0.2) !important;
 }
 
-/* Audio Clips: Waveform In Glacial Cyan */
+/* Audio Clips Waveform */
 .timeline-clip.audio {
-  background: linear-gradient(180deg, #092635 0%, #051822 100%) !important;
-  border-color: rgba(56, 189, 248, 0.3) !important;
+  background: linear-gradient(180deg, #072224 0%, #031417 100%) !important;
+  border-color: rgba(52, 211, 153, 0.25) !important;
 }
 
-/* The Luminous Icicle Blade (Playhead) */
-.timeline-playhead {
-  background: var(--goth-cyan-glow) !important;
-  box-shadow: 
-    0 0 14px var(--goth-cyan-glow),
-    0 0 28px rgba(56, 189, 248, 0.8) !important;
+.timeline-clip.audio:hover {
+  border-color: #34d399 !important;
 }
 
-.timeline-playhead::before {
-  content: '❄';
+.timeline-clip.audio.selected {
+  border-color: #fff !important;
+  box-shadow: 0 0 18px rgba(52, 211, 153, 0.7) !important;
+}
+
+.timeline-clip .waveform i {
+  background: #38bdf8 !important;
+}
+
+/* Playhead Needle (High-Latitude Cryo Indicator) */
+.playhead {
   position: absolute;
-  top: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 14px;
-  color: #fff;
-  text-shadow: 0 0 10px var(--goth-cyan-glow);
+  top: 0;
+  bottom: 0;
+  width: 2px !important;
+  background: #38bdf8 !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.8), 0 0 20px rgba(56, 189, 248, 0.4) !important;
+  z-index: 50 !important;
+  pointer-events: none;
+}
+
+.playhead > span {
+  position: absolute;
+  top: 0;
+  left: -5px;
+  width: 12px !important;
+  height: 14px !important;
+  background: #38bdf8 !important;
+  clip-path: polygon(0 0, 100% 0, 100% 65%, 50% 100%, 0 65%) !important;
+  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.8) !important;
+}
+
+/* Floating Action Bar (When clips are selected) */
+.floating-action-bar-container {
+  z-index: 60;
+}
+
+.floating-action-bar {
+  background: rgba(8, 14, 24, 0.94) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid var(--ed-border-cyan) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(56, 189, 248, 0.2) !important;
+}
+
+.floating-selection-count {
+  color: var(--ed-cyan) !important;
+  font-family: var(--font-mono);
+}
+
+.timeline-footer {
+  background: rgba(4, 7, 13, 0.96) !important;
+  border-top: 1px solid var(--ed-border) !important;
+  color: var(--ed-text-dim) !important;
+  font-size: 11px !important;
+  padding: 4px 16px !important;
+}
+
+.timeline-footer kbd {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid var(--ed-border) !important;
+  color: var(--ed-text-muted) !important;
+  font-family: var(--font-mono) !important;
+  border-radius: 4px !important;
+  padding: 1px 5px !important;
 }
 
 /* ==========================================================================
-   THE GOTHIC GRIMOIRE (MODALS & DIALOGS)
+   MODALS (CLEAN FROSTED FLOATING DIALOGS)
    ========================================================================== */
-dialog.modal {
-  background: rgba(7, 11, 20, 0.94) !important;
-  backdrop-filter: blur(32px) !important;
-  -webkit-backdrop-filter: blur(32px) !important;
-  border: 1px solid var(--goth-border-heavy) !important;
+dialog.modal,
+.modal-window {
+  background: rgba(8, 14, 24, 0.95) !important;
+  backdrop-filter: blur(28px) !important;
+  -webkit-backdrop-filter: blur(28px) !important;
+  border: 1px solid var(--ed-border-cyan) !important;
   border-radius: 14px !important;
-  box-shadow: 
-    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
-    0 25px 80px rgba(0, 0, 0, 0.9),
-    0 0 60px rgba(14, 116, 144, 0.25) !important;
-  color: var(--goth-silver-bright) !important;
-  position: relative;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.85), 0 0 40px rgba(14, 165, 233, 0.12) !important;
+  color: var(--ed-text) !important;
 }
 
-dialog.modal::backdrop {
-  background: radial-gradient(circle at 50% 50%, rgba(14, 116, 144, 0.2), rgba(2, 4, 8, 0.9) 75%) !important;
-  backdrop-filter: blur(12px) !important;
+dialog.modal::backdrop,
+.modal-backdrop {
+  background: rgba(2, 4, 8, 0.78) !important;
+  backdrop-filter: blur(14px) !important;
 }
 
-.modal-head {
-  border-bottom: 1px solid var(--goth-border) !important;
+.modal-head,
+.modal-header {
+  border-bottom: 1px solid var(--ed-border) !important;
   padding-bottom: 14px !important;
-  margin-bottom: 18px !important;
 }
 
-.modal-head h2 {
-  font-family: var(--font-gothic) !important;
-  font-size: 18px !important;
-  letter-spacing: 0.5px !important;
-  background: linear-gradient(135deg, #ffffff 40%, var(--goth-frost) 100%) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-}
-
-.modal-head button.icon {
-  background: rgba(15, 23, 42, 0.6) !important;
-  border: 1px solid var(--goth-border) !important;
-  border-radius: 7px !important;
-  color: var(--goth-silver) !important;
-  transition: all 0.2s ease !important;
-}
-
-.modal-head button.icon:hover {
-  background: rgba(30, 41, 59, 0.9) !important;
-  border-color: var(--goth-cyan) !important;
+.modal-head h2,
+.modal-header h2 {
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
   color: #fff !important;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3) !important;
-}
-
-.modal-footer {
-  border-top: 1px solid var(--goth-border) !important;
-}
-
-.modal-footer button.primary {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
-  border: 1px solid var(--goth-cyan-glow) !important;
-  color: #fff !important;
-  font-family: var(--font-gothic) !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.5px !important;
-  text-transform: uppercase !important;
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35) !important;
-  transition: all 0.25s ease !important;
-}
-
-.modal-footer button.primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
-  box-shadow: 0 0 24px rgba(103, 232, 249, 0.6) !important;
-  transform: translateY(-1px);
-}
-
-
-/* ==========================================================================
-   OVERDETAIL GOTHIC EDITOR ADDITIONS: CREST, TRANSPORT, TIMELINE & GRIMOIRE
-   ========================================================================== */
-
-/* Brand Crest in Editor Navbar */
-.editor-brand-crest-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 6px;
-  display: block;
-}
-
-/* Rune Glow on Action Buttons */
-.rune-glow {
-  color: var(--goth-cyan-glow) !important;
-  filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.7));
-}
-
-/* Glacial Forge Export Button */
-.header-export-btn.primary-export {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #075985 100%) !important;
-  border: 1px solid var(--goth-cyan-glow) !important;
-  border-radius: 8px !important;
-  box-shadow: 
-    0 0 18px rgba(56, 189, 248, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
-  color: #ffffff !important;
-  font-family: var(--font-gothic) !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.6px !important;
-  text-transform: uppercase !important;
-  padding: 6px 16px !important;
-  gap: 8px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-}
-
-.header-export-btn.primary-export:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
-  box-shadow: 
-    0 0 32px rgba(103, 232, 249, 0.75),
-    0 4px 16px rgba(0, 0, 0, 0.7) !important;
-  transform: translateY(-2px) scale(1.02) !important;
-}
-
-/* ==========================================================================
-   VIDEO PLAYER TRANSPORT BAR (THE OBSIDIAN ALTAR CONTROLS)
-   ========================================================================== */
-.preview .transport {
-  background: rgba(6, 10, 18, 0.92) !important;
-  border-top: 1px solid var(--goth-border) !important;
-  backdrop-filter: blur(16px) !important;
-  padding: 8px 16px !important;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6) !important;
-}
-
-.preview .transport .timecode {
-  font-family: monospace !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  color: var(--goth-frost) !important;
-  text-shadow: 0 0 8px rgba(56, 189, 248, 0.4) !important;
-  letter-spacing: 0.5px !important;
-}
-
-.preview .transport .timecode span {
-  color: var(--goth-silver) !important;
-}
-
-.preview .transport .play-button {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.25) 0%, rgba(14, 116, 144, 0.45) 100%) !important;
-  border: 1px solid var(--goth-cyan) !important;
-  border-radius: 50% !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.4) !important;
-  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-}
-
-.preview .transport .play-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.5) 0%, rgba(14, 116, 144, 0.7) 100%) !important;
-  box-shadow: 0 0 24px rgba(103, 232, 249, 0.7) !important;
-  transform: scale(1.08) !important;
-}
-
-.preview .transport button.icon {
-  background: transparent !important;
-  border: 1px solid transparent !important;
-  color: var(--goth-silver-bright) !important;
-  border-radius: 6px !important;
-  transition: all 0.2s ease !important;
-}
-
-.preview .transport button.icon:hover {
-  background: rgba(15, 23, 42, 0.7) !important;
-  border-color: var(--goth-border) !important;
-  color: var(--goth-frost) !important;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25) !important;
-}
-
-/* Audio Peak Meter: Bioluminescent Frost Stalagmites */
-.audio-peak-meter {
-  background: rgba(4, 7, 13, 0.85) !important;
-  border: 1px solid var(--goth-border) !important;
-  border-radius: 6px !important;
-  padding: 4px 8px !important;
-  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.7) !important;
-}
-
-.meter-track {
-  background: rgba(15, 23, 42, 0.9) !important;
-  border-radius: 2px !important;
-}
-
-.meter-fill {
-  background: linear-gradient(90deg, #38bdf8 0%, #67e8f9 70%, #f59e0b 100%) !important;
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6) !important;
-}
-
-/* ==========================================================================
-   LONG TO SHORTS STUDIO & MAGIC PRESETS (GRIMOIRE RELIQUARY)
-   ========================================================================== */
-.modal-window.long-to-shorts-window {
-  background: rgba(7, 11, 20, 0.96) !important;
-  border: 1px solid var(--goth-border-heavy) !important;
-  border-radius: 16px !important;
-  box-shadow: 
-    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
-    0 30px 90px rgba(0, 0, 0, 0.9),
-    0 0 70px rgba(14, 116, 144, 0.25) !important;
-}
-
-.modal-header-title h2 {
-  font-family: var(--font-gothic) !important;
-  font-size: 20px !important;
-  letter-spacing: 0.5px !important;
-  background: linear-gradient(135deg, #ffffff 40%, var(--goth-frost) 100%) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
 }
 
 .magic-preset-card {
-  background: rgba(10, 16, 29, 0.7) !important;
-  border: 1px solid var(--goth-border) !important;
+  background: rgba(12, 18, 30, 0.6) !important;
+  border: 1px solid var(--ed-border) !important;
   border-radius: 10px !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
-  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-  position: relative;
-  overflow: hidden;
-}
-
-.magic-preset-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: transparent;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease !important;
 }
 
 .magic-preset-card:hover {
-  background: rgba(15, 25, 45, 0.9) !important;
-  border-color: var(--goth-cyan) !important;
-  box-shadow: 0 6px 24px rgba(56, 189, 248, 0.3) !important;
+  background: rgba(16, 26, 44, 0.85) !important;
+  border-color: var(--ed-cyan) !important;
   transform: translateY(-2px);
-}
-
-.magic-preset-card:hover::before {
-  background: linear-gradient(90deg, transparent, var(--goth-cyan-glow), transparent);
 }
 
 .magic-preset-card.selected {
   background: rgba(14, 28, 52, 0.95) !important;
-  border-color: var(--goth-cyan-glow) !important;
-  box-shadow: 
-    0 0 24px rgba(56, 189, 248, 0.35),
-    inset 0 0 12px rgba(56, 189, 248, 0.15) !important;
-}
-
-.magic-preset-card.selected::before {
-  background: var(--goth-cyan-glow);
-  box-shadow: 0 0 10px var(--goth-cyan-glow);
-}
-
-.preset-badge {
-  background: rgba(3, 6, 12, 0.85) !important;
-  border: 1px solid var(--goth-border) !important;
-  color: var(--goth-frost) !important;
-  font-family: var(--font-gothic) !important;
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.6px !important;
-}
-
-.preset-icon-box {
-  background: rgba(14, 116, 144, 0.2) !important;
-  border: 1px solid var(--goth-border) !important;
-  border-radius: 8px !important;
-  color: var(--goth-cyan-glow) !important;
-}
-
-.magic-preset-card h3 {
-  font-family: var(--font-gothic) !important;
-  font-size: 14px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.3px !important;
-  color: #fff !important;
-}
-
-/* ==========================================================================
-   IMPORTER MODAL GOTHIC ENHANCEMENTS
-   ========================================================================== */
-.importer-modal-card {
-  position: relative;
-  background-image: 
-    radial-gradient(circle at 90% 10%, rgba(14, 116, 144, 0.18), transparent 40%),
-    linear-gradient(165deg, rgba(13, 20, 36, 0.96) 0%, rgba(6, 10, 18, 0.98) 100%) !important;
-  border: 1px solid var(--goth-border-heavy) !important;
+  border-color: var(--ed-cyan) !important;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.25) !important;
 }

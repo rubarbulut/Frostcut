@@ -85,7 +85,7 @@ export function createAudioPosterBlob(title: string, duration: number): Promise<
 
     // Audio Waveform Visual Accent
     ctx.fillStyle = '#38bdf8';
-    ctx.font = 'bold 36px "Cinzel", serif';
+    ctx.font = '700 32px "Plus Jakarta Sans", system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('AUDIO TRACK', 640, 320);
 

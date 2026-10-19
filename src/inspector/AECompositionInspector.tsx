@@ -39,7 +39,8 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
     (c) => c.voiceEnhance || c.autoDuck || (c.properties.volume && c.properties.volume > 1.0),
   );
 
-  const isCaptionsActive = p.captions.enabled;
+  const isNoSpeech = !!p.settings.noSpeech;
+  const isCaptionsActive = isNoSpeech || p.captions.enabled;
 
   const firstClip = [...p.clips].sort((a, b) => a.start - b.start)[0];
   const hasHook =
@@ -97,6 +98,7 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
 
   const handleApplyCaptions = () => {
     const next = structuredClone(p);
+    next.settings.noSpeech = false;
     next.captions.enabled = true;
     if (next.captions.preset === 'Clean') next.captions.preset = 'Bold';
     commit(next, 'Enable dynamic viral captions');
@@ -138,8 +140,10 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
         c.properties.volume = Math.min(0.35, c.properties.volume || 0.3);
       }
     }
-    next.captions.enabled = true;
-    if (next.captions.preset === 'Clean') next.captions.preset = 'Bold';
+    if (!isNoSpeech) {
+      next.captions.enabled = true;
+      if (next.captions.preset === 'Clean') next.captions.preset = 'Bold';
+    }
     const primary = [...next.clips].sort((a, b) => a.start - b.start)[0];
     if (primary) {
       primary.properties.animation = 'Punch In';
@@ -260,10 +264,10 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
                 type="button"
                 className={`ae-step-pill ${isCaptionsActive ? 'done' : ''}`}
                 onClick={handleApplyCaptions}
-                title="Altyazıları aç"
+                title={isNoSpeech ? 'Videoda konuşma yok (Metinsiz Mod). Tıkla: Konuşma/altyazı moduna geç' : 'Altyazıları aç'}
               >
                 <Captions size={12} />
-                <span>{isCaptionsActive ? '✓ Altyazı Aktif' : '2. Altyazı Ekle'}</span>
+                <span>{isNoSpeech ? '✓ Metinsiz Video' : isCaptionsActive ? '✓ Altyazı Aktif' : '2. Altyazı Ekle'}</span>
               </button>
 
               <button

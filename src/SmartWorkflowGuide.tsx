@@ -42,7 +42,8 @@ export function SmartWorkflowGuide({
     (c) => c.voiceEnhance || c.autoDuck || (c.properties.volume && c.properties.volume > 1.0),
   );
 
-  const isCaptionsActive = p.captions.enabled;
+  const isNoSpeech = !!p.settings.noSpeech;
+  const isCaptionsActive = isNoSpeech || p.captions.enabled;
 
   const firstClip = [...p.clips].sort((a, b) => a.start - b.start)[0];
   const hasHookAnimation =
@@ -52,6 +53,13 @@ export function SmartWorkflowGuide({
 
   // Has transcript or silence cuts
   const hasTranscript = p.transcripts.length > 0;
+
+  const handleToggleSpeech = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const next = structuredClone(p);
+    next.settings.noSpeech = !isNoSpeech;
+    commit(next, !isNoSpeech ? 'Metinsiz / Müzik video modu aktif' : 'Konuşma modu aktif');
+  };
 
   // 1. Format to 9:16 & Safe Area
   const handleApplyFormat = () => {
@@ -81,6 +89,15 @@ export function SmartWorkflowGuide({
 
   // 3. Captions
   const handleApplyCaptions = () => {
+    if (isNoSpeech) {
+      const next = structuredClone(p);
+      next.settings.noSpeech = false;
+      next.captions.enabled = true;
+      if (next.captions.preset === 'Clean') next.captions.preset = 'Bold';
+      commit(next, 'Enable dynamic viral captions');
+      if (!hasTranscript && onTranscribeRequest) onTranscribeRequest();
+      return;
+    }
     const next = structuredClone(p);
     next.captions.enabled = true;
     if (next.captions.preset === 'Clean') {
@@ -137,10 +154,12 @@ export function SmartWorkflowGuide({
       }
     }
 
-    // 3. Captions
-    next.captions.enabled = true;
-    if (next.captions.preset === 'Clean') {
-      next.captions.preset = 'Bold';
+    // 3. Captions (only if video has speech)
+    if (!isNoSpeech) {
+      next.captions.enabled = true;
+      if (next.captions.preset === 'Clean') {
+        next.captions.preset = 'Bold';
+      }
     }
 
     // 4. Hook Punch-In
@@ -162,7 +181,7 @@ export function SmartWorkflowGuide({
 
     commit(next, 'Apply full smart edit workflow polish');
 
-    if (!hasTranscript && onTranscribeRequest) {
+    if (!isNoSpeech && !hasTranscript && onTranscribeRequest) {
       onTranscribeRequest();
     }
   };
@@ -183,6 +202,18 @@ export function SmartWorkflowGuide({
           <span className="workflow-progress-pill">
             {completedCount}/5 Adım Hazır
           </span>
+          <button
+            type="button"
+            className={`workflow-speech-mode-btn ${isNoSpeech ? 'no-speech' : 'has-speech'}`}
+            onClick={handleToggleSpeech}
+            title={
+              isNoSpeech
+                ? 'Videoda metin/konuşma yok seçili. Deşifre atlandı. Tıkla: Konuşma moduna dön'
+                : 'Videoda konuşma var. Tıkla: Metinsiz / Müzik moduna geç'
+            }
+          >
+            {isNoSpeech ? '🔇 Metinsiz Video' : '🎙️ Konuşmalı Video'}
+          </button>
         </div>
 
         <div className="workflow-actions-right">
@@ -279,18 +310,30 @@ export function SmartWorkflowGuide({
                 <Captions size={13} />
               </span>
               <span className="step-num">3. Adım</span>
-              {isCaptionsActive && <span className="step-done-badge">✓ Aktif</span>}
+              {isCaptionsActive && (
+                <span className="step-done-badge">
+                  {isNoSpeech ? '✓ Metinsiz Mod' : '✓ Aktif'}
+                </span>
+              )}
             </div>
-            <b className="step-title">Viral Altyazı Ekle</b>
+            <b className="step-title">
+              {isNoSpeech ? 'Altyazı (Metinsiz Video)' : 'Viral Altyazı Ekle'}
+            </b>
             <p className="step-desc">
-              Kelimeleri otomatik transkribe edip TikTok/Reels tarzı parlayan renkli altyazılar ekler.
+              {isNoSpeech
+                ? 'Videoda konuşma yok seçili. Deşifre atlandı ve metinsiz mod devrede.'
+                : hasTranscript
+                ? 'Kelimeler transkribe edildi. Dinamik altyazılar sahnede.'
+                : 'Kelimeleri deşifre edip TikTok/Reels tarzı parlayan renkli altyazılar ekler.'}
             </p>
             <button
               type="button"
               className={`step-action-btn ${isCaptionsActive ? 'is-done' : ''}`}
               onClick={handleApplyCaptions}
             >
-              {isCaptionsActive ? (
+              {isNoSpeech ? (
+                <span>Konuşma Moduna Geç</span>
+              ) : isCaptionsActive ? (
                 <>
                   <Check size={11} />
                   <span>Altyazı Stilleri</span>

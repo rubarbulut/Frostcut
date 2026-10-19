@@ -513,7 +513,8 @@ export default function App() {
           timeRanges = merged;
         }
 
-        const needTranscript = !auto || (!existing && opts.goal !== 'Remove silences');
+        const isNoSpeech = opts.noSpeech ?? next.settings.noSpeech ?? false;
+        const needTranscript = !isNoSpeech && (!auto || (!existing && opts.goal !== 'Remove silences'));
         setJob((j) => (j ? { ...j, step: needTranscript ? 1 : 0 } : j));
         const analyzed = await analyzeSource(
           media,
@@ -801,7 +802,7 @@ export default function App() {
                 }}
               >
                 <div className="brand-logo-icon">
-                  <img src="/frostcut-crest.jpg" alt="" className="editor-brand-crest-img" />
+                  <Snowflake size={15} />
                 </div>
                 <span className="brand-title">FrostCut</span>
               </button>
@@ -842,8 +843,8 @@ export default function App() {
                 onClick={() => setModal('auto')}
                 title="Automatically remove silences and dead air"
               >
-                <Sparkles size={14} className="rune-glow" />
-                <span>Frost Slice</span>
+                <Scissors size={13} />
+                <span>Auto Cut</span>
               </button>
               <button
                 type="button"
@@ -852,8 +853,8 @@ export default function App() {
                 onClick={() => setModal('magic-shorts')}
                 title="1-Click Long-Form to Viral Shorts Studio"
               >
-                <Flame size={14} className="rune-glow" />
-                <span>Chrono Shards</span>
+                <Flame size={13} />
+                <span>Long to Shorts</span>
               </button>
               <button
                 type="button"
@@ -862,8 +863,8 @@ export default function App() {
                 onClick={() => setModal('transcribe')}
                 title="Generate speech-to-text transcript & subtitles"
               >
-                <MessageSquareText size={14} className="rune-glow" />
-                <span>Runic Scribe</span>
+                <MessageSquareText size={13} />
+                <span>Transcribe</span>
               </button>
             </div>
 
@@ -903,7 +904,6 @@ export default function App() {
                 className="header-icon-btn"
                 aria-label="New project"
                 title="New Project"
-                onClick={() => setModal('project')}
               >
                 <Plus size={15} />
               </button>
@@ -928,10 +928,10 @@ export default function App() {
                 className="header-export-btn primary-export"
                 disabled={!p.clips.length || !!job}
                 onClick={() => setModal('export')}
-                title="Glacial Forge Export Video (MP4)"
+                title="Export Video (MP4)"
               >
-                <Download size={15} />
-                <span>Forge MP4</span>
+                <Download size={14} />
+                <span>Export MP4</span>
                 <ArrowUpRight size={13} />
               </button>
             </div>
@@ -1363,6 +1363,32 @@ export default function App() {
                   ))}
                 </select>
               </Field>
+              <label
+                className="check-row"
+                style={{
+                  margin: '0.4rem 0 0.6rem 0',
+                  padding: '7px 9px',
+                  background: (opts.noSpeech ?? p.settings.noSpeech) ? 'rgba(245, 158, 11, 0.12)' : 'rgba(255, 255, 255, 0.04)',
+                  border: (opts.noSpeech ?? p.settings.noSpeech) ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '6px',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={opts.noSpeech ?? p.settings.noSpeech ?? false}
+                  onChange={(e) => {
+                    const val = e.target.checked;
+                    setOpts({ ...opts, noSpeech: val });
+                    commit(
+                      { ...p, settings: { ...p.settings, noSpeech: val } },
+                      'Toggle speech mode',
+                    );
+                  }}
+                />
+                <span style={{ fontSize: '11.5px', fontWeight: 500, color: (opts.noSpeech ?? p.settings.noSpeech) ? '#fbbf24' : '#cbd5e1' }}>
+                  🔇 Videoda metin / konuşma yok (Görsel & müzik ritmi modu · Deşifreyi atla)
+                </span>
+              </label>
               <label className="check-row">
                 <input
                   type="checkbox"

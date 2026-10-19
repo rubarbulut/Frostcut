@@ -50,4 +50,25 @@ describe('Adobe AE Inspector & Properties System', () => {
     const wideRatio = p.settings.width > p.settings.height ? '16:9' : '9:16';
     expect(wideRatio).toBe('16:9');
   });
+
+  it('renders AELumetriInspector cleanly without crashing', async () => {
+    const { renderToString } = await import('react-dom/server');
+    const { AELumetriInspector } = await import('./inspector/AELumetriInspector');
+    const { useEditor } = await import('./store');
+    const { newAdjustment } = await import('./adjustments');
+    const React = await import('react');
+
+    const { defaultProps, createProject } = await import('./model');
+    const layer = newAdjustment(0, 5);
+    const proj = {
+      ...createProject(),
+      clips: [{ id: 'c1', mediaId: 'm1', start: 0, sourceStart: 0, sourceEnd: 10, trackId: 'V1', properties: defaultProps }],
+      adjustments: [layer],
+    };
+    useEditor.getState().load(proj);
+    useEditor.getState().selectAdjustment(layer.id);
+    const html = renderToString(React.createElement(AELumetriInspector));
+    expect(html).toContain('ae-lumetri-inspector');
+    expect(html).toContain('Lumetri Color');
+  });
 });
