@@ -499,6 +499,10 @@ export function MediaPanel({
   );
 }
 export { TranscriptPanel } from './TranscriptPanel';
+export { SocialFormatPanel } from './SocialFormatPanel';
+export { ThumbnailGrabber } from './ThumbnailGrabber';
+export { SocialPostKit } from './SocialPostKit';
+export { SocialCaptionsPanel } from './SocialCaptionsPanel';
 export function PropertiesPanel() {
   const adjustmentSelection = useEditor((s) => s.adjustmentSelection);
   const { project: p, commit, selected } = useEditor(useShallow((s) => ({

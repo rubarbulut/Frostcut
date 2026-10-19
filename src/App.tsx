@@ -30,6 +30,10 @@ import {
   Keyboard,
   Flame,
   Zap,
+  Smartphone,
+  Captions,
+  Camera,
+  Share2,
 } from 'lucide-react';
 import { Modal, Field, Range } from './components';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
@@ -76,7 +80,15 @@ import {
 import { transcribe, parseSrt } from './transcription';
 import Preview from './Preview';
 import Timeline, { deleteSelected, splitSelected } from './Timeline';
-import { MediaPanel, TranscriptPanel, PropertiesPanel } from './Panels';
+import {
+  MediaPanel,
+  TranscriptPanel,
+  PropertiesPanel,
+  SocialFormatPanel,
+  ThumbnailGrabber,
+  SocialPostKit,
+  SocialCaptionsPanel,
+} from './Panels';
 import CaptionEditor from './CaptionEditor';
 import TranscriptionSetup from './TranscriptionSetup';
 import { resolveQuality, recommendedQuality, transcriptionModels } from './transcription-config';
@@ -811,15 +823,49 @@ export default function App() {
                 <button
                   className={panel === 'media' ? 'active' : ''}
                   onClick={() => setPanel('media')}
+                  title="Media Library & Import"
                 >
-                  <FileVideo size={15} />
+                  <FileVideo size={13} />
                   Media
+                </button>
+                <button
+                  className={panel === 'format' ? 'active' : ''}
+                  onClick={() => setPanel('format')}
+                  title="Aspect Ratio & Fill (TikTok / Reels / Shorts)"
+                >
+                  <Smartphone size={13} />
+                  Format
+                </button>
+                <button
+                  className={panel === 'captions' ? 'active' : ''}
+                  onClick={() => setPanel('captions')}
+                  title="Viral Subtitles & Animations"
+                >
+                  <Captions size={13} />
+                  Captions
+                </button>
+                <button
+                  className={panel === 'cover' ? 'active' : ''}
+                  onClick={() => setPanel('cover')}
+                  title="Thumbnail Grabber & Hook Headlines"
+                >
+                  <Camera size={13} />
+                  Cover
+                </button>
+                <button
+                  className={panel === 'postkit' ? 'active' : ''}
+                  onClick={() => setPanel('postkit')}
+                  title="Social Post Kit & Trending Hashtags"
+                >
+                  <Share2 size={13} />
+                  Post Kit
                 </button>
                 <button
                   className={panel === 'transcript' ? 'active' : ''}
                   onClick={() => setPanel('transcript')}
+                  title="Transcript & Speech Search"
                 >
-                  <MessageSquareText size={15} />
+                  <MessageSquareText size={13} />
                   Transcript
                 </button>
               </div>
@@ -829,6 +875,14 @@ export default function App() {
                   onRelink={(id) => importClick(id)}
                   onOpenImporter={() => setImporterOpen(true)}
                 />
+              ) : panel === 'format' ? (
+                <SocialFormatPanel />
+              ) : panel === 'captions' ? (
+                <SocialCaptionsPanel />
+              ) : panel === 'cover' ? (
+                <ThumbnailGrabber />
+              ) : panel === 'postkit' ? (
+                <SocialPostKit />
               ) : (
                 <TranscriptPanel
                   onTranscribe={() => setModal('transcribe')}
@@ -841,13 +895,20 @@ export default function App() {
                 <div>
                   <span className="sequence-dot" />
                   {p.settings.preset}
-                  <span className="ratio-tag">
+                  <button
+                    type="button"
+                    className="ratio-tag-button"
+                    onClick={() => setPanel('format')}
+                    title="Change Canvas Aspect Ratio"
+                  >
                     {p.settings.width > p.settings.height
                       ? '16:9'
                       : p.settings.width === p.settings.height
                         ? '1:1'
-                        : '9:16'}
-                  </span>
+                        : p.settings.height === 1350
+                          ? '4:5'
+                          : '9:16'}
+                  </button>
                 </div>
                 <div>
                   <button
@@ -903,7 +964,7 @@ export default function App() {
           <Timeline />
           <section className="mobile-flow">
             <div className="panel-tabs">
-              {['Clips', 'Transcript', 'Style'].map((t) => (
+              {['Clips', 'Format', 'Transcript', 'Style'].map((t) => (
                 <button
                   className={mobileTab === t ? 'active' : ''}
                   key={t}
@@ -987,6 +1048,8 @@ export default function App() {
                   </div>
                 )}
               </div>
+            ) : mobileTab === 'Format' ? (
+              <SocialFormatPanel />
             ) : mobileTab === 'Transcript' ? (
               <TranscriptPanel
                 onTranscribe={() => setModal('transcribe')}
