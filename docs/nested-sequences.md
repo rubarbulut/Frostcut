@@ -302,7 +302,7 @@ media acceptance remain in scope. Do not claim audible parity from metadata test
   cleanup/cancellation/relink outcomes. No real FFmpeg job, decoding, sound,
   browser suite, model, GPU or production build ran.
 
-Next, own these windows in a cancellable edit/File-version cache and actual media
+The owned cache increment below now retains these windows. Next, add actual media
 transport, check real decoded metadata/format, preserve pitch for preview-rate
 changes, feed shared master mute/metering, and connect main/proposed preview.
 Importing/mounting a project must not start audio preparation. Current native
@@ -315,6 +315,43 @@ Primary format/behavior references:
 [PCM float32 codec](https://www.ffmpeg.org/doxygen/6.1/libavcodec_2pcm_8c_source.html),
 [WAVEFORMATEXTENSIBLE](https://learn.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatextensible),
 [HTML pitch preservation](https://html.spec.whatwg.org/dev/media.html).
+
+## Owned prepared-audio cache increment
+
+`SequencePreviewAudioCache` now owns completed WAV windows, connected through
+`createSequencePreviewAudioCache` to the actual serialized media preparation
+entry. Constructing, updating or looking up the cache never launches that entry.
+The future preview owner must update it on immutable project/media revisions and
+dispose it on close/unmount; it is intentionally not mounted in native previews.
+
+- Audio timing, source bounds, speed, gain, fades, routing, detachment, voice
+  processing, ducking, child edits and source durations invalidate old windows.
+  Raw caption/transcript intervals remain dependencies even when overlap would
+  mask a change with all sources assumed audible. Actual ffprobe can subsequently
+  prove the overlapping source silent. Text, caption appearance, visual effects,
+  transforms, tracking and preview rate do not force another audio preparation.
+  The descriptor conservatively includes inactive timeline audio and unused
+  media durations; those changes can invalidate more than strictly necessary.
+- Original File identity is checked separately from editor metadata. Relinking
+  with identical name/size still invalidates; missing audible originals prevent
+  preparation. Held windows expose an `isCurrent` lease and invalidation events
+  so the transport can stop/release stale audio, including on media-only changes.
+- A containing sample-aligned window is reused. A maximum of two completed WAV
+  blobs share a 64MiB LRU budget per owner; oversized requests fail rather than
+  lowering quality. This bounds cache-owned blobs, not worker/decoder memory or
+  an evicted blob still owned by a transport. No performance benchmark claimed.
+- Matching in-flight requests share one actual preparation, with independent
+  progress/cancel listeners. The final waiter's cancellation, range supersession,
+  meaningful edit, relink or disposal aborts ownership and rejects promptly even
+  when a late renderer ignores cancellation. Late/error/mismatched outputs never
+  enter the cache. A failed request can be explicitly retried.
+- Ten cache tests plus preparation/audio-graph regressions passed: **25 tests in
+  868ms**, one active worker. Source type-check passed. Small metadata and fake
+  prepared PCM only; no actual FFmpeg/media/decoder/model/GPU/build/browser suite.
+
+Actual decoded audio transport, pitch-preserving preview rates, master routing,
+window joins and main/proposed preview integration remain required. This cache
+does not by itself deliver audible nested playback or complete P2.
 
 ## Implemented reference plan
 

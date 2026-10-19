@@ -19,6 +19,21 @@ the original checkout; no install or extra dev server is needed.
 
 ## Current state
 
+- Prepared audio now has an owned, explicit cache and production factory in
+  media.ts. It reuses sample-aligned containing windows across visual/text/style
+  edits, but invalidates on audio timing/routing/DSP/speech edits or actual File
+  identity changes. Raw word intervals are dependencies even when overlap masks
+  them in an all-audible filter graph. At most two completed WAV windows and64MiB
+  per owner; this is not a worker/decoder/transport-memory bound. Matching requests
+  share one render with independent cancellation; last-waiter cancellation, edit,
+  relink, range supersession and disposal reject promptly and discard late output.
+  Held leases expose isCurrent plus invalidation subscriptions; owners must update
+  on edits/media revisions and dispose on unmount. No renderer runs on update/peek.
+  Ten new cache tests plus preparation/audio graph checks:25 passed in868ms with
+  one worker; source type-check passed. No real media/model/render/build/browser
+  suite. Still not mounted or exposed. Next: actual decoded WAV transport, shared
+  master mute/metering and main/proposed preview ownership, then child text/UI/QA.
+
 - Actual ranged audio preparation is implemented in sequence-preview-audio.ts and
   media.ts. It reuses the real MP4 hierarchical mixer, trims the completed root bus
   by sample, retains child/group DSP history and wraps stereo48kHz float32 PCM in
@@ -28,7 +43,7 @@ the original checkout; no install or extra dev server is needed.
   probe/report validation and resource cleanup reject stale/failed/short output.
   Eight new tests plus report/graph regressions:22 passed in840ms; final source
   type-check passed. Fake-engine tests, no actual FFmpeg/media/sound/model/GPU/build.
-  Next implement owned edit/File-version cache and real audio transport with decoded
+  Owned edit/File-version cache is implemented below the preview UI. Add real audio transport with decoded
   metadata, pitch-preserving preview rate, shared mute/metering and window joins;
   then mount main/proposed visual/audio controllers. Late-window prep can process
   preceding graph history, so latency/cache/memory acceptance is still required.

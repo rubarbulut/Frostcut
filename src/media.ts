@@ -29,6 +29,7 @@ import { compileSequenceAudio } from './sequence-audio';
 import { SourceAudioReports, type MountedAudioSource } from './source-audio-reports';
 import { sequenceViews } from './sequences';
 import { planSequencePreviewAudio, renderSequencePreviewAudio, type PreviewAudioRange } from './sequence-preview-audio';
+import { SequencePreviewAudioCache } from './sequence-preview-audio-cache';
 const sourceAudioReports = new SourceAudioReports();
 let engine: FFmpeg | undefined;
 let busy = false;
@@ -124,6 +125,13 @@ export async function prepareSequencePreviewAudio(project: Project, range: Previ
   } finally {
     signal.removeEventListener('abort', cancel); backgroundMediaJobs.delete(controller);
   }
+}
+/** A preview owns/disposes this cache and updates it on edits/media revisions.
+ * Creating or updating it does not allocate the engine or start media work. */
+export function createSequencePreviewAudioCache(project: Project) {
+  const cache = new SequencePreviewAudioCache(prepareSequencePreviewAudio, (id) => mediaFiles.get(id));
+  cache.update(project);
+  return cache;
 }
 export async function inspectMedia(file: File): Promise<MediaAsset> {
   if (file.size > 1_500_000_000)

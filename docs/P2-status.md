@@ -274,7 +274,12 @@ without integer quantization or extra compression. File/relink/cancel/cleanup an
 per-window output bounds are implemented in the real media-engine entry, which is
 not called on import/mount. Eight new fake-engine/byte checks plus report/graph
 tests passed (22,840ms,one worker); final source type-check passed. No actual media,
-sound, FFmpeg, GPU, model or build ran. Owned cache/transport, decoded format checks,
+sound, FFmpeg, GPU, model or build ran. The owned cache now reuses containing
+sample-aligned windows across visual/text/style edits and invalidates on audio
+dependencies and actual File identity. Two windows share a64MiB completed-WAV
+budget per owner; matching requests coalesce with independent cancellation and
+stale output rejection.25 focused tests in868ms plus source type-check passed;
+metadata/fake-engine fixtures only. Actual transport, decoded format checks,
 window joins, master mute/metering and main/proposed mounting remain. Long-window
 latency/total memory and actual audible/export acceptance are unverified; nested
 editing stays unexposed and P2 stays open.

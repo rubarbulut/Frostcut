@@ -31,6 +31,12 @@ export function planSequencePreviewAudio(p: Project, range: PreviewAudioRange): 
     throw new Error('Choose an audio preview range of at least one sample.');
   if (pcmBytes + HEADER_BYTES > MAX_PREVIEW_AUDIO_WINDOW_BYTES)
     throw new Error('This audio preview window is too large. Prepare a shorter range.');
+  return { startFrame, endFrame, start: startFrame / PREVIEW_AUDIO_RATE, end: endFrame / PREVIEW_AUDIO_RATE,
+    frames, pcmBytes, sourceIds: sequencePreviewAudioSources(p) };
+}
+
+/** File dependencies follow the same audible routing as the actual mixer. */
+export function sequencePreviewAudioSources(p: Project): string[] {
   const views = sequenceViews(p); validateSequenceGraph(views);
   if (!p.activeSequenceId || !views.some((s) => s.id === p.activeSequenceId))
     throw new Error('The active sequence is missing.');
@@ -46,8 +52,7 @@ export function planSequencePreviewAudio(p: Project, range: PreviewAudioRange): 
     }
   };
   visit(p.activeSequenceId);
-  return { startFrame, endFrame, start: startFrame / PREVIEW_AUDIO_RATE, end: endFrame / PREVIEW_AUDIO_RATE,
-    frames, pcmBytes, sourceIds: [...ids] };
+  return [...ids];
 }
 
 /** A float32 stereo WAVE wrapper: no quantization, clipping, normalization or re-encoding. */
