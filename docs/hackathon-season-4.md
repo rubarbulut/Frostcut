@@ -8,15 +8,42 @@ public repository. This is a preparation/evidence record, **not a submitted entr
 
 - GitHub's repository API confirmed the repository is public on 2026-10-19.
 - User selected free **Vercel Hobby** hosting. The new `rubar/frostcut` project
-  serves https://frostcut.vercel.app/ (HTTP 200 verified). Its initial `main`
-  deployment is 66ea8dd and does not yet contain the isolation/metadata changes;
-  publish the prepared PR source before claiming complete runtime verification.
+  serves https://frostcut.vercel.app/. Production deployment
+  [7kwrAgP4yBAxdRBtohkC2suNwFsn](https://vercel.com/rubar/frostcut/7kwrAgP4yBAxdRBtohkC2suNwFsn)
+  is Ready at source `9b4a9a9`. Its metadata, isolation headers and core assets were
+  verified through unauthenticated HTTPS requests. The previous `main` deployment
+  66ea8dd was replaced by promoting this prepared PR revision; PR #1 is not merged.
+- The entrant explicitly approved removing Vercel Authentication **only for the
+  frostcut project** so independent PR previews can be tested by the cloud service.
+  The setting was saved and the actual
+  [entry branch preview](https://frostcut-git-codex-testsprite-hackathon-rubar.vercel.app/)
+  passed the same source/header/asset verifier. The personal rubar.me project was
+  not changed. No bypass secret or paid feature was created.
 - [PR #1](https://github.com/rubarbulut/Frostcut/pull/1) opened 2026-10-19 and
   [quality run 39246105008](https://github.com/rubarbulut/Frostcut/actions/runs/39246105008)
   passed: 229 tests in 37 files (6.72 s), hosted metadata test, and production build.
+  The latest head `9b4a9a9` also has a successful
+  [quality run 39247659854](https://github.com/rubarbulut/Frostcut/actions/runs/39247659854).
 - The actual TestSprite account matches the entrant's provided email. Profile
   name is Rubar; Free plan shows 150 credits before generation. No trial/upgrade
-  was accepted. The suite and TestSprite GitHub App remain outstanding.
+  was accepted. The real portal project
+  [a34e8de5-bcc5-43f5-8de6-91793ac81697](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/settings/source)
+  was created with no application sign-in and a public editing/persistence brief.
+  Exploration finished, then proposed 57 mostly repeated cases across six use cases.
+  Twelve distinct core cases were selected and reviewed with exact UI labels,
+  edit values, file assertions and undo/redo checks before generating/running.
+- First real portal execution:
+  [2aeddbd3-edee-4ef0-bcab-936f29b2350a](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/2aeddbd3-edee-4ef0-bcab-936f29b2350a).
+  It is running; its sample-opening case failed with the actual message
+  "Your browser cannot preview this format. Try an H.264 MP4."
+  A short local check opened the real sample editor (one V1 clip, eight C1 blocks).
+  A second built-in sample format is being prepared on GitHub, with decoded video
+  frame hashes checked against the unchanged original. No local encode is needed.
+- The portal now reports TestSprite GitHub App installation `173013929` connected
+  on rubarbulut. GitHub showed it installed with All repositories access; narrowing
+  to Frostcut is pending the entrant because the repo picker did not show options.
+  Do not report Frostcut-only scope until it is visibly saved. No trigger is saved
+  yet; the form detected the real Vercel commit-status event and branch URL pattern.
 - The entrant saved the Vercel GitHub App selection for Frostcut. The repo then
   appeared in Vercel's import list. Existing personal-site selection was retained.
 - `.github/workflows/quality.yml` runs real unit checks, metadata checks and a
@@ -24,7 +51,8 @@ public repository. This is a preparation/evidence record, **not a submitted entr
   independent PR previews; no publishing token is placed in this repository.
 - `build:hosted` records the real Vercel/CI source revision in `_deployment.json`.
   scripts/verify-deployment.mjs checks that revision and runtime/demo/font/model
-  assets over HTTPS, and requires the actual document isolation headers.
+  assets over HTTPS, and requires the actual document isolation headers. It rejects
+  authentication responses and redirects rather than mistaking login HTML for an app.
 - Asset URLs respect Vite's public base. `vercel.json` preserves the existing
   COOP/COEP headers directly; no new service worker or host shim is bundled.
 - Nested-sequence work stays separately on `codex/nested-sequences` (73396b1).
@@ -78,8 +106,8 @@ Dates/changes must also be checked in the server's pinned announcements.
 | 1 Eligibility | X follow and Discord membership with badge | Handles/access and actual verification pending |
 | 2 Single entry | Check channel for an existing entry, submit once | No entry sent by this agent |
 | 3 Team | List every member | Entrant confirmed Rubar, solo |
-| 4 Portal + GitHub App | Portal-generated suite, same-account App, in-window PR with authentic result | Account verified, PR #1 open; no generated suite/TestSprite result yet |
-| 5 Public app throughout build | Reachable URL, version evidence, continued uptime | Vercel app HTTP 200 on Oct 19; runtime update pending, earlier uptime unproven |
+| 4 Portal + GitHub App | Portal-generated suite, same-account App, in-window PR with authentic result | 12-case initial portal run started; sample decode failure; App connected, scope/trigger/result pending |
+| 5 Public app throughout build | Reachable URL, version evidence, continued uptime | Production and PR preview verified Oct 19 at 9b4a9a9; earlier uptime unproven |
 | 6 Public repo/materials | Public source, README app/live URL/actual coverage, proper channel template | Public repo verified; live/tests/submission still pending |
 | 7 Account match | Submission account equals suite-generation and App account | Portal email verified; use this same account for pending generation/App steps |
 | 8 CLI bonus | Optional separate genuine issue/fix/test/PR, checkbox, handle and maintainer merge | Not entered; not required for the project track |

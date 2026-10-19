@@ -5,17 +5,22 @@ A local-first video editor built from the FrostCut master spec, with P0 and P1 w
 ## Public app and TestSprite Season 4
 
 Live app: [frostcut.vercel.app](https://frostcut.vercel.app/) on **Vercel Hobby**.
-Hosted runtime verification is in progress. Vercel's GitHub integration publishes
-independent PR previews; hosted builds identify their source in `_deployment.json`.
+Production and the entry PR preview were verified at source `9b4a9a9` on October 19:
+public metadata, isolation headers, demo, caption, font and runtime/model assets.
+Vercel's GitHub integration publishes independent PR previews; hosted builds
+identify their source in `_deployment.json`.
 The [initial PR](https://github.com/rubarbulut/Frostcut/pull/1) has a passing
 [GitHub quality run](https://github.com/rubarbulut/Frostcut/actions/runs/39246105008):
 229 unit tests and a production build. These are separate from TestSprite results.
 
-The TestSprite **3.0 portal suite and GitHub App are being configured**. No generated
-suite or TestSprite pass is claimed yet. The [coverage brief](docs/testsprite-coverage.md)
+The [TestSprite 3.0 project](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/settings/source)
+generated a reviewed 12-case core suite. Its
+[first cloud execution](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/2aeddbd3-edee-4ef0-bcab-936f29b2350a)
+is in progress and has exposed a sample H.264 decoding failure in the cloud browser.
+No TestSprite pass is claimed. The [coverage brief](docs/testsprite-coverage.md)
 specifies split/undo/redo, caption text/timing/validation/style, timeline navigation,
 preview speed, equal parts, project downloads and invalid-open recovery. After
-generation this section will list actual coverage, the entry PR and run evidence.
+the first run, this section will record final counts and the authentic PR result.
 See the [complete entry checklist](docs/hackathon-season-4.md) for all requirements.
 
 The public static editor runs its media workflows in your browser. The optional

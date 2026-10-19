@@ -21,15 +21,26 @@ remaining account/portal/social/submission proof and publication state. Keep the
 user's account email out of public files. Free publication was explicitly approved;
 no paid service or duplicate submission is authorized by that choice.
 
-Current TestSprite setup: PR #1 is open, head 38eca80. Its actual quality run
-39246105008 passed 229 unit tests/37 suites, hosted metadata check and build.
-The new Vercel Hobby project `rubar/frostcut` serves frostcut.vercel.app (200),
-initially from main 66ea8dd. The prepared feature branch still needs publication
-for real isolation headers and _deployment.json before portal generation. The
-entrant's real TestSprite email is verified; profile name Rubar, Free/150 credits.
-The entrant saved Vercel's Frostcut GitHub App selection. Generate in the 3.0 portal
-before installing TestSprite's App; then actual preview/trigger/check/blocking/
-rerun proof and Discord/X/eligibility/one final submission remain required.
+Current TestSprite setup: PR #1 is open, head 9b4a9a9. Quality runs 39246105008
+and 39247659854 passed; the first verified 229 unit tests/37 suites, metadata and
+build. The Vercel Hobby project `rubar/frostcut` now serves source 9b4a9a9 on both
+production and the entry branch preview. The public verifier passed actual source,
+isolation headers and core assets. Production was promoted from the PR, not merged.
+The entrant approved Frostcut-only preview authentication removal; it was saved,
+with the personal rubar.me project untouched. The entrant's TestSprite email is
+verified; profile Rubar, Free/150 before generation. Actual portal project
+a34e8de5-bcc5-43f5-8de6-91793ac81697 finished exploration; 12 distinct reviewed
+cases from 57 mostly duplicates are in real execution
+2aeddbd3-edee-4ef0-bcab-936f29b2350a. The sample-opening case failed because cloud
+Chromium cannot decode the H.264 MP4; it opened locally in a brief UI smoke check.
+A GitHub-only workflow prepares a VP9 lossless-video/Opus-audio sample and checks
+every decoded frame against the unchanged MP4; do not encode on the user's PC.
+TestSprite App 173013929 is connected but initially All repositories; user was
+asked to save Frostcut-only scope because the agent's repo picker stayed empty.
+PR trigger form detects Vercel commit status, with target pattern
+https://frostcut-git-{branch-slug}-rubar.vercel.app/ ; it is not saved yet.
+Passing suite/trigger/check/blocking/rerun and Discord/X/eligibility/one final
+submission remain required. No TestSprite pass has been claimed.
 
 Nested sequence source-model work is saved/pushed as ae6997d on
 `codex/nested-sequences`, in the attached managed worktree:
