@@ -7,8 +7,18 @@ public repository. This is a preparation/evidence record, **not a submitted entr
 ## Current implementation
 
 - GitHub's repository API confirmed the repository is public on 2026-10-19.
-- User selected free **Vercel** hosting. Its account login is in progress; the
-  production and PR URLs are not yet verified. Do not configure a paid plan.
+- User selected free **Vercel Hobby** hosting. The new `rubar/frostcut` project
+  serves https://frostcut.vercel.app/ (HTTP 200 verified). Its initial `main`
+  deployment is 66ea8dd and does not yet contain the isolation/metadata changes;
+  publish the prepared PR source before claiming complete runtime verification.
+- [PR #1](https://github.com/rubarbulut/Frostcut/pull/1) opened 2026-10-19 and
+  [quality run 39246105008](https://github.com/rubarbulut/Frostcut/actions/runs/39246105008)
+  passed: 229 tests in 37 files (6.72 s), hosted metadata test, and production build.
+- The actual TestSprite account matches the entrant's provided email. Profile
+  name is Rubar; Free plan shows 150 credits before generation. No trial/upgrade
+  was accepted. The suite and TestSprite GitHub App remain outstanding.
+- The entrant saved the Vercel GitHub App selection for Frostcut. The repo then
+  appeared in Vercel's import list. Existing personal-site selection was retained.
 - `.github/workflows/quality.yml` runs real unit checks, metadata checks and a
   production build on GitHub. Vercel's GitHub integration will deploy the app and
   independent PR previews; no publishing token is placed in this repository.
@@ -68,10 +78,10 @@ Dates/changes must also be checked in the server's pinned announcements.
 | 1 Eligibility | X follow and Discord membership with badge | Handles/access and actual verification pending |
 | 2 Single entry | Check channel for an existing entry, submit once | No entry sent by this agent |
 | 3 Team | List every member | Entrant confirmed Rubar, solo |
-| 4 Portal + GitHub App | Portal-generated suite, same-account App, in-window PR with authentic result | Account login pending; no TestSprite result yet |
-| 5 Public app throughout build | Reachable URL, version evidence, continued uptime | Free publication in preparation; earlier uptime unproven |
+| 4 Portal + GitHub App | Portal-generated suite, same-account App, in-window PR with authentic result | Account verified, PR #1 open; no generated suite/TestSprite result yet |
+| 5 Public app throughout build | Reachable URL, version evidence, continued uptime | Vercel app HTTP 200 on Oct 19; runtime update pending, earlier uptime unproven |
 | 6 Public repo/materials | Public source, README app/live URL/actual coverage, proper channel template | Public repo verified; live/tests/submission still pending |
-| 7 Account match | Submission account equals suite-generation and App account | Entrant specified account privately; portal proof pending |
+| 7 Account match | Submission account equals suite-generation and App account | Portal email verified; use this same account for pending generation/App steps |
 | 8 CLI bonus | Optional separate genuine issue/fix/test/PR, checkbox, handle and maintainer merge | Not entered; not required for the project track |
 | 9 Marketing rights | Entrant understands submission permits credited marketing use | Entrant acknowledgement required at submission |
 | 10 Prize payment | Winner handles organizer's legitimate payout request privately | Conditional on winning; no payment or financial data supplied |
@@ -84,7 +94,7 @@ Dates/changes must also be checked in the server's pinned announcements.
 | 17 Privacy | Only required entrant details in the actual authorized submission | Email omitted from public files |
 | 18 Changes/cancellation | Recheck official announcements before entry | Website read; server announcements still need access |
 | 19 Governing terms | Entrant reviews applicable event terms | Acknowledgement at final submission; no legal eligibility claim |
-| 20 Account/credits | Same account; real balance; credit form only when depleted | Login/balance pending; entrant reports filling the form, submission/eligibility unverified |
+| 20 Account/credits | Same account; real balance; credit form only when depleted | Free plan/150 credits verified; entrant reports filling form; no duplicate boost requested |
 | 21 Scoring/Creator Picks | Quality 40, autonomous tests 40, innovation 20; authentic engagement only | Coverage/PR integration being built; no score or recognition claimed |
 
 The [credit boost form](https://docs.google.com/forms/d/e/1FAIpQLSf5F0r-16l5RkBbnHaYEYaDAbacZ4wESjbPyyXygjd7Ny_WWg/viewform)
@@ -126,4 +136,4 @@ Frostcut Pages setup was removed; no working Pages site was deployed.
 Local checks: the public-asset path test passed (162 ms), hosted metadata test
 passed (491 ms), and source type-check passed. No local production build, model
 or media/render job ran. The full unit suite/build will run in GitHub Actions;
-its result is pending until the actual run finishes.
+the first run passed as linked above. No TestSprite run has been substituted for it.

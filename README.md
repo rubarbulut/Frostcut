@@ -4,10 +4,12 @@ A local-first video editor built from the FrostCut master spec, with P0 and P1 w
 
 ## Public app and TestSprite Season 4
 
-Live URL: pending the first verified **Vercel Hobby** deployment. Vercel's GitHub
-integration will provide independent PR previews, each identifying its source
-revision in `_deployment.json`. GitHub runs unit checks and production builds
-remotely. Production and PR URLs will be recorded here after publication.
+Live app: [frostcut.vercel.app](https://frostcut.vercel.app/) on **Vercel Hobby**.
+Hosted runtime verification is in progress. Vercel's GitHub integration publishes
+independent PR previews; hosted builds identify their source in `_deployment.json`.
+The [initial PR](https://github.com/rubarbulut/Frostcut/pull/1) has a passing
+[GitHub quality run](https://github.com/rubarbulut/Frostcut/actions/runs/39246105008):
+229 unit tests and a production build. These are separate from TestSprite results.
 
 The TestSprite **3.0 portal suite and GitHub App are being configured**. No generated
 suite or TestSprite pass is claimed yet. The [coverage brief](docs/testsprite-coverage.md)

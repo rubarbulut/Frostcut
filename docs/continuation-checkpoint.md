@@ -21,6 +21,16 @@ remaining account/portal/social/submission proof and publication state. Keep the
 user's account email out of public files. Free publication was explicitly approved;
 no paid service or duplicate submission is authorized by that choice.
 
+Current TestSprite setup: PR #1 is open, head 38eca80. Its actual quality run
+39246105008 passed 229 unit tests/37 suites, hosted metadata check and build.
+The new Vercel Hobby project `rubar/frostcut` serves frostcut.vercel.app (200),
+initially from main 66ea8dd. The prepared feature branch still needs publication
+for real isolation headers and _deployment.json before portal generation. The
+entrant's real TestSprite email is verified; profile name Rubar, Free/150 credits.
+The entrant saved Vercel's Frostcut GitHub App selection. Generate in the 3.0 portal
+before installing TestSprite's App; then actual preview/trigger/check/blocking/
+rerun proof and Discord/X/eligibility/one final submission remain required.
+
 Nested sequence source-model work is saved/pushed as ae6997d on
 `codex/nested-sequences`, in the attached managed worktree:
 `C:/Users/Arenb/.codex/worktrees/nested-sequences/Videoeditor`.
