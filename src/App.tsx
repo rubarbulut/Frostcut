@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { publicAsset } from './public-asset';
+import { loadBuiltinSample } from './builtin-sample';
 import { useShallow } from 'zustand/react/shallow';
 import {
   Snowflake,
@@ -305,13 +306,7 @@ export default function App() {
   async function demo() {
     try {
       setToast('Opening the sample project…');
-      const response = await fetch(publicAsset('demo.mp4'));
-      if (!response.ok)
-        throw new Error('Sample video is unavailable. Import your own footage to start.');
-      const file = new File([await response.blob()], 'A better story — sample.mp4', {
-          type: 'video/mp4',
-        }),
-        asset = await inspectMedia(file);
+      const { file, asset } = await loadBuiltinSample(inspectMedia);
       asset.demo = true;
       registerMedia(asset, file);
       let next = addMedia(createProject('A better story', 'YouTube Shorts'), asset);

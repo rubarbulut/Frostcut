@@ -14,6 +14,10 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
 
 ## Active development location — resume here
 
+The general autonomous development goal currently reports **paused**. Continue the
+separately requested TestSprite/hackathon setup; do not resume broad nested-sequence
+development automatically after this work.
+
 The immediate user priority is TestSprite Season 4 setup, now being prepared on
 `codex/testsprite-hackathon` in this original checkout. Read
 docs/hackathon-season-4.md and docs/testsprite-coverage.md for actual requirements,
@@ -30,11 +34,16 @@ The entrant approved Frostcut-only preview authentication removal; it was saved,
 with the personal rubar.me project untouched. The entrant's TestSprite email is
 verified; profile Rubar, Free/150 before generation. Actual portal project
 a34e8de5-bcc5-43f5-8de6-91793ac81697 finished exploration; 12 distinct reviewed
-cases from 57 mostly duplicates are in real execution
-2aeddbd3-edee-4ef0-bcab-936f29b2350a. The sample-opening case failed because cloud
+cases from 57 mostly duplicates finished in real execution
+2aeddbd3-edee-4ef0-bcab-936f29b2350a: 0 passed, 8 failed, 4 blocked. The sample-opening case failed because cloud
 Chromium cannot decode the H.264 MP4; it opened locally in a brief UI smoke check.
-A GitHub-only workflow prepares a VP9 lossless-video/Opus-audio sample and checks
-every decoded frame against the unchanged MP4; do not encode on the user's PC.
+A GitHub-only workflow prepared a VP9 lossless-video/Opus-audio sample in successful
+run 39250091522; all 576 decoded frames match. The original MP4 remains unchanged;
+the additional WebM has 8 ms codec padding. Actual-inspection fallback is implemented
+with four focused tests (324 ms) and a passed source type-check. No local encode ran.
+See docs/sample-format-evidence.json. Deploy and rerun the real suite; don't claim
+TestSprite success yet. Allow one-frame timing tolerance in test requirements and
+use the real selected media filename (MP4 or WebM), not a hardcoded MP4-only label.
 TestSprite App 173013929 is connected but initially All repositories; user was
 asked to save Frostcut-only scope because the agent's repo picker stayed empty.
 PR trigger form detects Vercel commit status, with target pattern

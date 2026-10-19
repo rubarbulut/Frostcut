@@ -2,7 +2,7 @@
 
 The FC labels below are requirements supplied to the **TestSprite 3.0 web portal**,
 not generated test IDs or passing results. A real reviewed 12-case initial run has
-now started; see its actual evidence below. Use the deployed source in
+now finished; see its actual evidence below. Use the deployed source in
 `_deployment.json`, never a hardcoded old source revision in future PR cases.
 
 ## Product and test setup
@@ -67,7 +67,7 @@ unbounded run schedule is part of this setup.
 | --- | --- |
 | Portal project / suite | Project a34e8de5-bcc5-43f5-8de6-91793ac81697; exploration finished; 12 reviewed distinct cases generated/run |
 | Generated core case IDs/count | 12 selected from 57 proposed across 6 use cases; sample test case 2eb00247-3b2a-4a30-bc8c-d5e41af4cacb; append remaining IDs after completion |
-| Initial execution and failures | [2aeddbd3-edee-4ef0-bcab-936f29b2350a](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/2aeddbd3-edee-4ef0-bcab-936f29b2350a) in progress; sample MP4 cannot be decoded by cloud browser; real failure preserved |
+| Initial execution and failures | [2aeddbd3-edee-4ef0-bcab-936f29b2350a](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/2aeddbd3-edee-4ef0-bcab-936f29b2350a): 0 passed, 8 failed, 4 blocked; sample MP4 cannot be decoded by cloud browser; real failure preserved |
 | Final passing execution | Pending |
 | Entry PR with authentic TestSprite comment/check | PR #1 open; authentic TestSprite result pending |
 | New-commit automatic rerun | Pending |

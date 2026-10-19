@@ -23,7 +23,7 @@ for (let attempt = 0; attempt < 24; attempt++) {
   await new Promise((done) => setTimeout(done, 5000));
 }
 if (!verified) throw new Error('Published source revision did not become reachable');
-for (const asset of ['', 'demo.mp4', 'spoken-demo.srt', 'fonts/NotoSans.ttf',
+for (const asset of ['', 'demo.mp4', 'demo.webm', 'spoken-demo.srt', 'fonts/NotoSans.ttf',
   'runtime/ffmpeg-core.js', 'runtime/ffmpeg-core.wasm', 'models/blaze_face_short_range.tflite']) {
   const response = await fetch(new URL(asset, target), {
     method: 'HEAD', redirect: 'manual', signal: AbortSignal.timeout(15000),

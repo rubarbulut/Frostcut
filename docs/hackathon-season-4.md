@@ -34,11 +34,20 @@ public repository. This is a preparation/evidence record, **not a submitted entr
   edit values, file assertions and undo/redo checks before generating/running.
 - First real portal execution:
   [2aeddbd3-edee-4ef0-bcab-936f29b2350a](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/2aeddbd3-edee-4ef0-bcab-936f29b2350a).
-  It is running; its sample-opening case failed with the actual message
+  It finished with **0 passed, 8 failed, 4 blocked**. Its sample-opening case failed
+  with the actual message
   "Your browser cannot preview this format. Try an H.264 MP4."
   A short local check opened the real sample editor (one V1 clip, eight C1 blocks).
-  A second built-in sample format is being prepared on GitHub, with decoded video
-  frame hashes checked against the unchanged original. No local encode is needed.
+  A second built-in sample format was prepared by
+  [GitHub run 39250091522](https://github.com/rubarbulut/Frostcut/actions/runs/39250091522):
+  all **576 decoded video frames match**, dimensions remain 360×640, audio remains
+  present as Opus, and the container adds 8 ms of codec padding (24.008 s). The
+  unchanged original MP4 remains the first choice on supporting browsers. Actual
+  metadata inspection is mandatory for either format; no fake playable asset is
+  synthesized. [Hashes and probe evidence](sample-format-evidence.json) are saved.
+  Four focused compatibility checks passed in 324 ms and source type-check passed;
+  no video encoding or full browser suite ran on the user's computer. The real
+  cloud rerun is still needed before claiming the fix passed TestSprite.
 - The portal now reports TestSprite GitHub App installation `173013929` connected
   on rubarbulut. GitHub showed it installed with All repositories access; narrowing
   to Frostcut is pending the entrant because the repo picker did not show options.
@@ -106,7 +115,7 @@ Dates/changes must also be checked in the server's pinned announcements.
 | 1 Eligibility | X follow and Discord membership with badge | Handles/access and actual verification pending |
 | 2 Single entry | Check channel for an existing entry, submit once | No entry sent by this agent |
 | 3 Team | List every member | Entrant confirmed Rubar, solo |
-| 4 Portal + GitHub App | Portal-generated suite, same-account App, in-window PR with authentic result | 12-case initial portal run started; sample decode failure; App connected, scope/trigger/result pending |
+| 4 Portal + GitHub App | Portal-generated suite, same-account App, in-window PR with authentic result | 12-case initial run: 0 pass, 8 fail, 4 blocked; portable sample fix awaits rerun; App scope/trigger/PR result pending |
 | 5 Public app throughout build | Reachable URL, version evidence, continued uptime | Production and PR preview verified Oct 19 at 9b4a9a9; earlier uptime unproven |
 | 6 Public repo/materials | Public source, README app/live URL/actual coverage, proper channel template | Public repo verified; live/tests/submission still pending |
 | 7 Account match | Submission account equals suite-generation and App account | Portal email verified; use this same account for pending generation/App steps |

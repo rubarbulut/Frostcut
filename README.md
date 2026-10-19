@@ -16,11 +16,13 @@ The [initial PR](https://github.com/rubarbulut/Frostcut/pull/1) has a passing
 The [TestSprite 3.0 project](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/settings/source)
 generated a reviewed 12-case core suite. Its
 [first cloud execution](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/2aeddbd3-edee-4ef0-bcab-936f29b2350a)
-is in progress and has exposed a sample H.264 decoding failure in the cloud browser.
+finished with 0 passed, 8 failed and 4 blocked: the cloud browser could not decode
+the sample H.264 MP4 and enter the editor. A real additional WebM sample and
+inspected-media fallback are now implemented; their cloud verification is pending.
 No TestSprite pass is claimed. The [coverage brief](docs/testsprite-coverage.md)
 specifies split/undo/redo, caption text/timing/validation/style, timeline navigation,
 preview speed, equal parts, project downloads and invalid-open recovery. After
-the first run, this section will record final counts and the authentic PR result.
+the fix is verified, this section will record the authentic PR result.
 See the [complete entry checklist](docs/hackathon-season-4.md) for all requirements.
 
 The public static editor runs its media workflows in your browser. The optional
