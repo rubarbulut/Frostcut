@@ -110,6 +110,16 @@ function VideoLayer({
     onDegrade,
     previewRate,
   ]);
+  useEffect(() => {
+    const v = ref.current;
+    return () => {
+      if (v) {
+        v.pause();
+        v.removeAttribute('src');
+        v.load();
+      }
+    };
+  }, []);
   if (!url)
     return active ? (
       <div className="missing-preview">
@@ -146,6 +156,94 @@ function VideoLayer({
     </>
   );
 }
+
+/**
+ * ActiveWindowDecoder: Sanallaştırılmış Video Dekoder Havuzu (Virtual Decoder Pool)
+ * Tarayıcının donanım video dekoder limitini (16 instance) patlatmamak için:
+ * 1. 'playhead' zamanına temas eden (aktif klip)
+ * 2. Bir sonraki kurgu noktasına 2 saniyeden az mesafede olan (ön yükleme / pre-roll klibi)
+ * olmak üzere DOM'da MAKSİMUM 2 adet <video> elemanı tutulur.
+ * Uzaktaki klipler DOM'dan unmount edilir, video elementlerinin 'src' referansı
+ * temizlenerek donanım dekoderleri ve GPU video texture kaynakları anında boşaltılır.
+ */
+export function getActiveWindowClips(project: Project, time: number, preRollWindow = 2.0): Clip[] {
+  const visibleTracks = new Set(
+    project.tracks.filter((t) => !t.hidden).map((t) => t.id),
+  );
+  const tracksOrder = new Map(project.tracks.map((t, i) => [t.id, i]));
+
+  // Görünür kanallardaki video kliplerini timeline ve katman sırasına göre sırala
+  const videoClips = project.clips
+    .filter((c) => visibleTracks.has(c.trackId) && !isAudioClip(project, c))
+    .sort((a, b) => {
+      const trackDiff = (tracksOrder.get(b.trackId) ?? 0) - (tracksOrder.get(a.trackId) ?? 0);
+      if (trackDiff !== 0) return trackDiff;
+      return a.start - b.start;
+    });
+
+  const pool: Clip[] = [];
+
+  // 1. Playhead zamanına temas eden aktif video klibi (en fazla 2)
+  const active = videoClips.filter((c) => time >= c.start && time < clipEnd(c));
+  for (const c of active) {
+    if (pool.length < 2 && !pool.some((p) => p.id === c.id)) {
+      pool.push(c);
+    }
+  }
+
+  // 2. Bir sonraki kurgu noktasına 2 saniyeden az mesafede olan ön yükleme (pre-roll) klibi
+  if (pool.length < 2) {
+    const upcoming = videoClips
+      .filter((c) => c.start >= time && c.start - time <= preRollWindow && !pool.some((p) => p.id === c.id))
+      .sort((a, b) => a.start - b.start);
+
+    for (const c of upcoming) {
+      if (pool.length < 2) {
+        pool.push(c);
+      }
+    }
+  }
+
+  // Aktif ses klipleri (donanım video dekoderi tüketmez)
+  const activeAudio = project.clips.filter(
+    (c) => isAudioClip(project, c) && visibleTracks.has(c.trackId) && time >= c.start && time < clipEnd(c),
+  );
+
+  return [...pool, ...activeAudio];
+}
+
+export function ActiveWindowDecoder({
+  project,
+  time,
+  quality,
+  degraded,
+  onDegrade,
+}: {
+  project: Project;
+  time: number;
+  quality: PreviewQuality;
+  degraded: string[];
+  onDegrade: (id: string) => void;
+}) {
+  const windowClips = useMemo(
+    () => getActiveWindowClips(project, time),
+    [project, time],
+  );
+
+  return (
+    <>
+      {windowClips.map((c) => (
+        <VideoLayer
+          key={c.id}
+          clip={c}
+          quality={quality}
+          degraded={degraded.includes(c.mediaId)}
+          onDegrade={onDegrade}
+        />
+      ))}
+    </>
+  );
+}
 export default function Preview({
   onImport,
   processing = false,
@@ -168,7 +266,6 @@ export default function Preview({
     setPlaying = useEditor((s) => s.setPlaying),
     frame = useRef<HTMLDivElement>(null),
     total = duration(p),
-    clips = useMemo(() => clipTimelineIndex(p, true), [p.clips, p.tracks]),
     captions = useMemo(() => captionTimelineIndex(p), [p]),
     caption = captions.first(time),
     appearance = captionAppearance(p.captions);
