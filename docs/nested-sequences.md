@@ -236,6 +236,42 @@ dependencies; no install/model download or extra dev server was started.
   Source currentTime checks do not prove encoded frame PTS/presentation accuracy;
   real decoder, timing, pixels, playback and memory acceptance remains pending.
 
+## Independent audio timeline increment
+
+- `SequenceAudioTimeline` compiles an edit-time audio interval index independently
+  of the visual frame plan. Queries include actual crossfade pre/post handles,
+  including a following clip's sound before its visible start. Native clip order
+  and half-open ends remain stable for arbitrary seeks.
+- Every placement retains its full instance path, owning sequence time/rate,
+  source time/rate, local fade/duck/volume envelope and voice-processing flag.
+  Completed child buses remain hierarchical: group voice processing and gain are
+  not approximated by multiplying those values into each native leaf. Repeated
+  placements of one child keep independent clocks, even at different speeds.
+- Checked source-audio availability is required for reachable audible files;
+  unknown reports fail rather than becoming silent. Known silent sources cannot
+  invent speech ducking. Local track/A1 mute and detached/audio-only routing are
+  retained; hiding a video track does not mute its sound.
+- Fixed reference out points survive a shortened child. Such a placement remains
+  on its parent's clock, but its out-of-child-range frame contains silence rather
+  than a repeated final sample. Query expansion above 2,048 simultaneous audio
+  placements fails explicitly before returning a partial result.
+- Full-graph validation precedes one shared snapshot of the current edit and
+  sequence views. Later edits/relinks/report changes cannot alter an existing
+  plan. Seeks do not clone projects; window metadata is read-only/frozen and local
+  gain functions can be queried on their owning clocks by the eventual mixer.
+- Eight new tests plus existing audio-graph/window regressions passed: **19 tests
+  in 1.17 seconds**, one active worker. Final source type-check passed. Tests use
+  small real project metadata and checked availability flags, not real sound.
+  No decoder, playback, FFmpeg, model, GPU, browser suite or build was started.
+
+This is the required query/clock layer, not a live audio mixer. Main/proposed
+preview still does not mount nested playback. Next, implement actual hierarchical
+bus/source ownership with cancellation, pitch-preserving group timing, local
+processing/envelopes and shared master mute/metering; then connect both previews.
+Do not replace completed-child processing with per-leaf gain/rate shortcuts or
+claim audible preview/export parity from metadata tests. Caption rollup, insertion
+UI and actual media acceptance remain in scope.
+
 ## Implemented reference plan
 
 - A `SequenceReferenceClip` has a real child sequence ID and editable parent
@@ -300,7 +336,9 @@ browser suite or production build was started.
    quality/controls and actual audio routing; do not expose silent nested playback.
 5. Actual hierarchical export audio filters/routing are implemented. Connect live
    playback to real hierarchical buses, gains/fades/ducking and local clock rates,
-   including source audio availability and nonlinear group processing. Define child
+   including source audio availability and nonlinear group processing. Independent
+   audio-window/clock queries now exist in sequence-audio-timeline.ts; they are not
+   a live mixer and must not be replaced by visual-only timing. Define child
    caption text/sidecar rollup alongside visual compositing; do not drop child text.
 6. Brief unit/type checks can continue now. Actual interaction, decoder timing,
    nested captions/audio/effects, playback and decoded MP4/parts/batch quality need

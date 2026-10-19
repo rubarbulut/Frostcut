@@ -268,6 +268,16 @@ rendering must be updated together for visual features.
 
 ## Transcript chapter delivery
 
+The development branch now also has independent hierarchical audio-window queries
+in `sequence-audio-timeline.ts`, including real crossfade handles, owner/source
+clocks, distinct placement paths, local gain/duck envelopes, checked source audio,
+mute/detachment and shortened-child silence. Queries preserve completed-child
+processing boundaries and snapshot once per edit. Eight new checks plus audio/
+window regressions passed (19 tests, 1.17s, one worker); source type-check passed.
+No audio/media/AI/GPU/browser/build ran. Real live buses/transport, main/proposed
+preview ownership, text rollup, insertion UI and output acceptance still remain;
+this query layer does not deliver audible nested playback or close P2.
+
 The latest nested-branch audio preparation reuses checked File-identity ffprobe
 reports, preserves relink/error/cancellation semantics, and supplies indexed
 crossfade windows to both actual export paths. Native ducking excludes checked

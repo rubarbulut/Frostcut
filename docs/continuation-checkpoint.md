@@ -19,16 +19,34 @@ the original checkout; no install or extra dev server is needed.
 
 ## Current state
 
+- Hackathon technical setup is now merged on stable main as **42f3b43**, PR #1.
+  Public https://frostcut.vercel.app/ verified that exact revision/headers/assets.
+  Required PR checks passed: 233 unit + seven real Chromium cases, and the actual
+  new-commit automatic TestSprite core run passed 10/10. Main's post-merge quality
+  run39259923414 also passed. Read PR #1 for current evidence; older setup notes
+  in this branch predate that delivery. Separate Season4 submission channel/template
+  and final terms/publication approval remain; no entry was sent. User declined
+  an admin access question. Keep technical completion distinct from final entry.
+- The next nested increment now implements SequenceAudioTimeline: real audio-window
+  indexes include crossfade handles independently of visible frames; hierarchical
+  local buses/envelopes, complete instance paths and owner/source rate products
+  survive repeated placements and shortened children. Checked no-audio/mute/
+  detached routing and speech ducking remain explicit. One snapshot per edit,
+  no per-seek project copies; 2,048 active audio-placement bound fails explicitly.
+  Eight new checks and existing graph/window checks: 19 passed in 1.17s, one active
+  worker; final source type-check passed. No real sound/media/model/GPU/build ran.
+  This is not a live mixer. Next implement actual hierarchical audio bus/transport
+  ownership and group pitch/processing semantics, then connect main/proposed
+  preview controllers; preserve child caption rollup/insertion UI/output acceptance.
+
 - Latest audio increment shares real checked source audio reports across native/
   nested export, with File-identity caching, relink/error/abort guards and native
   no-audio ducking. Explicit preview preparation exists but is not mounted.
   Crossfade-window indexes now feed both export paths and optional gain plans.
   Seven report tests passed in 842 ms; 21 focused audio/window tests passed in
   1.00 s, one active worker; final source type-check passed. No actual media, AI,
-  codec or heavy workload ran. Next nested work remains hierarchical audio query
-  windows/buses and preview ownership. The user now prioritizes researching and
-  implementing TestSprite Season 4 entry requirements; preserve the nested
-  branch while preparing the stable application and real portal/PR evidence.
+  codec or heavy workload ran. The independent query windows are now implemented
+  as described above; actual buses/transport and preview ownership remain.
 
 - cf82af6: optional local accepted-edit preference memory, linked to actual
   Undo/Redo. Ten focused tests/type-check passed; browser review pending.
