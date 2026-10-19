@@ -9,14 +9,23 @@ export function extractYouTubeId(rawUrl: string): string | null {
 
   // Pattern matches:
   // - youtube.com/watch?v=ID
+  // - youtube.com/watch?...&v=ID
   // - youtu.be/ID
   // - youtube.com/shorts/ID
+  // - youtube.com/live/ID
   // - youtube.com/embed/ID
   // - music.youtube.com/watch?v=ID
+  // - m.youtube.com/watch?v=ID
   const match = trimmed.match(
-    /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/i,
+    /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|shorts\/|live\/|(?:watch\?.*v=)))([\w-]{11})/i,
   );
   if (match) return match[1];
+
+  try {
+    const parsed = new URL(trimmed);
+    const vParam = parsed.searchParams.get('v');
+    if (vParam && /^[\w-]{11}$/.test(vParam)) return vParam;
+  } catch {}
 
   // Specific 11-character ID (requires alphanumeric mix)
   if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed) && /[A-Z]/.test(trimmed) && /[0-9]/.test(trimmed)) {
@@ -24,6 +33,21 @@ export function extractYouTubeId(rawUrl: string): string | null {
   }
 
   return null;
+}
+
+/**
+ * Checks whether the local high-performance yt-dlp media engine is active.
+ */
+export async function checkMediaEngineHealth(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/youtube-health', {
+      method: 'GET',
+      signal: 'timeout' in AbortSignal ? (AbortSignal as any).timeout(2500) : undefined,
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -165,10 +189,15 @@ export async function downloadRemoteMedia(
 
       if (!response.ok) {
         let errMsg = `Download failed (${response.status})`;
-        try {
-          const errJson = await response.json();
-          if (errJson.error) errMsg = errJson.error;
-        } catch {}
+        if (response.status === 404) {
+          errMsg =
+            'Local media engine is offline or not installed. YouTube ingest requires running FrostCut locally ("npm run dev" with yt-dlp & ffmpeg). On hosted static deployments (like Vercel), please use the "Local File" tab.';
+        } else {
+          try {
+            const errJson = await response.json();
+            if (errJson.error) errMsg = errJson.error;
+          } catch {}
+        }
         throw new Error(errMsg);
       }
 

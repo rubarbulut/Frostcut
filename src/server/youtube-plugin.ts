@@ -1,13 +1,21 @@
 import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { existsSync, createReadStream, promises as fs } from 'node:fs';
+import { existsSync, createReadStream, promises as fs, readdirSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import type { Plugin, ViteDevServer, PreviewServer } from 'vite';
 
 export function youtubeIngestPlugin(): Plugin {
   const handler = async (req: any, res: any, next: any) => {
     const rawUrl = req.url || '';
+
+    // Endpoint 0: /api/youtube-health - Health check to verify local engine availability
+    if (rawUrl.startsWith('/api/youtube-health')) {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ status: 'ok', engine: 'yt-dlp', ffmpeg: true }));
+      return;
+    }
 
     // Endpoint 1: /api/youtube-meta?url=...
     if (rawUrl.startsWith('/api/youtube-meta')) {
@@ -28,6 +36,8 @@ export function youtubeIngestPlugin(): Plugin {
           '--dump-json',
           '--no-warnings',
           '--no-playlist',
+          '--js-runtimes',
+          'node',
           targetUrl,
         ]);
 
@@ -101,11 +111,15 @@ export function youtubeIngestPlugin(): Plugin {
                 '-m',
                 'yt_dlp',
                 '--no-playlist',
+                '--js-runtimes',
+                'node',
                 '-f',
                 'ba/b',
                 '-x',
                 '--audio-format',
                 'mp3',
+                '--audio-quality',
+                '192k',
                 '-o',
                 outputTemplate,
                 targetUrl,
@@ -114,14 +128,18 @@ export function youtubeIngestPlugin(): Plugin {
                 '-m',
                 'yt_dlp',
                 '--no-playlist',
+                '--js-runtimes',
+                'node',
                 '-f',
-                'bv*[ext=mp4][vcodec^=avc]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/best',
-                '--merge-output-format',
-                'mp4',
+                'bv*[vcodec^=avc]+ba[ext=m4a]/bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/best',
                 '-S',
                 'res:1080,codec:h264',
+                '--recode-video',
+                'mp4',
                 '--postprocessor-args',
-                'ffmpeg:-c:v copy -c:a aac',
+                'VideoConvertor:-c:v libx264 -preset veryfast -crf 22 -c:a aac -b:a 192k -pix_fmt yuv420p',
+                '--postprocessor-args',
+                'FFmpegMerger:-c:v copy -c:a aac',
                 '-o',
                 outputTemplate,
                 targetUrl,
@@ -145,14 +163,20 @@ export function youtubeIngestPlugin(): Plugin {
           }
 
           const finalExt = type === 'audio' ? '.mp3' : '.mp4';
-          const finalPath = `${tempBase}${finalExt}`;
+          let finalPath = `${tempBase}${finalExt}`;
 
           if (!existsSync(finalPath)) {
-            // Check if another extension was produced
-            res.statusCode = 500;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ error: 'Downloaded file not found on disk.' }));
-            return;
+            // Find any output file matching tempId in tmpdir
+            const dirFiles = readdirSync(tmpdir());
+            const matched = dirFiles.find((f) => f.startsWith(tempId));
+            if (matched) {
+              finalPath = join(tmpdir(), matched);
+            } else {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'Downloaded file not found on disk.' }));
+              return;
+            }
           }
 
           const stat = await fs.stat(finalPath);

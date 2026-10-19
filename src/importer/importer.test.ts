@@ -19,12 +19,15 @@ describe('Media & YouTube Importer', () => {
       expect(extractYouTubeId('http://youtu.be/dQw4w9WgXcQ?si=abc123xyz')).toBe('dQw4w9WgXcQ');
     });
 
-    it('extracts ID from YouTube Shorts URL', () => {
+    it('extracts ID from YouTube Shorts and Live URLs', () => {
       expect(extractYouTubeId('https://www.youtube.com/shorts/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+      expect(extractYouTubeId('https://www.youtube.com/live/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+      expect(extractYouTubeId('https://www.youtube.com/watch?feature=shared&v=dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
     });
 
-    it('extracts ID from embed and music URLs', () => {
+    it('extracts ID from embed, mobile, and music URLs', () => {
       expect(extractYouTubeId('https://www.youtube.com/embed/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+      expect(extractYouTubeId('https://m.youtube.com/watch?v=dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
       expect(extractYouTubeId('https://music.youtube.com/watch?v=dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
     });
 

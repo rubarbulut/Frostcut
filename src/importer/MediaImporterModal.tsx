@@ -1,4 +1,4 @@
-import { useState, useRef, type DragEvent, type ChangeEvent } from 'react';
+import { useState, useRef, useEffect, type DragEvent, type ChangeEvent } from 'react';
 import {
   Youtube,
   Music,
@@ -18,6 +18,7 @@ import {
   isValidMediaUrl,
   resolveRemoteMedia,
   downloadRemoteMedia,
+  checkMediaEngineHealth,
 } from './youtube-resolver';
 import { isAudioOnlyFile, inspectAudioFile } from './audio-inspector';
 import type { IngestJobProgress, IngestMediaType, RemoteMediaMeta } from './types';
@@ -37,6 +38,7 @@ export function MediaImporterModal({
   const [urlInput, setUrlInput] = useState('');
   const [targetType, setTargetType] = useState<IngestMediaType>('video');
   const [mediaMeta, setMediaMeta] = useState<RemoteMediaMeta | null>(null);
+  const [engineOnline, setEngineOnline] = useState<boolean | null>(null);
   const [resolving, setResolving] = useState(false);
   const [progress, setProgress] = useState<IngestJobProgress>({
     phase: 'idle',
@@ -46,6 +48,17 @@ export function MediaImporterModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    checkMediaEngineHealth().then((ok) => {
+      if (!cancelled) setEngineOnline(ok);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -172,6 +185,15 @@ export function MediaImporterModal({
         {/* Tab 1: YouTube / URL */}
         {activeTab === 'youtube' && (
           <div className="importer-content-section">
+            {engineOnline === false && (
+              <div className="importer-warning-box">
+                <AlertCircle size={15} style={{ flexShrink: 0 }} />
+                <span>
+                  <b>Local Media Engine Offline:</b> Direct YouTube stream extraction runs via local yt-dlp & ffmpeg (<code>npm run dev</code>). On hosted deployments (like Vercel), please use the <b>Local File</b> tab.
+                </span>
+              </div>
+            )}
+
             <div className="importer-input-group">
               <label htmlFor="remote-url-input">Paste YouTube, Shorts, or Direct Stream Link</label>
               <div className="importer-input-row">
