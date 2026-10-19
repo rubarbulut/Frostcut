@@ -266,6 +266,14 @@ rendering must be updated together for visual features.
 
 ## Transcript chapter delivery
 
+Latest nested branch checkpoint is 73396b1: checked source report caching keyed
+by immutable File and indexed crossfade windows feed native/nested export. The
+explicit preview preparation API is unconnected. Seven report checks plus 21
+focused window/audio checks passed in brief separate runs with one active worker;
+source type-check passed. Live hierarchical audio and remaining nested consumers
+are still pending. The user now prioritizes TestSprite Season 4 setup on a separate
+branch; this does not close P2 or merge incomplete nested work into the public app.
+
 - Creator tools → Chapters offers manual editing, a non-model transcript structure
   mode and a real local semantic embedding worker. Both suggestion paths use
   existing timeline-adjusted transcript text; titles are extracted from that text.

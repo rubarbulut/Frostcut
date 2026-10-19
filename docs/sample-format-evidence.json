@@ -1,0 +1,49 @@
+{
+  "source": "public/demo.mp4",
+  "output": "browser-demo/demo.webm",
+  "sourceSha256": "7b3e5494371dc0917dbb8190ebee2925ae5382a26d3f0063aa75a0cdd44ad90b",
+  "outputSha256": "4b90c695d2aca11477a06320f6bc43ede3e5d92ba4c4cf6dbfc76b45e65094af",
+  "verifiedVideoFrames": 576,
+  "videoFramesIdentical": true,
+  "original": {
+    "programs": [],
+    "streams": [
+      {
+        "codec_name": "h264",
+        "codec_type": "video",
+        "width": 360,
+        "height": 640
+      },
+      {
+        "codec_name": "aac",
+        "codec_type": "audio",
+        "sample_rate": "48000",
+        "channels": 1
+      }
+    ],
+    "format": {
+      "duration": "24.000000"
+    }
+  },
+  "portable": {
+    "programs": [],
+    "streams": [
+      {
+        "codec_name": "vp9",
+        "codec_type": "video",
+        "width": 360,
+        "height": 640
+      },
+      {
+        "codec_name": "opus",
+        "codec_type": "audio",
+        "sample_rate": "48000",
+        "channels": 1
+      }
+    ],
+    "format": {
+      "duration": "24.008000"
+    }
+  },
+  "note": "Additional VP9 lossless video / Opus audio sample for browsers without H.264. The original MP4 remains unchanged."
+}

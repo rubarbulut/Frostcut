@@ -1,0 +1,52 @@
+name: FrostCut quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test -- --maxWorkers=1 --no-file-parallelism
+      - run: node --test scripts/write-deployment.test.mjs
+      - name: Build and record the source revision
+        env:
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: npm run build:hosted
+      - name: Install the real Chromium browser on the GitHub runner
+        run: npx playwright install --with-deps chromium
+      - name: Verify actual files, caption gestures, navigation, playback and recovery
+        run: npx playwright test --config=playwright.hackathon.config.ts
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: browser-file-failure-${{ github.sha }}
+          path: test-results/hackathon/
+          retention-days: 2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: production-build-${{ github.sha }}
+          path: dist
+          retention-days: 2
+
+# Vercel's GitHub App publishes the actual PR preview. TestSprite's GitHub App
+# must run the portal-generated suite AFTER that deployment is Ready.
+# This workflow does not pretend to be a TestSprite check.

@@ -2,6 +2,51 @@
 
 A local-first video editor built from the FrostCut master spec, with P0 and P1 workflows implemented. React, TypeScript, Vite, Zustand, IndexedDB, Transformers.js, MediaPipe, and FFmpeg.wasm. Core editing, transcription, translation and export run on the device, without an account or a media upload endpoint. Public stock and topic searches are explicit network actions.
 
+## Public app and TestSprite Season 4
+
+Live app: [frostcut.vercel.app](https://frostcut.vercel.app/) on **Vercel Hobby**.
+Production and the entry PR preview were verified at source `9fbecb8` on October 19:
+public metadata, isolation headers, MP4/WebM demos, captions, fonts and runtime/model assets.
+Vercel's GitHub integration publishes independent PR previews; hosted builds
+identify their source in `_deployment.json`.
+The [entry PR](https://github.com/rubarbulut/Frostcut/pull/1) has a passing
+[GitHub quality run](https://github.com/rubarbulut/Frostcut/actions/runs/39253972919):
+**233 unit tests, a production build, and five real Chromium scenarios** covering
+caption dragging/resizing/history, exact timing, actual JSON download/reimport,
+invalid JSON/SRT recovery and equal-parts file persistence.
+
+The portal-generated **FrostCut PR core** suite
+[passed all 10 cases](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/2b7bdea7-7743-4036-96f1-3527e99a4ea3/execution/8ccb1dc9-ee0e-4def-9f96-c853b108c56f):
+sample opening, split/history, caption text/timing/validation/manual edits/style,
+preview speed, timeline panning, equal parts and project rename/autosave recovery.
+Its assertions use actual UI and IndexedDB reloads. Native file/gesture assertions
+run separately in the five Chromium cases; neither suite claims ASR or render coverage.
+
+TestSprite's real GitHub App watches completed Vercel deployments and runs the
+portal suite on PR previews. Main requires **TestSprite V3** from TestSprite and
+**Quality checks** from GitHub Actions, with strict up-to-date checks including admins.
+The PR carries the authoritative results for its latest source revision.
+
+The first automatic core run on a new commit exposed inconclusive agent evidence
+for mouse panning. The required Chromium selection now also includes actual
+middle-mouse/Hand panning, cursor-anchored zoom and playback-rate isolation.
+The portal navigation case uses a visible minimap/Playhead comparison instead;
+its earlier failed execution is preserved. Newer results are recorded on the PR.
+
+The original 12-case diagnostic suite and all failed/blocked history are retained.
+Its first run exposed a real H.264 limitation in cloud Chromium. The added WebM
+sample preserves all 576 decoded video frames; the original MP4 stays unchanged.
+[Subsequent PR evidence](https://github.com/rubarbulut/Frostcut/pull/1#issuecomment-6267077384)
+verified sample opening but blocked at native downloaded-file inspection, motivating
+the separate real file runner. See the [coverage and execution evidence](docs/testsprite-coverage.md).
+See the [complete entry checklist](docs/hackathon-season-4.md) for all requirements.
+
+The public static editor runs its media workflows in your browser. The optional
+YouTube URL downloader needs the local Vite/Python helper and is not a hosted API.
+First model use requires a model download; it never starts on opening the app.
+`vercel.json` preserves the editor's COOP/COEP isolation headers. Original local
+editing and quality settings are unchanged. No paid hosting plan is configured.
+
 ## Run locally
 
 ```sh

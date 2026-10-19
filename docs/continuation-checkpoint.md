@@ -1,4 +1,4 @@
-# Continuation checkpoint — 2026-09-30
+# Continuation checkpoint — 2026-10-19
 
 The user requested checkpoints before credits run out, and now authorizes an
 ongoing autonomous improvement loop until they say stop. Keep the full development
@@ -14,11 +14,83 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
 
 ## Active development location — resume here
 
+The user resumed the general autonomous goal on October 19; `get_goal` now reports
+**active**. Keep the full development objective open. TestSprite/hackathon setup
+remains the immediate priority; all local work must stay light while they animate.
+
+The immediate user priority is TestSprite Season 4 setup, now being prepared on
+`codex/testsprite-hackathon` in this original checkout. Read
+docs/hackathon-season-4.md and docs/testsprite-coverage.md for actual requirements,
+remaining account/portal/social/submission proof and publication state. Keep the
+user's account email out of public files. Free publication was explicitly approved;
+no paid service or duplicate submission is authorized by that choice.
+
+Current hackathon branch: codex/testsprite-hackathon; PR #1 open, source 9fbecb8.
+Vercel production and branch preview were verified at that source, including actual
+metadata, isolation headers, MP4/WebM and runtime assets. Production deployment
+6BDmSSTVxML1maSXipaFiJCKGtXH was promoted from the PR. Personal rubar.me untouched.
+Frostcut-only preview authentication removal was explicitly approved/saved.
+
+Actual quality run 39253972919 passed 233 unit tests/38 files, metadata/build and
+5/5 real Chromium scenarios: caption gestures/history/exact timing, real backup
+JSON download/content/reimport/style, invalid JSON/SRT recovery, equal-parts file
+roundtrip. A prior 4/5 run had a test selector error, fixed to actual combobox role.
+No new local full build/browser/media/model workload ran; cloud execution did.
+
+Actual FrostCut PR core portal project 2b7bdea7-7743-4036-96f1-3527e99a4ea3 generated
+10 reviewed scenarios and passed 10/10, zero failed/blocked, in execution
+8ccb1dc9-ee0e-4def-9f96-c853b108c56f. Scope is visible editing and IndexedDB reload,
+not native-file/drag/ASR/render proof. Separate real Chromium checks cover files
+and gestures. Original diagnostic project a34e8de5-bcc5-43f5-8de6-91793ac81697 and
+all failures/blocked reports remain. Its old duplicate trigger is disabled.
+Initial real failure exposed H.264 incompatibility; additional WebM is implemented
+with mandatory metadata inspection and all 576 decoded video frames identical.
+See docs/sample-format-evidence.json; original MP4 retained. Preparation ran on GitHub.
+
+Core Vercel commit-status trigger saved Active; Merge gate enabled. Target pattern
+https://frostcut-git-{branch-slug}-rubar.vercel.app/ . Real manual PR event execution
+72f0b84b-a955-4be9-9688-4a4c4996b58f passed 10/10; actual TestSprite V3 success.
+Need genuine
+new-commit core auto result on final head before merging; do not infer success.
+Commit a1aa503 genuinely auto-started core run 0d710c47-b2da-433f-9df6-b06854fbf780.
+Its pan case failed because the agent clicked minimap but could not prove required
+native drag/before-after viewport positions. Keep the real failure/history. Portal
+case 0858170e-2b51-493c-b535-236af80145be now asserts actual Playhead 0 -> minimap
+midpoint (10-14s) -> reset 0, unchanged baseline/Undo. Save & Run started one case.
+Quality now selects seven actual Chromium cases, adding existing real middle/Hand
+pan/cursor-anchored zoom and 4x playback/saved-speed tests. Backup JSON now explicitly
+checks edited tokens/exact source times/alignment before real reimport. Local list
+only confirmed seven, no browser launched. Read actual new cloud outcomes before
+claiming final pass. The prior a1aa503 Quality run39257442735 passed 233 + five cases.
+Prior substantive commit 7f1c924 automatically ran diagnostic execution 40ad35dd,
+which genuinely failed (2 pass, 2 fail, 8 blocked). Main is protected: strict required
+Quality checks App15368 and TestSprite V3 App2756476, enforce admins and conversation
+resolution. Real failed status kept PR blocked. No fake status or bypass.
+
+Entrant profile/email verified in same Free TestSprite account; no paid trial.
+User saved TestSprite App installation173013929 to only Frostcut; fresh GitHub UI
+confirmed exactly one selected repo. User confirms Discord unique/display name
+Rubar, membership with badge, X @RubarAren following TestSprite. Discord web
+membership/session is verified, actual username rubar. Official Season 4 rules show the
+submission channel as No access (opens Oct19); channel browser search returns only
+archived Seasons1-3 forums. Season4 discussion has no pins and confirms Oct22
+23:59PT deadline. Do not submit to the old forum. Current template/duplicate check
+and one final entry remain unavailable until the actual Season4 channel opens.
+User reports credit boost form submitted; do not
+duplicate or attest zero balance. Entrant age/region/IP/marketing/event-terms
+acknowledgements must precede final submission. No final entry sent by this agent.
+Read latest PR checks and full evidence docs before claiming current pass/merge.
+Keep email out of public repo. Do not enable a paid plan or duplicate entry.
+
 Nested sequence source-model work is saved/pushed as ae6997d on
 `codex/nested-sequences`, in the attached managed worktree:
 `C:/Users/Arenb/.codex/worktrees/nested-sequences/Videoeditor`.
-Latest saved/pushed increment: da6a77d, actual independent visual preview source/
-publication driver, following 39cf340's Shorts source fix and 178c8ae's MP4 audio.
+Latest saved/pushed increment: 73396b1, checked File-identity audio report reuse
+and indexed crossfade windows in both actual export paths; explicit preview
+preparation exists but is unconnected. Seven report checks and 21 focused audio/
+window tests passed in separate brief runs, one active worker; source type-check
+passed. No actual media/AI job ran. This follows da6a77d's independent visual
+driver, 39cf340's Shorts source fix and 178c8ae's hierarchical MP4 audio.
 Continue from that branch's current HEAD, not ae6997d.
 Use that directory and its current docs/nested-sequences.md for continuing code.
 Main retains the prior working editor and timing-plan foundation. Do not recreate
