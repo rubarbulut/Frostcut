@@ -1,0 +1,939 @@
+/* ==========================================================================
+   FROSTCUT — THE GLACIAL SANCTUARY (GOTHIC WINTER EDITOR & WORKSPACE)
+   Overdetailed dark fantasy aesthetic: Obsidian bedrock, bioluminescent ice,
+   wrought-iron tracery, cathedral lancet arches, and glowing runes.
+   ========================================================================== */
+
+:root {
+  --goth-abyss: #03060a;
+  --goth-deep: #060a12;
+  --goth-surface: #0a101d;
+  --goth-surface-card: rgba(12, 19, 34, 0.78);
+  --goth-glass: rgba(8, 14, 25, 0.82);
+  --goth-glass-hover: rgba(14, 24, 42, 0.9);
+
+  --goth-cyan: #38bdf8;
+  --goth-cyan-glow: #67e8f9;
+  --goth-frost: #a5f3fc;
+  --goth-ice-white: #f0f9ff;
+  
+  --goth-silver: #94a3b8;
+  --goth-silver-bright: #e2e8f0;
+  --goth-iron: #334155;
+  --goth-iron-dark: #1e293b;
+  
+  --goth-amber: #f59e0b;
+  --goth-amber-glow: #fbbf24;
+  --goth-amethyst: #a855f7;
+
+  --goth-border: rgba(125, 211, 252, 0.18);
+  --goth-border-hover: rgba(125, 211, 252, 0.48);
+  --goth-border-heavy: rgba(125, 211, 252, 0.3);
+  --goth-border-iron: rgba(148, 163, 184, 0.2);
+
+  --font-gothic-display: 'Cinzel Decorative', 'Cinzel', serif;
+  --font-gothic: 'Cinzel', 'Times New Roman', Georgia, serif;
+}
+
+/* ==========================================================================
+   GLOBAL GOTHIC SCROLLBARS & ACCENTS
+   ========================================================================== */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(3, 6, 10, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #1e293b 0%, #38bdf8 50%, #1e293b 100%);
+  border-radius: 4px;
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #38bdf8 0%, #67e8f9 50%, #38bdf8 100%);
+  box-shadow: 0 0 14px rgba(103, 232, 249, 0.6);
+}
+
+::selection {
+  background: rgba(56, 189, 248, 0.3);
+  color: #f0f9ff;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+}
+
+/* ==========================================================================
+   MAIN EDITOR SHELL (THE GLACIAL CITADEL)
+   ========================================================================== */
+.editor {
+  background-color: var(--goth-abyss) !important;
+  background-image: 
+    radial-gradient(ellipse 90% 40% at 50% 0%, rgba(14, 116, 144, 0.18), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 85% 90%, rgba(56, 189, 248, 0.07), transparent 70%),
+    radial-gradient(circle at 10% 80%, rgba(30, 41, 59, 0.3), transparent 60%),
+    linear-gradient(180deg, #05080e 0%, #070c14 45%, #030508 100%) !important;
+  position: relative;
+}
+
+.editor::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.35;
+  z-index: 1;
+}
+
+/* ==========================================================================
+   EDITOR HEADER (THE OBSIDIAN ARCHTRAVE)
+   ========================================================================== */
+.editor-header {
+  height: 58px !important;
+  min-height: 58px !important;
+  background: rgba(6, 10, 18, 0.86) !important;
+  backdrop-filter: blur(28px) !important;
+  -webkit-backdrop-filter: blur(28px) !important;
+  border-bottom: 1px solid var(--goth-border-heavy) !important;
+  box-shadow: 
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 10px 30px rgba(0, 0, 0, 0.7),
+    0 0 25px rgba(56, 189, 248, 0.08) !important;
+  padding: 0 20px !important;
+  position: relative;
+  z-index: 100;
+}
+
+/* Brand pill with gothic crest & snowflake */
+.editor-header .brand-pill {
+  padding: 5px 10px !important;
+  border-radius: 8px !important;
+  background: rgba(12, 19, 34, 0.6) !important;
+  border: 1px solid var(--goth-border) !important;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  gap: 10px !important;
+}
+
+.editor-header .brand-pill:hover {
+  background: rgba(16, 27, 48, 0.85) !important;
+  border-color: var(--goth-cyan) !important;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35) !important;
+  transform: translateY(-1px);
+}
+
+.editor-header .brand-logo-icon {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 8px !important;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.3) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
+  border: 1px solid var(--goth-border-hover) !important;
+  color: var(--goth-cyan-glow) !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3) !important;
+  transition: transform 0.4s ease;
+}
+
+.editor-header .brand-pill:hover .brand-logo-icon {
+  transform: rotate(60deg) scale(1.08);
+  box-shadow: 0 0 22px rgba(103, 232, 249, 0.6) !important;
+}
+
+.editor-header .brand-title {
+  font-family: var(--font-gothic) !important;
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
+  background: linear-gradient(135deg, #ffffff 40%, var(--goth-frost) 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Project Title Pill: Engraved Stone Tablet */
+.editor-header .project-title-pill {
+  background: rgba(10, 16, 28, 0.75) !important;
+  border: 1px solid var(--goth-border) !important;
+  border-radius: 6px !important;
+  padding: 4px 12px !important;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6) !important;
+  transition: all 0.25s ease !important;
+}
+
+.editor-header .project-title-pill:focus-within {
+  border-color: var(--goth-cyan) !important;
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+}
+
+.editor-header .project-name-input {
+  font-family: var(--font-gothic) !important;
+  font-size: 13px !important;
+  letter-spacing: 0.3px !important;
+  color: var(--goth-silver-bright) !important;
+  font-weight: 600 !important;
+}
+
+.editor-header .save-status-pill {
+  color: #34d399 !important;
+  font-size: 10px !important;
+  letter-spacing: 0.6px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  background: rgba(16, 185, 129, 0.12) !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  border: 1px solid rgba(52, 211, 153, 0.25) !important;
+}
+
+/* Aspect Ratio Pill */
+.editor-header .format-indicator-pill {
+  background: rgba(12, 19, 34, 0.7) !important;
+  border: 1px solid var(--goth-border-iron) !important;
+  border-radius: 6px !important;
+  color: var(--goth-frost) !important;
+  font-family: monospace !important;
+  font-weight: 700 !important;
+  transition: all 0.2s ease !important;
+}
+
+.editor-header .format-indicator-pill:hover {
+  border-color: var(--goth-cyan) !important;
+  background: rgba(20, 32, 54, 0.8) !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25) !important;
+}
+
+/* ==========================================================================
+   CENTER ACTION RELICS: FROST SLICE, CHRONO SHARDS, RUNIC SCRIBE
+   ========================================================================== */
+.editor-header .header-center-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.editor-header .action-pill-btn {
+  background: rgba(10, 16, 29, 0.8) !important;
+  border: 1px solid var(--goth-border) !important;
+  border-radius: 8px !important;
+  color: var(--goth-silver-bright) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.2px !important;
+  padding: 6px 14px !important;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.editor-header .action-pill-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.2), transparent);
+  transition: left 0.6s ease;
+}
+
+.editor-header .action-pill-btn:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.editor-header .action-pill-btn:hover:not(:disabled) {
+  border-color: var(--goth-cyan) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.25) !important;
+  color: #fff !important;
+}
+
+/* Auto Cut - Frost Slice */
+.editor-header .action-pill-btn.auto-cut {
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+.editor-header .action-pill-btn.auto-cut svg {
+  color: var(--goth-cyan-glow) !important;
+}
+
+/* Long to Shorts - Chrono Shards */
+.editor-header .action-pill-btn.magic-shorts {
+  border-color: rgba(168, 85, 247, 0.35) !important;
+}
+.editor-header .action-pill-btn.magic-shorts svg {
+  color: var(--goth-amethyst) !important;
+}
+.editor-header .action-pill-btn.magic-shorts:hover:not(:disabled) {
+  border-color: var(--goth-amethyst) !important;
+  box-shadow: 0 4px 18px rgba(168, 85, 247, 0.35) !important;
+}
+
+/* Primary Export: The Glacial Forge */
+.editor-header .header-btn-export.primary-export {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #075985 100%) !important;
+  border: 1px solid var(--goth-cyan-glow) !important;
+  border-radius: 8px !important;
+  box-shadow: 
+    0 0 16px rgba(56, 189, 248, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+  font-family: var(--font-gothic) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.6px !important;
+  text-transform: uppercase !important;
+  padding: 7px 18px !important;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.editor-header .header-btn-export.primary-export:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
+  box-shadow: 
+    0 0 28px rgba(103, 232, 249, 0.6),
+    0 4px 14px rgba(0, 0, 0, 0.6) !important;
+  transform: translateY(-2px) scale(1.02) !important;
+}
+
+/* ==========================================================================
+   WORKSPACE ARCHITECTURE (3 CATHEDRAL N挙げS)
+   ========================================================================== */
+.editor-workspace {
+  background: transparent !important;
+  border-bottom: 1px solid var(--goth-border) !important;
+}
+
+/* Sequence Picker Bar */
+.sequence-picker {
+  background: rgba(7, 11, 19, 0.88) !important;
+  border-bottom: 1px solid var(--goth-border) !important;
+  padding: 6px 20px !important;
+  backdrop-filter: blur(12px) !important;
+}
+.sequence-picker select,
+.sequence-picker input {
+  background: rgba(12, 18, 30, 0.9) !important;
+  border: 1px solid var(--goth-border) !important;
+  color: var(--goth-silver-bright) !important;
+  border-radius: 5px !important;
+}
+
+/* ==========================================================================
+   LEFT PANEL (THE ARCHIVE & RELIQUARY)
+   ========================================================================== */
+.left-panel {
+  background: rgba(6, 10, 18, 0.75) !important;
+  backdrop-filter: blur(20px) !important;
+  border-right: 1px solid var(--goth-border) !important;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Gothic Lancet Arched Tab Bar */
+.left-panel .panel-tabs {
+  background: rgba(4, 7, 13, 0.9) !important;
+  border-bottom: 1px solid var(--goth-border) !important;
+  padding: 8px 6px 0 6px !important;
+  gap: 3px !important;
+  display: flex;
+  overflow-x: auto;
+}
+
+.left-panel .panel-tabs button {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-bottom: none !important;
+  border-top-left-radius: 7px !important;
+  border-top-right-radius: 7px !important;
+  color: var(--goth-silver) !important;
+  font-family: var(--font-gothic) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.3px !important;
+  padding: 8px 10px !important;
+  transition: all 0.2s ease !important;
+  position: relative;
+}
+
+.left-panel .panel-tabs button:hover {
+  color: var(--goth-frost) !important;
+  background: rgba(15, 23, 42, 0.6) !important;
+}
+
+.left-panel .panel-tabs button.active {
+  background: rgba(12, 19, 34, 0.95) !important;
+  border-color: var(--goth-border-heavy) !important;
+  color: #fff !important;
+  box-shadow: 
+    0 -3px 12px rgba(56, 189, 248, 0.2),
+    inset 0 1px 0 var(--goth-cyan) !important;
+}
+
+.left-panel .panel-tabs button.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: var(--goth-cyan-glow);
+  box-shadow: 0 0 8px var(--goth-cyan);
+}
+
+/* Media Cards: Thaw On Hover */
+.asset-item {
+  background: rgba(12, 19, 34, 0.65) !important;
+  border: 1px solid var(--goth-border) !important;
+  border-radius: 8px !important;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  overflow: hidden;
+}
+
+.asset-item:hover {
+  background: rgba(16, 26, 46, 0.85) !important;
+  border-color: var(--goth-cyan) !important;
+  box-shadow: 0 4px 18px rgba(56, 189, 248, 0.25) !important;
+  transform: translateY(-2px);
+}
+
+.asset-item .asset-duration-tag {
+  background: rgba(3, 6, 12, 0.85) !important;
+  border: 1px solid rgba(125, 211, 252, 0.3) !important;
+  color: var(--goth-frost) !important;
+  font-family: monospace !important;
+}
+
+/* ==========================================================================
+   CENTER PANEL & VIDEO PREVIEW (THE FROST MIRROR)
+   ========================================================================== */
+.center-panel {
+  background: radial-gradient(circle at 50% 50%, rgba(10, 16, 28, 0.6), rgba(3, 5, 9, 0.95)) !important;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-viewport-bar {
+  background: rgba(7, 11, 19, 0.8) !important;
+  border-bottom: 1px solid var(--goth-border) !important;
+  backdrop-filter: blur(10px) !important;
+  padding: 6px 16px !important;
+}
+
+.viewport-ratio-chip {
+  background: rgba(12, 19, 34, 0.8) !important;
+  border: 1px solid var(--goth-border) !important;
+  border-radius: 6px !important;
+  color: var(--goth-silver-bright) !important;
+  font-family: monospace !important;
+  font-weight: 700 !important;
+}
+
+.safe-area-toggle-pill {
+  background: rgba(12, 19, 34, 0.8) !important;
+  border: 1px solid var(--goth-border) !important;
+  border-radius: 6px !important;
+  color: var(--goth-silver) !important;
+}
+
+/* Preview Canvas Enclosed in Ornate Gothic Frame */
+.preview {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.preview video,
+.preview canvas {
+  border-radius: 8px;
+  box-shadow: 
+    0 0 0 1px var(--goth-border-heavy),
+    0 15px 45px rgba(0, 0, 0, 0.8),
+    0 0 40px rgba(14, 116, 144, 0.2) !important;
+}
+
+/* Suggestion Banner: Arcane Discovery Talisman */
+.suggestion-banner {
+  background: linear-gradient(135deg, rgba(88, 28, 135, 0.75) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
+  border: 1px solid rgba(168, 85, 247, 0.5) !important;
+  border-radius: 9px !important;
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.35) !important;
+  color: #f3e8ff !important;
+  font-family: var(--font-gothic) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.3px !important;
+  transition: all 0.3s ease !important;
+}
+
+.suggestion-banner:hover {
+  box-shadow: 0 6px 28px rgba(168, 85, 247, 0.55) !important;
+  transform: translateY(-2px);
+  border-color: #c084fc !important;
+}
+
+/* ==========================================================================
+   RIGHT PANEL (PROPERTIES & ADJUSTMENT FORGE)
+   ========================================================================== */
+.properties-panel {
+  background: rgba(6, 10, 18, 0.75) !important;
+  backdrop-filter: blur(20px) !important;
+  border-left: 1px solid var(--goth-border) !important;
+}
+
+.properties-panel .panel-tabs {
+  background: rgba(4, 7, 13, 0.9) !important;
+  border-bottom: 1px solid var(--goth-border) !important;
+  padding: 8px 6px 0 6px !important;
+  gap: 3px !important;
+}
+
+.properties-panel .panel-tabs button.active {
+  background: rgba(12, 19, 34, 0.95) !important;
+  border-color: var(--goth-border-heavy) !important;
+  color: #fff !important;
+  box-shadow: 
+    0 -3px 12px rgba(56, 189, 248, 0.2),
+    inset 0 1px 0 var(--goth-cyan) !important;
+}
+
+/* Inputs, Selects & Sliders */
+.field span {
+  font-family: var(--font-gothic) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.3px !important;
+  color: var(--goth-silver) !important;
+  text-transform: uppercase !important;
+}
+
+.field input,
+.field select,
+.field textarea {
+  background: rgba(10, 16, 29, 0.85) !important;
+  border: 1px solid var(--goth-border) !important;
+  border-radius: 6px !important;
+  color: var(--goth-silver-bright) !important;
+  transition: all 0.2s ease !important;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--goth-cyan) !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.3) !important;
+  outline: none !important;
+}
+
+/* Gothic Range Sliders: Frost Channel & Ice Thumb */
+.range-field input[type='range'] {
+  accent-color: var(--goth-cyan) !important;
+}
+
+/* ==========================================================================
+   THE ICEFORGE TIMELINE (LANES, TRACKS & RUNIC PLAYHEAD)
+   ========================================================================== */
+.timeline-panel {
+  background: rgba(4, 7, 13, 0.95) !important;
+  border-top: 1px solid var(--goth-border-heavy) !important;
+  box-shadow: 0 -10px 35px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Timeline Toolbar: Wrought Iron Blacksmith Tools */
+.timeline-toolbar {
+  background: rgba(7, 11, 19, 0.9) !important;
+  border-bottom: 1px solid var(--goth-border) !important;
+  padding: 6px 16px !important;
+  gap: 8px !important;
+}
+
+.timeline-toolbar button {
+  background: rgba(12, 19, 34, 0.7) !important;
+  border: 1px solid var(--goth-border-iron) !important;
+  border-radius: 6px !important;
+  color: var(--goth-silver-bright) !important;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.timeline-toolbar button:hover {
+  background: rgba(20, 32, 54, 0.9) !important;
+  border-color: var(--goth-cyan) !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+.timeline-toolbar button.active {
+  background: rgba(14, 116, 144, 0.4) !important;
+  border-color: var(--goth-cyan-glow) !important;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.4) !important;
+}
+
+/* Timeline Ruler */
+.timeline-ruler {
+  background: rgba(6, 10, 18, 0.95) !important;
+  border-bottom: 1px solid var(--goth-border) !important;
+  font-family: monospace !important;
+  color: var(--goth-silver) !important;
+}
+
+/* Track Labels (V1, A1, Captions) */
+.timeline-label {
+  background: rgba(6, 10, 17, 0.95) !important;
+  border-right: 1px solid var(--goth-border) !important;
+  border-bottom: 1px solid var(--goth-border) !important;
+  font-family: var(--font-gothic) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
+  color: var(--goth-silver-bright) !important;
+}
+
+/* Timeline Lanes */
+.timeline-lanes {
+  background-color: #04060b !important;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px) !important;
+  background-size: 100% 44px, 20px 100% !important;
+}
+
+/* Video Clips: Frozen Obsidian Tablets */
+.timeline-clip {
+  background: linear-gradient(180deg, #162438 0%, #0d1726 100%) !important;
+  border: 1px solid rgba(125, 211, 252, 0.28) !important;
+  border-radius: 5px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+  color: var(--goth-ice-white) !important;
+  font-size: 11px !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.timeline-clip:hover {
+  border-color: var(--goth-cyan) !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35) !important;
+}
+
+.timeline-clip.selected {
+  border-color: #ffffff !important;
+  box-shadow: 
+    0 0 18px rgba(56, 189, 248, 0.7),
+    inset 0 0 8px rgba(103, 232, 249, 0.3) !important;
+}
+
+/* Audio Clips: Waveform In Glacial Cyan */
+.timeline-clip.audio {
+  background: linear-gradient(180deg, #092635 0%, #051822 100%) !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+/* The Luminous Icicle Blade (Playhead) */
+.timeline-playhead {
+  background: var(--goth-cyan-glow) !important;
+  box-shadow: 
+    0 0 14px var(--goth-cyan-glow),
+    0 0 28px rgba(56, 189, 248, 0.8) !important;
+}
+
+.timeline-playhead::before {
+  content: '❄';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14px;
+  color: #fff;
+  text-shadow: 0 0 10px var(--goth-cyan-glow);
+}
+
+/* ==========================================================================
+   THE GOTHIC GRIMOIRE (MODALS & DIALOGS)
+   ========================================================================== */
+dialog.modal {
+  background: rgba(7, 11, 20, 0.94) !important;
+  backdrop-filter: blur(32px) !important;
+  -webkit-backdrop-filter: blur(32px) !important;
+  border: 1px solid var(--goth-border-heavy) !important;
+  border-radius: 14px !important;
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 25px 80px rgba(0, 0, 0, 0.9),
+    0 0 60px rgba(14, 116, 144, 0.25) !important;
+  color: var(--goth-silver-bright) !important;
+  position: relative;
+}
+
+dialog.modal::backdrop {
+  background: radial-gradient(circle at 50% 50%, rgba(14, 116, 144, 0.2), rgba(2, 4, 8, 0.9) 75%) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+.modal-head {
+  border-bottom: 1px solid var(--goth-border) !important;
+  padding-bottom: 14px !important;
+  margin-bottom: 18px !important;
+}
+
+.modal-head h2 {
+  font-family: var(--font-gothic) !important;
+  font-size: 18px !important;
+  letter-spacing: 0.5px !important;
+  background: linear-gradient(135deg, #ffffff 40%, var(--goth-frost) 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.modal-head button.icon {
+  background: rgba(15, 23, 42, 0.6) !important;
+  border: 1px solid var(--goth-border) !important;
+  border-radius: 7px !important;
+  color: var(--goth-silver) !important;
+  transition: all 0.2s ease !important;
+}
+
+.modal-head button.icon:hover {
+  background: rgba(30, 41, 59, 0.9) !important;
+  border-color: var(--goth-cyan) !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3) !important;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--goth-border) !important;
+}
+
+.modal-footer button.primary {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+  border: 1px solid var(--goth-cyan-glow) !important;
+  color: #fff !important;
+  font-family: var(--font-gothic) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35) !important;
+  transition: all 0.25s ease !important;
+}
+
+.modal-footer button.primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
+  box-shadow: 0 0 24px rgba(103, 232, 249, 0.6) !important;
+  transform: translateY(-1px);
+}
+
+
+/* ==========================================================================
+   OVERDETAIL GOTHIC EDITOR ADDITIONS: CREST, TRANSPORT, TIMELINE & GRIMOIRE
+   ========================================================================== */
+
+/* Brand Crest in Editor Navbar */
+.editor-brand-crest-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+}
+
+/* Rune Glow on Action Buttons */
+.rune-glow {
+  color: var(--goth-cyan-glow) !important;
+  filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.7));
+}
+
+/* Glacial Forge Export Button */
+.header-export-btn.primary-export {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #075985 100%) !important;
+  border: 1px solid var(--goth-cyan-glow) !important;
+  border-radius: 8px !important;
+  box-shadow: 
+    0 0 18px rgba(56, 189, 248, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  font-family: var(--font-gothic) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.6px !important;
+  text-transform: uppercase !important;
+  padding: 6px 16px !important;
+  gap: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.header-export-btn.primary-export:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
+  box-shadow: 
+    0 0 32px rgba(103, 232, 249, 0.75),
+    0 4px 16px rgba(0, 0, 0, 0.7) !important;
+  transform: translateY(-2px) scale(1.02) !important;
+}
+
+/* ==========================================================================
+   VIDEO PLAYER TRANSPORT BAR (THE OBSIDIAN ALTAR CONTROLS)
+   ========================================================================== */
+.preview .transport {
+  background: rgba(6, 10, 18, 0.92) !important;
+  border-top: 1px solid var(--goth-border) !important;
+  backdrop-filter: blur(16px) !important;
+  padding: 8px 16px !important;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6) !important;
+}
+
+.preview .transport .timecode {
+  font-family: monospace !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: var(--goth-frost) !important;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.4) !important;
+  letter-spacing: 0.5px !important;
+}
+
+.preview .transport .timecode span {
+  color: var(--goth-silver) !important;
+}
+
+.preview .transport .play-button {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.25) 0%, rgba(14, 116, 144, 0.45) 100%) !important;
+  border: 1px solid var(--goth-cyan) !important;
+  border-radius: 50% !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.4) !important;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.preview .transport .play-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.5) 0%, rgba(14, 116, 144, 0.7) 100%) !important;
+  box-shadow: 0 0 24px rgba(103, 232, 249, 0.7) !important;
+  transform: scale(1.08) !important;
+}
+
+.preview .transport button.icon {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: var(--goth-silver-bright) !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+}
+
+.preview .transport button.icon:hover {
+  background: rgba(15, 23, 42, 0.7) !important;
+  border-color: var(--goth-border) !important;
+  color: var(--goth-frost) !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25) !important;
+}
+
+/* Audio Peak Meter: Bioluminescent Frost Stalagmites */
+.audio-peak-meter {
+  background: rgba(4, 7, 13, 0.85) !important;
+  border: 1px solid var(--goth-border) !important;
+  border-radius: 6px !important;
+  padding: 4px 8px !important;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.7) !important;
+}
+
+.meter-track {
+  background: rgba(15, 23, 42, 0.9) !important;
+  border-radius: 2px !important;
+}
+
+.meter-fill {
+  background: linear-gradient(90deg, #38bdf8 0%, #67e8f9 70%, #f59e0b 100%) !important;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6) !important;
+}
+
+/* ==========================================================================
+   LONG TO SHORTS STUDIO & MAGIC PRESETS (GRIMOIRE RELIQUARY)
+   ========================================================================== */
+.modal-window.long-to-shorts-window {
+  background: rgba(7, 11, 20, 0.96) !important;
+  border: 1px solid var(--goth-border-heavy) !important;
+  border-radius: 16px !important;
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 30px 90px rgba(0, 0, 0, 0.9),
+    0 0 70px rgba(14, 116, 144, 0.25) !important;
+}
+
+.modal-header-title h2 {
+  font-family: var(--font-gothic) !important;
+  font-size: 20px !important;
+  letter-spacing: 0.5px !important;
+  background: linear-gradient(135deg, #ffffff 40%, var(--goth-frost) 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.magic-preset-card {
+  background: rgba(10, 16, 29, 0.7) !important;
+  border: 1px solid var(--goth-border) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.magic-preset-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: transparent;
+  transition: all 0.3s ease;
+}
+
+.magic-preset-card:hover {
+  background: rgba(15, 25, 45, 0.9) !important;
+  border-color: var(--goth-cyan) !important;
+  box-shadow: 0 6px 24px rgba(56, 189, 248, 0.3) !important;
+  transform: translateY(-2px);
+}
+
+.magic-preset-card:hover::before {
+  background: linear-gradient(90deg, transparent, var(--goth-cyan-glow), transparent);
+}
+
+.magic-preset-card.selected {
+  background: rgba(14, 28, 52, 0.95) !important;
+  border-color: var(--goth-cyan-glow) !important;
+  box-shadow: 
+    0 0 24px rgba(56, 189, 248, 0.35),
+    inset 0 0 12px rgba(56, 189, 248, 0.15) !important;
+}
+
+.magic-preset-card.selected::before {
+  background: var(--goth-cyan-glow);
+  box-shadow: 0 0 10px var(--goth-cyan-glow);
+}
+
+.preset-badge {
+  background: rgba(3, 6, 12, 0.85) !important;
+  border: 1px solid var(--goth-border) !important;
+  color: var(--goth-frost) !important;
+  font-family: var(--font-gothic) !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.6px !important;
+}
+
+.preset-icon-box {
+  background: rgba(14, 116, 144, 0.2) !important;
+  border: 1px solid var(--goth-border) !important;
+  border-radius: 8px !important;
+  color: var(--goth-cyan-glow) !important;
+}
+
+.magic-preset-card h3 {
+  font-family: var(--font-gothic) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3px !important;
+  color: #fff !important;
+}
+
+/* ==========================================================================
+   IMPORTER MODAL GOTHIC ENHANCEMENTS
+   ========================================================================== */
+.importer-modal-card {
+  position: relative;
+  background-image: 
+    radial-gradient(circle at 90% 10%, rgba(14, 116, 144, 0.18), transparent 40%),
+    linear-gradient(165deg, rgba(13, 20, 36, 0.96) 0%, rgba(6, 10, 18, 0.98) 100%) !important;
+  border: 1px solid var(--goth-border-heavy) !important;
+}

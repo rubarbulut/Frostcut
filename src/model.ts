@@ -889,7 +889,11 @@ export function validateProject(value: unknown): Project {
                 key === 'scale' ? 5 : key === 'opacity' ? 1 : 10000,
               ) ||
               (i > 0 && frame.time <= frames[i - 1].time) ||
-              (frame.easing !== undefined && !['linear', 'smooth'].includes(frame.easing))
+              (frame.easing !== undefined && !['linear', 'smooth', 'bezier'].includes(frame.easing)) ||
+              (frame.easing === 'bezier' &&
+                (!Array.isArray(frame.bezier) ||
+                  frame.bezier.length !== 4 ||
+                  frame.bezier.some((n) => typeof n !== 'number' || !Number.isFinite(n))))
             )
               fail();
           });

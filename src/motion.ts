@@ -1,8 +1,14 @@
 import type { AspectFillMode, ClipProps } from './model';
 import { trackingOffsetAt, type ClipTracking } from './tracking-data';
+import { CubicBezier } from './spline-interpolation';
 export const animatedProperties = ['x', 'y', 'scale', 'rotation', 'opacity'] as const;
 export type AnimatedProperty = (typeof animatedProperties)[number];
-export type Keyframe = { time: number; value: number; easing?: 'linear' | 'smooth' };
+export type Keyframe = {
+  time: number;
+  value: number;
+  easing?: 'linear' | 'smooth' | 'bezier';
+  bezier?: [number, number, number, number];
+};
 export type KeyframeTracks = Partial<Record<AnimatedProperty, Keyframe[]>>;
 export const clampMotion = (property: AnimatedProperty, value: number) =>
   Math.max(
@@ -29,7 +35,12 @@ export function interpolateKeyframes(
       previous = frames[i - 1];
     if (sourceTime > next.time) continue;
     const t = Math.max(0, Math.min(1, (sourceTime - previous.time) / (next.time - previous.time)));
-    const eased = previous.easing === 'smooth' ? t * t * (3 - 2 * t) : t;
+    const eased =
+      previous.easing === 'smooth'
+        ? t * t * (3 - 2 * t)
+        : previous.easing === 'bezier' && previous.bezier
+        ? new CubicBezier(...previous.bezier).evaluate(t)
+        : t;
     return previous.value + (next.value - previous.value) * eased;
   }
   return frames.at(-1)!.value;

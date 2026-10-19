@@ -3,6 +3,9 @@ import { addMedia, createProject, splitClip, validateProject } from './model';
 import { createEqualPartSequences } from './equal-parts';
 import {
   defaultChroma,
+  defaultCornerPin,
+  defaultGrade,
+  defaultLens,
   defaultMask,
   hasVisualEffects,
   rgbColor,
@@ -19,11 +22,18 @@ function fixture() {
     size: 10,
     type: 'video/mp4',
   });
-  p.clips[0].effects = { chroma: defaultChroma(), mask: defaultMask() };
+  p.clips[0].effects = {
+    chroma: defaultChroma(),
+    mask: defaultMask(),
+    grade: defaultGrade(),
+    lens: defaultLens(),
+    cornerPin: defaultCornerPin(),
+  };
   return p;
 }
+
 describe('visual effect project data', () => {
-  it('round-trips editable key and mask settings without sharing defaults', () => {
+  it('round-trips editable key, mask, grade, lens, and pin settings', () => {
     const p = fixture();
     expect(validateProject(JSON.parse(JSON.stringify(p))).clips[0].effects).toEqual(
       p.clips[0].effects,
@@ -34,8 +44,12 @@ describe('visual effect project data', () => {
     a.points[0].x = 99;
     expect(b.points[0].x).toBe(20);
     expect(hasVisualEffects({ chroma: { ...defaultChroma(), enabled: false } })).toBe(false);
+    expect(hasVisualEffects({ grade: { ...defaultGrade(), enabled: true } })).toBe(true);
+    expect(hasVisualEffects({ lens: { ...defaultLens(), enabled: true } })).toBe(true);
+    expect(hasVisualEffects({ cornerPin: { ...defaultCornerPin(), enabled: true } })).toBe(true);
     expect(rgbColor('#ff0080')).toEqual([1, 0, 128 / 255]);
   });
+
   it('preserves effects through timeline splits and equal-part creation', () => {
     const p = fixture(),
       before = structuredClone(p);
@@ -48,6 +62,7 @@ describe('visual effect project data', () => {
     );
     expect(p).toEqual(before);
   });
+
   it('rejects unsafe or corrupt effect settings in active and inactive sequences', () => {
     for (const effects of [
       { chroma: { ...defaultChroma(), color: 'url(x)' } },
@@ -66,8 +81,17 @@ describe('visual effect project data', () => {
           ],
         },
       },
+      { grade: { ...defaultGrade(), exposure: 10 } },
+      { lens: { ...defaultLens(), vignette: 150 } },
+      {
+        cornerPin: {
+          ...defaultCornerPin(),
+          topLeft: { x: 200, y: 0 },
+        },
+      },
     ])
       expect(validVisualEffects(effects)).toBe(false);
+
     const p = createEqualPartSequences(fixture(), { mode: 'count', value: 2 });
     p.sequences![0].clips[0].effects!.mask!.feather = 99;
     expect(() => validateProject(p)).toThrow();

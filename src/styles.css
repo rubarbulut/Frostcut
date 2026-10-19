@@ -1217,7 +1217,7 @@ kbd {
 }
 .editor-workspace {
   display: grid;
-  grid-template-columns: 240px minmax(300px, 1fr) 272px;
+  grid-template-columns: 240px minmax(320px, 1fr) 320px;
   flex: 1;
   min-height: 300px;
   overflow: hidden;
@@ -3148,16 +3148,41 @@ details > summary {
 .spin {
   animation: spin 1.5s linear infinite;
 }
+/* ==========================================================================
+   MASTER GOTHIC CATHEDRAL SCROLLBAR (OBSIDIAN & GLACIAL ICICLE)
+   ========================================================================== */
+html, body {
+  scrollbar-width: thin;
+  scrollbar-color: #38bdf8 #020408;
+}
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 13px;
+  height: 13px;
 }
 ::-webkit-scrollbar-track {
-  background: #17212a;
+  background: #03060b;
+  border-left: 1px solid rgba(125, 211, 252, 0.2);
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.95);
 }
 ::-webkit-scrollbar-thumb {
-  background: #3f5668;
-  border-radius: 10px;
+  background: linear-gradient(180deg, #7dd3fc 0%, #0284c7 15%, #0f172a 50%, #0284c7 85%, #7dd3fc 100%);
+  border: 1px solid #38bdf8;
+  border-radius: 4px;
+  box-shadow: 
+    0 0 14px rgba(56, 189, 248, 0.55),
+    inset 0 0 6px rgba(255, 255, 255, 0.4);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #a5f3fc 0%, #38bdf8 25%, #0369a1 50%, #38bdf8 75%, #a5f3fc 100%);
+  border-color: #ffffff;
+  box-shadow: 
+    0 0 24px rgba(103, 232, 249, 0.9),
+    0 0 6px #ffffff,
+    inset 0 0 10px rgba(255, 255, 255, 0.7);
+}
+::-webkit-scrollbar-corner {
+  background: #020408;
+  border: 1px solid rgba(125, 211, 252, 0.2);
 }
 @keyframes spin {
   to {
@@ -3179,7 +3204,7 @@ details > summary {
 }
 @media (min-width: 1600px) {
   .editor-workspace {
-    grid-template-columns: 270px minmax(300px, 1fr) 300px;
+    grid-template-columns: 270px minmax(340px, 1fr) 350px;
   }
   .editor-header {
     height: 65px;
@@ -3250,7 +3275,7 @@ details > summary {
     display: none;
   }
   .editor-workspace {
-    grid-template-columns: 205px minmax(260px, 1fr) 230px;
+    grid-template-columns: 205px minmax(260px, 1fr) 290px;
   }
   .editor-header {
     gap: 8px;

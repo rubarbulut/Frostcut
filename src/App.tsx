@@ -96,6 +96,7 @@ import { resolveQuality, recommendedQuality, transcriptionModels } from './trans
 import LandingPage from './LandingPage';
 import { MediaImporterModal } from './importer/MediaImporterModal';
 import './importer/importer.css';
+import './editor-gothic.css';
 import { SequencePicker } from './SequencePicker';
 import { ExportDestination } from './ExportDestination';
 import { createShortSequences } from './sequences';
@@ -807,7 +808,7 @@ export default function App() {
                 }}
               >
                 <div className="brand-logo-icon">
-                  <Snowflake size={16} />
+                  <img src="/frostcut-crest.jpg" alt="" className="editor-brand-crest-img" />
                 </div>
                 <span className="brand-title">FrostCut</span>
               </button>
@@ -848,8 +849,8 @@ export default function App() {
                 onClick={() => setModal('auto')}
                 title="Automatically remove silences and dead air"
               >
-                <Sparkles size={14} />
-                <span>Auto Cut</span>
+                <Sparkles size={14} className="rune-glow" />
+                <span>Frost Slice</span>
               </button>
               <button
                 type="button"
@@ -858,8 +859,8 @@ export default function App() {
                 onClick={() => setModal('magic-shorts')}
                 title="1-Click Long-Form to Viral Shorts Studio"
               >
-                <Flame size={14} />
-                <span>Long to Shorts</span>
+                <Flame size={14} className="rune-glow" />
+                <span>Chrono Shards</span>
               </button>
               <button
                 type="button"
@@ -868,8 +869,8 @@ export default function App() {
                 onClick={() => setModal('transcribe')}
                 title="Generate speech-to-text transcript & subtitles"
               >
-                <MessageSquareText size={14} />
-                <span>Transcribe</span>
+                <MessageSquareText size={14} className="rune-glow" />
+                <span>Runic Scribe</span>
               </button>
             </div>
 
@@ -931,13 +932,13 @@ export default function App() {
 
               {/* Glowing High-Impact Export Button */}
               <button
-                className="header-export-btn"
+                className="header-export-btn primary-export"
                 disabled={!p.clips.length || !!job}
                 onClick={() => setModal('export')}
-                title="Export Video (MP4)"
+                title="Glacial Forge Export Video (MP4)"
               >
                 <Download size={15} />
-                <span>Export</span>
+                <span>Forge MP4</span>
                 <ArrowUpRight size={13} />
               </button>
             </div>

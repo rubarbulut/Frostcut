@@ -28,13 +28,20 @@ describe('source-aware motion', () => {
     expect(transformAt({ ...c, start: 20, sourceStart: 4 }, 20, 1080, 1920).x).toBe(50);
     expect(transformAt(c, 15, 1080, 1920).x).toBe(100);
   });
-  it('has deterministic smooth easing and endpoints', () => {
+  it('has deterministic smooth and bezier easing and endpoints', () => {
     const frames = [
       { time: 0, value: 0, easing: 'smooth' as const },
       { time: 4, value: 100 },
     ];
     expect(interpolateKeyframes(frames, 1, 1)).toBe(15.625);
     expect(interpolateKeyframes(frames, -1, 1)).toBe(0);
+
+    const bezierFrames = [
+      { time: 0, value: 0, easing: 'bezier' as const, bezier: [0.42, 0, 1, 1] as [number, number, number, number] },
+      { time: 2, value: 100 },
+    ];
+    // At t = 0.5 (time = 1), ease-in curve has value less than 50
+    expect(interpolateKeyframes(bezierFrames, 1, 0)).toBeLessThan(50);
   });
   it('creates editable preset tracks without mutating static properties', () => {
     const c = clip();

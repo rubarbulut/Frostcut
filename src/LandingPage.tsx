@@ -287,57 +287,137 @@ function GothicAtmosphereCanvas() {
   return <canvas ref={canvasRef} className="gothic-snow-canvas" aria-hidden="true" />;
 }
 
-// 🕯️ Warm Amber Lantern Cursor: Follows mouse and provides warm light through the cold
-// (100% GPU Hardware Accelerated - ZERO React state re-renders)
-function WarmAmberLantern() {
-  const lanternRef = useRef<HTMLDivElement>(null);
+// 🕯️ Cathedral Ethereal Torch & Glacial Spark Cursor:
+// Instant 0ms latency hardware tracking + dynamic ambient illumination + trailing frost sparks
+function CathedralEtherealTorch() {
+  const torchRef = useRef<HTMLDivElement>(null);
+  const sparkCanvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    let targetX = -1000;
-    let targetY = -1000;
-    let currentX = -1000;
-    let currentY = -1000;
-    let frameId: number;
-    let visible = false;
+    const torch = torchRef.current;
+    const canvas = sparkCanvasRef.current;
+    if (!torch || !canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    const onResize = () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', onResize, { passive: true });
+
+    interface Spark {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      size: number;
+      alpha: number;
+      decay: number;
+      color: string;
+      rune?: string;
+    }
+
+    const sparks: Spark[] = [];
+    const runes = ['✦', '❄', '✧', 'ᛟ', 'ᚦ', 'ᚱ'];
+    let lastX = -1000;
+    let lastY = -1000;
 
     const onMove = (e: globalThis.MouseEvent) => {
-      targetX = e.clientX;
-      targetY = e.clientY;
-      if (!visible) {
-        visible = true;
-        currentX = targetX;
-        currentY = targetY;
-        if (lanternRef.current) lanternRef.current.style.opacity = '1';
+      const x = e.clientX;
+      const y = e.clientY;
+
+      // 1. Zero-latency instantaneous hardware transform
+      torch.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      if (torch.style.opacity !== '1') torch.style.opacity = '1';
+
+      // 2. Update global specular lighting coordinates
+      document.documentElement.style.setProperty('--torch-x', `${x}px`);
+      document.documentElement.style.setProperty('--torch-y', `${y}px`);
+
+      // 3. Spawn ephemeral frost & ember sparks on mouse motion
+      const dist = Math.hypot(x - lastX, y - lastY);
+      if (dist > 7 && sparks.length < 60) {
+        lastX = x;
+        lastY = y;
+        const isAmber = Math.random() > 0.45;
+        sparks.push({
+          x: x + (Math.random() - 0.5) * 14,
+          y: y + (Math.random() - 0.5) * 14,
+          vx: (Math.random() - 0.5) * 1.8,
+          vy: Math.random() * -1.8 - 0.4,
+          size: Math.random() * 2.5 + 1.2,
+          alpha: 1,
+          decay: Math.random() * 0.035 + 0.02,
+          color: isAmber ? '#fbbf24' : '#67e8f9',
+          rune: Math.random() > 0.8 ? runes[Math.floor(Math.random() * runes.length)] : undefined,
+        });
       }
     };
+
     window.addEventListener('mousemove', onMove, { passive: true });
 
-    const lerp = () => {
-      currentX += (targetX - currentX) * 0.16;
-      currentY += (targetY - currentY) * 0.16;
-      if (lanternRef.current && visible) {
-        lanternRef.current.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+    let animId: number;
+    const renderSparks = () => {
+      ctx.clearRect(0, 0, width, height);
+
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        const s = sparks[i];
+        s.x += s.vx;
+        s.y += s.vy;
+        s.alpha -= s.decay;
+
+        if (s.alpha <= 0) {
+          sparks.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = s.alpha;
+        if (s.rune) {
+          ctx.fillStyle = s.color;
+          ctx.font = '10px serif';
+          ctx.fillText(s.rune, s.x, s.y);
+        } else {
+          ctx.fillStyle = s.color;
+          ctx.shadowColor = s.color;
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
       }
-      frameId = requestAnimationFrame(lerp);
+
+      animId = requestAnimationFrame(renderSparks);
     };
-    frameId = requestAnimationFrame(lerp);
+
+    animId = requestAnimationFrame(renderSparks);
 
     return () => {
+      window.removeEventListener('resize', onResize);
       window.removeEventListener('mousemove', onMove);
-      cancelAnimationFrame(frameId);
+      cancelAnimationFrame(animId);
     };
   }, []);
 
   return (
-    <div
-      ref={lanternRef}
-      className="warm-amber-lantern"
-      style={{ opacity: 0, willChange: 'transform' }}
-      aria-hidden="true"
-    >
-      <div className="lantern-ember-core" />
-      <div className="lantern-amber-halo" />
-    </div>
+    <>
+      <canvas ref={sparkCanvasRef} className="cathedral-spark-canvas" aria-hidden="true" />
+      <div
+        ref={torchRef}
+        className="cathedral-ethereal-torch"
+        style={{ opacity: 0, willChange: 'transform' }}
+        aria-hidden="true"
+      >
+        <div className="torch-flame-core" />
+        <div className="torch-amber-halo" />
+        <div className="torch-glacial-bloom" />
+      </div>
+    </>
   );
 }
 
@@ -396,6 +476,7 @@ function PixelScottishFoldMascot() {
   const [tipIndex, setTipIndex] = useState(0);
   const [burstKey, setBurstKey] = useState(0);
   const [blinking, setBlinking] = useState(false);
+  const [royalMode, setRoyalMode] = useState(false);
 
   const tips = [
     'Hey! Your footage stays 100% on your device. Zero cloud uploads, zero privacy leaks.',
@@ -472,14 +553,22 @@ function PixelScottishFoldMascot() {
         {/* Ambient warm amber & frost aura */}
         <div className={`cat-aura-glow ${purring ? 'purr-active' : ''}`} />
 
-        {/* 48x48 Authentic Pixel Art Scottish Fold SVG in Sitting Posture with Cozy Scarf */}
-        <svg
-          className={`pixel-cat-svg ${purring ? 'cat-bounce' : ''}`}
-          viewBox="0 0 48 48"
-          width="105"
-          height="105"
-          shapeRendering="crispEdges"
-        >
+        {royalMode ? (
+          <div className={`gothic-cat-portrait-frame ${purring ? 'cat-bounce' : ''}`}>
+            <img
+              src="/frostcut-cat-guardian.jpg"
+              alt="Gothic Scottish Fold Guardian"
+              className="gothic-cat-portrait-img"
+            />
+          </div>
+        ) : (
+          <svg
+            className={`pixel-cat-svg ${purring ? 'cat-bounce' : ''}`}
+            viewBox="0 0 48 48"
+            width="105"
+            height="105"
+            shapeRendering="crispEdges"
+          >
           {/* Ground shadow beneath paws and sitting body */}
           <rect x="7" y="43" width="34" height="2" fill="rgba(3,7,14,0.55)" />
           {/* Striped Fluffy Tail (curling peacefully beside the cat on the floor) */}
@@ -604,6 +693,7 @@ function PixelScottishFoldMascot() {
           <rect x="38" y="17" width="4" height="1" fill="#94a3b8" />
           <rect x="38" y="20" width="5" height="1" fill="#94a3b8" />
         </svg>
+        )}
 
         {/* Floating Heart / Amber Sparks on Purr */}
         {purring && (
@@ -619,6 +709,17 @@ function PixelScottishFoldMascot() {
         <div className="cat-status-line">
           <span className="cat-dot" />
           <b>SCOTTISH FOLD GUARDIAN</b>
+          <button
+            type="button"
+            className="cat-portrait-toggle"
+            onClick={(e) => {
+              e.stopPropagation();
+              setRoyalMode((m) => !m);
+            }}
+            title="Toggle between Royal Gothic Portrait and Pixel Mascot"
+          >
+            {royalMode ? '✦ PIXEL ART' : '⚜ ROYAL PORTRAIT'}
+          </button>
           <span className="cat-sub-hint">Click me for tips</span>
         </div>
         <p className="cat-quote">{tips[tipIndex]}</p>
@@ -662,10 +763,13 @@ function ObsidianMonolith() {
           onMouseMove={handleMonolithMove}
           onMouseLeave={handleMonolithLeave}
         >
+          {/* Gothic Cathedral Filigree Frame & Texture */}
+          <div className="monolith-gothic-frame-overlay" aria-hidden="true" />
+
           {/* Monolith Header */}
           <div className="product-top monolith-header">
             <span className="monolith-brand-tag">
-              <Snowflake size={15} /> frostcut
+              <img src="/frostcut-crest.jpg" alt="" className="monolith-mini-crest" /> frostcut
             </span>
             <span className="monolith-project-pill">
               A better story <ChevronDown size={12} />
@@ -783,8 +887,31 @@ export default function LandingPage({
       {/* Background Interactive Canvas: Aurora Borealis + Gothic Castle + Snow */}
       <GothicAtmosphereCanvas />
 
-      {/* Warm Amber Lantern Cursor */}
-      <WarmAmberLantern />
+      {/* 🏰 Monumental Frozen Cathedral Nave Chamber Interior */}
+      <div className="cathedral-nave-chamber" aria-hidden="true">
+        <img
+          src="/frostcut-cathedral-nave.jpg"
+          alt=""
+          className="cathedral-nave-bg-img"
+        />
+        <div className="cathedral-nave-vignette" />
+        <div className="cathedral-light-shafts" />
+      </div>
+
+      {/* ⚜️ Gothic Cathedral Left & Right Stone Colonnades & Hanging Torches */}
+      <div className="cathedral-colonnade-left" aria-hidden="true">
+        <div className="cathedral-hanging-sconce">
+          <div className="sconce-flame-flicker" />
+        </div>
+      </div>
+      <div className="cathedral-colonnade-right" aria-hidden="true">
+        <div className="cathedral-hanging-sconce">
+          <div className="sconce-flame-flicker" />
+        </div>
+      </div>
+
+      {/* Zero-latency Cathedral Ethereal Torch & Spark Cursor */}
+      <CathedralEtherealTorch />
 
       <div className="gothic-ambient-veil" />
 
@@ -793,7 +920,7 @@ export default function LandingPage({
         <nav className="landing-nav gothic-nav">
           <a className="brand gothic-brand" href="#" aria-label="FrostCut Home">
             <div className="gothic-brand-crest">
-              <Snowflake className="gothic-crest-icon" size={19} />
+              <img src="/frostcut-crest.jpg" alt="FrostCut Crest" className="gothic-crest-img" />
             </div>
             <div className="gothic-brand-text">
               frostcut
@@ -819,6 +946,17 @@ export default function LandingPage({
 
         {/* Hero Section */}
         <section className="hero gothic-hero">
+          {/* Monumental Gothic Cathedral Arch & Icicle Frieze */}
+          <div className="cathedral-grand-arch-frame" aria-hidden="true">
+            <img src="/frostcut-gothic-arch.jpg" alt="" className="cathedral-arch-img" />
+          </div>
+
+          {/* Celestial Stained Glass Rose Portal */}
+          <div className="gothic-rose-portal" aria-hidden="true">
+            <img src="/frostcut-rose-window.jpg" alt="" className="gothic-rose-img" />
+            <div className="gothic-rose-radial-fade" />
+          </div>
+
           {/* Left Column: Copy & Actions */}
           <div className="hero-copy gothic-hero-copy">
             <div className="eyebrow gothic-eyebrow">
@@ -903,6 +1041,7 @@ export default function LandingPage({
           <div className="gothic-pillars-grid">
             {/* Pillar 1 */}
             <FrostThawCard className="gothic-pillar-card">
+              <span className="pillar-roman-arch" aria-hidden="true">I</span>
               <div className="pillar-icon-box">
                 <Scissors size={26} />
               </div>
@@ -918,6 +1057,7 @@ export default function LandingPage({
 
             {/* Pillar 2 */}
             <FrostThawCard className="gothic-pillar-card">
+              <span className="pillar-roman-arch" aria-hidden="true">II</span>
               <div className="pillar-icon-box">
                 <Type size={26} />
               </div>
@@ -933,6 +1073,7 @@ export default function LandingPage({
 
             {/* Pillar 3 */}
             <FrostThawCard className="gothic-pillar-card">
+              <span className="pillar-roman-arch" aria-hidden="true">III</span>
               <div className="pillar-icon-box">
                 <ShieldCheck size={26} />
               </div>
