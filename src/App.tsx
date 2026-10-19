@@ -67,6 +67,7 @@ import {
   clipDuration,
   isLocked,
   isAudioClip,
+  timelineWords,
 } from './model';
 import { inspectMedia, extractAudio, exportMp4 } from './media';
 import {
@@ -436,7 +437,14 @@ export default function App() {
         : current,
     );
   }
-  async function runAnalysis(auto: boolean, mediaId?: string) {
+  async function runAnalysis(
+    auto: boolean,
+    targetOptions?: {
+      scope?: 'timeline' | 'selected' | 'all';
+      mediaId?: string;
+      clipIds?: string[];
+    } | string,
+  ) {
     if (job) return;
     if (!p.clips.length) {
       setToast('Import a video first.');
@@ -450,6 +458,15 @@ export default function App() {
     let next = structuredClone(useEditor.getState().project);
     try {
       const ranges: { start: number; end: number }[] = [];
+      const mediaId = typeof targetOptions === 'string' ? targetOptions : targetOptions?.mediaId;
+      const currentSelected = useEditor.getState().selected;
+      const scope = typeof targetOptions === 'object'
+        ? (targetOptions.scope ?? 'timeline')
+        : (auto ? 'all' : (currentSelected.length > 0 ? 'selected' : 'timeline'));
+      const clipIds = typeof targetOptions === 'object'
+        ? targetOptions.clipIds
+        : (scope === 'selected' ? currentSelected : undefined);
+
       for (const media of next.media.filter(
         (m) =>
           (!mediaId || m.id === mediaId) &&
@@ -475,6 +492,33 @@ export default function App() {
           );
           continue;
         }
+
+        // Determine specific time ranges to transcribe!
+        let timeRanges: { start: number; end: number }[] | undefined = undefined;
+        if (scope === 'selected' && clipIds?.length) {
+          const matching = next.clips.filter((c) => c.mediaId === media.id && clipIds.includes(c.id));
+          if (!matching.length) continue; // Skip media not in selected clips
+          timeRanges = matching.map((c) => ({ start: c.sourceStart, end: c.sourceEnd }));
+        } else if (scope === 'timeline') {
+          const matching = next.clips.filter((c) => c.mediaId === media.id);
+          if (!matching.length) continue;
+          timeRanges = matching.map((c) => ({ start: c.sourceStart, end: c.sourceEnd }));
+        }
+
+        if (timeRanges && timeRanges.length > 0) {
+          timeRanges.sort((a, b) => a.start - b.start);
+          const merged: { start: number; end: number }[] = [];
+          for (const r of timeRanges) {
+            const last = merged.at(-1);
+            if (last && r.start <= last.end + 0.5) {
+              last.end = Math.max(last.end, r.end);
+            } else {
+              merged.push({ start: Math.max(0, r.start), end: Math.min(media.duration, r.end) });
+            }
+          }
+          timeRanges = merged;
+        }
+
         const needTranscript = !auto || (!existing && opts.goal !== 'Remove silences');
         setJob((j) => (j ? { ...j, step: needTranscript ? 1 : 0 } : j));
         const analyzed = await analyzeSource(
@@ -509,6 +553,8 @@ export default function App() {
                 : j,
             );
           },
+          timeRanges,
+          existing,
         );
         ranges.push(...mapSilences(next, media.id, analyzed.silences));
         if (analyzed.transcript) {
@@ -517,8 +563,15 @@ export default function App() {
             analyzed.transcript,
           ];
           // Keep corrections until the entire processing job succeeds.
-          if (!auto)
-            next.clips.filter((c) => c.mediaId === media.id).forEach((c) => delete c.captionWords);
+          if (!auto) {
+            if (timeRanges?.length) {
+              next.clips
+                .filter((c) => c.mediaId === media.id && (!clipIds || clipIds.includes(c.id)))
+                .forEach((c) => delete c.captionWords);
+            } else {
+              next.clips.filter((c) => c.mediaId === media.id).forEach((c) => delete c.captionWords);
+            }
+          }
         }
       }
       if (controller.signal.aborted || abortRef.current !== controller) return;
@@ -538,7 +591,12 @@ export default function App() {
         commit(next, 'Transcribe footage');
         setPanel('transcript');
         setMobileTab('Transcript');
-        setToast('Transcript ready. Click any word to jump to that moment.');
+        const countWords = timelineWords(next).length;
+        setToast(
+          scope === 'selected'
+            ? `Transcribed selected clip (${countWords} words ready).`
+            : `Transcript ready (${countWords} words on timeline). Click any word to jump.`
+        );
       }
       setJob(null);
     } catch (e) {

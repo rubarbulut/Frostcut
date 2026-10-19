@@ -5929,3 +5929,81 @@ details > summary {
   line-height: 1.4;
   margin: 0;
 }
+
+/* Transcription Scope Selector Cards */
+.transcription-scope-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin: 8px 0 14px 0;
+}
+
+.scope-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.scope-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.scope-card.active {
+  background: rgba(56, 189, 248, 0.08);
+  border-color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.18);
+}
+
+.scope-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+.scope-icon-wrap {
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+}
+
+.scope-badge {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+}
+
+.scope-badge.rec {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+.scope-badge.fast {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+}
+
+.scope-title {
+  font-size: 11px;
+  color: #f1f5f9;
+  margin-bottom: 3px;
+}
+
+.scope-desc {
+  font-size: 10px;
+  color: #8da4b5;
+  line-height: 1.35;
+}

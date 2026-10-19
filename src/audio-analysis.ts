@@ -1,6 +1,31 @@
 import type { Word } from './model';
-export function analysisWindows(duration: number, step = 90) {
+export function analysisWindows(
+  duration: number,
+  step = 90,
+  ranges?: { start: number; end: number }[],
+) {
   const windows: { start: number; duration: number; coreStart: number; coreEnd: number }[] = [];
+
+  if (ranges && ranges.length > 0) {
+    for (const r of ranges) {
+      const rStart = Math.max(0, Math.min(duration, r.start));
+      const rEnd = Math.max(rStart, Math.min(duration, r.end));
+      if (rEnd - rStart <= 0.05) continue;
+
+      for (let coreStart = rStart; coreStart < rEnd; coreStart += step) {
+        const start = Math.max(0, coreStart - 1),
+          coreEnd = Math.min(rEnd, coreStart + step);
+        windows.push({
+          start,
+          duration: Math.min(duration, coreEnd + 1) - start,
+          coreStart,
+          coreEnd,
+        });
+      }
+    }
+    return windows;
+  }
+
   for (let coreStart = 0; coreStart < duration; coreStart += step) {
     const start = Math.max(0, coreStart - 1),
       coreEnd = Math.min(duration, coreStart + step);

@@ -25,14 +25,25 @@ export async function analyzeSource(
   signal: AbortSignal,
   onProgress: (message: string, progress?: number) => void,
   onDiscovery?: (transcript: Transcript | undefined, elapsed: number) => void,
+  ranges?: { start: number; end: number }[],
+  initialTranscript?: Transcript,
 ) {
   const file = mediaFiles.get(asset.id);
   if (!file) throw new Error('Relink missing media before processing.');
   const cached = measuredSilences(asset.id, sensitivity);
-  if (!needTranscript && cached) return { silences: cached, transcript: undefined };
-  const windows = analysisWindows(asset.duration),
+  if (!needTranscript && cached && !ranges) return { silences: cached, transcript: undefined };
+  const windows = analysisWindows(asset.duration, 90, ranges),
     energy = new Float32Array(Math.ceil(asset.duration / 0.02));
-  let transcript: Transcript | undefined,
+  let transcript: Transcript | undefined = initialTranscript
+    ? {
+        ...initialTranscript,
+        words: ranges?.length
+          ? initialTranscript.words.filter(
+              (w) => !ranges.some((r) => w.end > r.start && w.start < r.end),
+            )
+          : initialTranscript.words,
+      }
+    : undefined,
     index = 0;
   const session = needTranscript
     ? createTranscriber(
@@ -80,7 +91,7 @@ export async function analyzeSource(
       );
       onDiscovery?.(transcript, window.coreEnd);
     }
-    if (needTranscript && !transcript?.words.length)
+    if (needTranscript && !transcript?.words.length && (!ranges || ranges.length === 0))
       throw new Error(
         'No speech was detected. Try selecting the spoken language or importing an SRT transcript.',
       );
