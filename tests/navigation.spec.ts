@@ -55,7 +55,7 @@ test('preview speed advances playback faster without changing saved clip or expo
   await expect
     .poll(() =>
       page
-        .locator('.video-canvas > video')
+        .locator('.video-canvas video')
         .first()
         .evaluate((v) => (v as HTMLVideoElement).playbackRate),
     )
