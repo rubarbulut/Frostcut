@@ -10,9 +10,10 @@ Rubar'ın ilettiği güncel direktör talimatı, 19 Ekim 2026.
    kuralları geçerli. Aynı işi ikinci kez başlatma; devam eden göreve ekle.
 4. `docs/director-core-handoff.md`: Codex'in testli tarif çekirdeği ve entegrasyon
    sözleşmesi hazır. B002 bitmeden ortak dosyalara entegrasyon başlatma.
-5. `docs/ux-audit-2026-10-19.md`: güncel arayüz/ürün bulguları. B002-D ile ilişkili
-   yeni normal Vite başlangıç engelini öncelikli incele; toplu UI yeniden tasarımı
-   henüz dağıtılmış bir görev değil, sonraki pilot için yön belgesi.
+5. `docs/ux-audit-2026-10-19.md`: arayüz ve ürün bulguları.
+6. `docs/director-ui-delivery.md`: Codex ilk UI düzeltme paketini uyguladı.
+   Normal Vite başlangıcı ve görünür durum/metadata sorunları da ele alındı.
+   Aynı işleri yeniden dağıtma; Okan'ın işi ve son Manager entegrasyonu devam eder.
 
 Codex ayrı bir çalışma kopyasında `creator-recipe` çekirdeğini hazırladı:
 kaynak editten uzun/kısa çıktı tarifleri ve mevcut edit operasyonlarıyla gerçek

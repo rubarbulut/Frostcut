@@ -15,12 +15,20 @@ import {
   Scissors,
   ArrowRight,
 } from 'lucide-react';
-import { type Project, isAudioClip, duration, timecode } from '../model';
+import {
+  type Project,
+  isAudioClip,
+  duration,
+  timecode,
+  changeAspectRatio,
+  timelineWords,
+} from '../model';
 import { useEditor } from '../store';
 import { presetKeyframes, clampMotion, type AnimatedProperty } from '../motion';
 import { AEGroup } from './AEGroup';
 import { AEPropertyRow } from './AEPropertyRow';
 import { AEScrubber } from './AEScrubber';
+import { frameAspectRatio } from '../aspect-fill';
 
 export function AECompositionInspector({ project: p }: { project: Project }) {
   const commit = useEditor((s) => s.commit);
@@ -28,7 +36,8 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
   const dur = duration(p);
 
   const [renaming, setRenaming] = useState(false);
-  const [seqName, setSeqName] = useState<string>(String(p.settings.preset || 'Main Sequence'));
+  const currentName = p.sequences?.find((s) => s.id === p.activeSequenceId)?.name ?? p.name;
+  const [seqName, setSeqName] = useState(currentName);
 
   const is916 =
     (p.settings.aspectRatio === '9:16' ||
@@ -40,43 +49,24 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
   );
 
   const isNoSpeech = !!p.settings.noSpeech;
-  const isCaptionsActive = isNoSpeech || p.captions.enabled;
+  const hasCaptionWords = timelineWords(p).length > 0;
+  const isCaptionsActive = isNoSpeech || (p.captions.enabled && hasCaptionWords);
 
   const firstClip = [...p.clips].sort((a, b) => a.start - b.start)[0];
   const hasHook =
-    firstClip &&
-    firstClip.properties.animation &&
-    firstClip.properties.animation !== 'None';
+    firstClip && firstClip.properties.animation && firstClip.properties.animation !== 'None';
 
   const completedSteps = [is916, isAudioMastered, isCaptionsActive, hasHook].filter(Boolean).length;
 
-  const currentRatio =
-    p.settings.aspectRatio ||
-    (p.settings.width > p.settings.height
-      ? '16:9'
-      : p.settings.width === p.settings.height
-        ? '1:1'
-        : p.settings.height === 1350
-          ? '4:5'
-          : '9:16');
+  const currentRatio = frameAspectRatio(p.settings) ?? 'Custom';
 
   const setRatio = (ratio: '9:16' | '16:9' | '1:1' | '4:5') => {
-    const dimMap = {
-      '9:16': { width: 1080, height: 1920 },
-      '16:9': { width: 1920, height: 1080 },
-      '1:1': { width: 1080, height: 1080 },
-      '4:5': { width: 1080, height: 1350 },
-    };
-    const next = structuredClone(p);
-    next.settings.aspectRatio = ratio;
-    next.settings.width = dimMap[ratio].width;
-    next.settings.height = dimMap[ratio].height;
+    const next = changeAspectRatio(p, ratio);
     commit(next, `Change sequence aspect ratio to ${ratio}`);
   };
 
   const handleApplyFormat = () => {
-    setRatio('9:16');
-    const next = structuredClone(useEditor.getState().project);
+    const next = changeAspectRatio(p, '9:16');
     next.captions.safeArea = true;
     commit(next, 'Format: 9:16 Reels/TikTok with safe margins');
   };
@@ -93,7 +83,7 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
         c.properties.volume = Math.min(0.35, c.properties.volume || 0.3);
       }
     }
-    commit(next, 'Master audio: -14 LUFS speech leveling & auto-ducking');
+    commit(next, 'Enable voice enhancement and music ducking');
   };
 
   const handleApplyCaptions = () => {
@@ -126,10 +116,7 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
 
   const handleApplyAll = () => {
     const next = structuredClone(p);
-    next.settings.aspectRatio = '9:16';
-    next.settings.width = 1080;
-    next.settings.height = 1920;
-    next.captions.safeArea = true;
+    // Preserve the selected delivery format; use the explicit format action for 9:16.
     for (const c of next.clips) {
       if (!isAudioClip(next, c) || c.audioRole === 'voice') {
         c.voiceEnhance = true;
@@ -165,16 +152,22 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
   const handleSaveName = () => {
     setRenaming(false);
     if (!seqName.trim()) return;
-    const next = structuredClone(p);
-    const validPresets = ['YouTube Shorts', 'TikTok', 'Instagram Reel', 'YouTube', 'Custom'] as const;
-    const matched = validPresets.find((x) => x.toLowerCase() === seqName.trim().toLowerCase());
-    next.settings.preset = matched ?? 'Custom';
+    const current = useEditor.getState().project;
+    const name = seqName.trim().slice(0, 80);
+    const oldName =
+      current.sequences?.find((s) => s.id === current.activeSequenceId)?.name ?? current.name;
+    if (name === oldName) return;
+    const next = structuredClone(current);
+    if (next.activeSequenceId && next.sequences) {
+      next.sequences = next.sequences.map((s) =>
+        s.id === next.activeSequenceId ? { ...s, name } : s,
+      );
+    } else next.name = name;
     commit(next, 'Rename sequence');
   };
 
   const videoTracks = p.tracks.filter((t) => t.kind === 'video').length;
   const audioTracks = p.tracks.filter((t) => t.kind === 'audio').length;
-
 
   return (
     <div className="ae-composition-inspector">
@@ -199,21 +192,20 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
                   if (e.key === 'Escape') setRenaming(false);
                 }}
               />
-              <button
-                type="button"
-                className="ae-clip-rename-ok"
-                onClick={handleSaveName}
-              >
+              <button type="button" className="ae-clip-rename-ok" onClick={handleSaveName}>
                 <Check size={11} />
               </button>
             </div>
           ) : (
             <div className="ae-clip-name-wrap">
-              <b className="ae-comp-title">{p.settings.preset || 'Main Sequence'}</b>
+              <b className="ae-comp-title">{currentName}</b>
               <button
                 type="button"
                 className="ae-clip-rename-btn"
-                onClick={() => setRenaming(true)}
+                onClick={() => {
+                  setSeqName(currentName);
+                  setRenaming(true);
+                }}
                 title="Rename sequence"
               >
                 <Edit2 size={10} />
@@ -246,7 +238,7 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
           title="İlk Adım Önerileri & İş Akışı"
           icon={<Sparkles size={13} />}
           defaultOpen={true}
-          badge={`${completedSteps}/4 Hazır`}
+          badge={`${completedSteps}/4 ayar etkin`}
         >
           <div className="ae-comp-body">
             <div className="ae-comp-workflow-strip">
@@ -254,20 +246,30 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
                 type="button"
                 className={`ae-step-pill ${isAudioMastered ? 'done' : ''}`}
                 onClick={handleApplyMasterAudio}
-                title="Sesi -14 LUFS standardına getir ve arka planı kıs"
+                title="Konuşma iyileştirme ve müzik kısma ayarlarını aç; ölçülmüş LUFS sonucu değildir"
               >
                 <Volume2 size={12} />
-                <span>{isAudioMastered ? '✓ Ses Dengelendi' : '1. Sesi Dengele'}</span>
+                <span>{isAudioMastered ? '✓ Ses ayarı etkin' : '1. Sesi Dengele'}</span>
               </button>
 
               <button
                 type="button"
                 className={`ae-step-pill ${isCaptionsActive ? 'done' : ''}`}
                 onClick={handleApplyCaptions}
-                title={isNoSpeech ? 'Videoda konuşma yok (Metinsiz Mod). Tıkla: Konuşma/altyazı moduna geç' : 'Altyazıları aç'}
+                title={
+                  isNoSpeech
+                    ? 'Videoda konuşma yok (Metinsiz Mod). Tıkla: Konuşma/altyazı moduna geç'
+                    : 'Altyazıları aç'
+                }
               >
                 <Captions size={12} />
-                <span>{isNoSpeech ? '✓ Metinsiz Video' : isCaptionsActive ? '✓ Altyazı Aktif' : '2. Altyazı Ekle'}</span>
+                <span>
+                  {isNoSpeech
+                    ? '✓ Metinsiz Video'
+                    : isCaptionsActive
+                      ? '✓ Altyazı Aktif'
+                      : '2. Altyazı Ekle'}
+                </span>
               </button>
 
               <button
@@ -287,15 +289,11 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
                 title="İlk 3 saniyeye dikkat çeken punch-in zoom ekle"
               >
                 <Zap size={12} />
-                <span>{hasHook ? '✓ Hook Hazır' : '4. Hook Ekle'}</span>
+                <span>{hasHook ? '✓ Animasyon etkin' : '4. Hook Ekle'}</span>
               </button>
             </div>
 
-            <button
-              type="button"
-              className="ae-workflow-all-btn"
-              onClick={handleApplyAll}
-            >
+            <button type="button" className="ae-workflow-all-btn" onClick={handleApplyAll}>
               <Zap size={12} />
               <span>✨ Tüm İlk Adımları Tek Tıkla Uygula</span>
             </button>
@@ -376,6 +374,9 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
                 onChange={(w) => {
                   const next = structuredClone(p);
                   next.settings.width = Math.round(w);
+                  next.settings.preset = 'Custom';
+                  next.settings.aspectRatio = undefined;
+                  next.exportSettings.width = next.settings.width;
                   commit(next, 'Change canvas width');
                 }}
               />
@@ -390,6 +391,9 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
                 onChange={(h) => {
                   const next = structuredClone(p);
                   next.settings.height = Math.round(h);
+                  next.settings.preset = 'Custom';
+                  next.settings.aspectRatio = undefined;
+                  next.exportSettings.height = next.settings.height;
                   commit(next, 'Change canvas height');
                 }}
               />
@@ -404,6 +408,7 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
               onChange={(e) => {
                 const next = structuredClone(p);
                 next.settings.fps = +e.target.value;
+                next.exportSettings.fps = next.settings.fps;
                 commit(next, 'Change frame rate');
               }}
             >
@@ -459,9 +464,17 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
               <span className="cell-label">Subtitles</span>
               <b
                 className="cell-val"
-                style={{ color: p.captions.enabled ? '#4ade80' : '#8b949e' }}
+                style={{ color: p.captions.enabled && hasCaptionWords ? '#4ade80' : '#8b949e' }}
               >
-                {p.captions.enabled ? 'Active ✓' : 'Disabled'}
+                {!p.clips.length
+                  ? 'No clips'
+                  : isNoSpeech
+                    ? 'Not required'
+                    : !hasCaptionWords
+                      ? 'No transcript'
+                      : p.captions.enabled
+                        ? 'Enabled'
+                        : 'Disabled'}
               </b>
               <small>{p.captions.preset}</small>
             </div>
@@ -469,9 +482,9 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
             <div className="ae-matrix-cell">
               <span className="cell-label">Render Engine</span>
               <b className="cell-val" style={{ color: '#38bdf8' }}>
-                ⚡ Turbo GPU
+                Selected at export
               </b>
-              <small>Hardware NVENC</small>
+              <small>Depends on device and edit</small>
             </div>
           </div>
         </div>

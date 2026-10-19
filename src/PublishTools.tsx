@@ -1,52 +1,86 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useEditor, downloadBlob } from './store';
 import { metadataDrafts, mediaCredits, type PublishingMetadata } from './publishing';
 import { Field } from './components';
 import { safeFilename } from './zip';
 import { appendChapters, publishingChaptersStale } from './chapters';
-export function PublishTools() {
-  const { project: p, commit } = useEditor();
-  const generated = metadataDrafts(p);
-  const [draft, setDraft] = useState<PublishingMetadata>(
-    p.publishing ?? {
-      title: generated.titles[0],
-      description: generated.description,
-      hashtags: generated.hashtags,
-    },
-  );
+export type PublishPlatform = 'youtube' | 'shorts' | 'instagram' | 'tiktok';
+const platformNames = {
+  youtube: 'YouTube',
+  shorts: 'YouTube Shorts',
+  instagram: 'Instagram Reels',
+  tiktok: 'TikTok',
+};
+export function PublishTools({ platform = 'youtube' }: { platform?: PublishPlatform }) {
+  const p = useEditor((s) => s.project);
+  return <PublishingForm key={`${p.id}:${p.activeSequenceId ?? ''}`} platform={platform} />;
+}
+function PublishingForm({ platform }: { platform: PublishPlatform }) {
+  const p = useEditor((s) => s.project);
+  const commit = useEditor((s) => s.commit);
+  const generated = useMemo(() => metadataDrafts(p), [p]);
+  const draft: PublishingMetadata = p.publishing ?? {
+    title: generated.titles[0] ?? '',
+    description: generated.description,
+    hashtags: generated.hashtags,
+  };
+  const setDraft = (next: PublishingMetadata) => {
+    commit({ ...useEditor.getState().project, publishing: next }, 'Edit publishing draft');
+  };
+  const youtube = platform === 'youtube' || platform === 'shorts';
+  const descriptionLimit = youtube ? 5000 : 2200;
+  const descriptionChars = (
+    youtube ? [draft.description, draft.hashtags] : [draft.title, draft.description, draft.hashtags]
+  )
+    .filter(Boolean)
+    .join('\n\n').length;
+  const descriptionTooLong = descriptionChars > descriptionLimit;
   const [status, setStatus] = useState('');
-  const text = () => `${draft.title}\n\n${draft.description}\n\n${draft.hashtags}`;
+  const text = () => [draft.title, draft.description, draft.hashtags].filter(Boolean).join('\n\n');
   const credits = mediaCredits(p);
   const staleChapters = publishingChaptersStale(p, draft);
   return (
     <div className="creator-section">
       <p>
-        Editable YouTube drafts drawn from your actual transcript. These are local text suggestions;
-        review the title and description before publishing.
+        {platformNames[platform]} · edits save with this sequence. Review the exported video before
+        posting.
       </p>
-      <b>Title suggestions</b>
-      <div className="draft-titles">
-        {generated.titles.map((title) => (
-          <button className="secondary" key={title} onClick={() => setDraft({ ...draft, title })}>
-            {title}
-          </button>
-        ))}
-      </div>
-      <Field label="YouTube title">
+      <details className="draft-suggestions">
+        <summary>
+          {p.transcripts.some((t) => t.words.length)
+            ? 'Use a transcript excerpt'
+            : 'Use the project name'}
+        </summary>
+        <div className="draft-titles">
+          {generated.titles.map((title) => (
+            <button className="secondary" key={title} onClick={() => setDraft({ ...draft, title })}>
+              {title}
+            </button>
+          ))}
+        </div>
+      </details>
+      <Field label={youtube ? 'YouTube title' : 'Opening line'}>
         <input
           maxLength={100}
+          aria-label={youtube ? 'YouTube title' : 'Opening line'}
           value={draft.title}
           onChange={(e) => setDraft({ ...draft, title: e.target.value })}
         />
       </Field>
-      <Field label="YouTube description">
+      <small>{draft.title.length}/100 characters</small>
+      <Field label={youtube ? 'YouTube description' : 'Post description'}>
         <textarea
           rows={7}
           maxLength={5000}
+          aria-label={youtube ? 'YouTube description' : 'Post description'}
           value={draft.description}
           onChange={(e) => setDraft({ ...draft, description: e.target.value })}
         />
       </Field>
+      <small role={descriptionTooLong ? 'alert' : undefined}>
+        {descriptionChars}/{descriptionLimit} characters including hashtags
+        {descriptionTooLong ? ' · shorten the draft for this platform' : ''}
+      </small>
       <Field label="Hashtags">
         <input
           maxLength={1000}
@@ -61,7 +95,7 @@ export function PublishTools() {
             try {
               setDraft(appendChapters(p, draft));
               setStatus(
-                'Chapters updated in the description. Review and save the publishing draft.',
+                'Chapters updated and saved in the description. Review the timestamps before posting.',
               );
             } catch (e) {
               setStatus((e as Error).message);
@@ -93,7 +127,7 @@ export function PublishTools() {
       <div className="button-row">
         <button
           className="primary"
-          disabled={staleChapters}
+          disabled={staleChapters || descriptionTooLong || !p.clips.length || !draft.title.trim()}
           onClick={() => {
             commit({ ...p, publishing: draft }, 'Save publishing metadata');
             setStatus('Saved with this sequence.');
@@ -103,7 +137,7 @@ export function PublishTools() {
         </button>
         <button
           className="secondary"
-          disabled={staleChapters}
+          disabled={staleChapters || descriptionTooLong || !p.clips.length || !draft.title.trim()}
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(text());
@@ -117,11 +151,11 @@ export function PublishTools() {
         </button>
         <button
           className="secondary"
-          disabled={staleChapters}
+          disabled={staleChapters || descriptionTooLong || !p.clips.length || !draft.title.trim()}
           onClick={() =>
             downloadBlob(
               new Blob([text()], { type: 'text/plain;charset=utf-8' }),
-              `${safeFilename(p.name)}-youtube.txt`,
+              `${safeFilename(p.name)}-${platform}.txt`,
             )
           }
         >
