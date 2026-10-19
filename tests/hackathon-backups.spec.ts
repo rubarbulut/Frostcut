@@ -34,15 +34,15 @@ test('hosted backup: downloads actual caption/style edits and reopens that file'
   await page.getByLabel('Caption start', { exact: true }).fill('0.5');
   await page.getByLabel('Caption end', { exact: true }).fill('4');
   await page.getByRole('button', { name: 'Save caption', exact: true }).click();
-  await page.getByLabel('Text alignment', { exact: true }).selectOption('right');
+  await page.getByRole('combobox', { name: 'Text alignment', exact: true }).selectOption('right');
   const saved = await backup(page);
   expect(saved.project.name).toBe('Backup proof');
   // Changing the current edit proves file import rather than merely redisplaying autosave.
   await page.getByLabel('Project name', { exact: true }).fill('Unsaved different name');
-  await page.getByLabel('Text alignment', { exact: true }).selectOption('left');
+  await page.getByRole('combobox', { name: 'Text alignment', exact: true }).selectOption('left');
   await page.getByLabel('Open project file', { exact: true }).setInputFiles(saved.path);
   await expect(page.getByLabel('Project name', { exact: true })).toHaveValue('Backup proof');
-  await expect(page.getByLabel('Text alignment', { exact: true })).toHaveValue('right');
+  await expect(page.getByRole('combobox', { name: 'Text alignment', exact: true })).toHaveValue('right');
   await page.getByRole('button', { name: /^Caption 1: Saved caption proof\./ }).click();
   await expect(page.getByLabel('Caption start', { exact: true })).toHaveValue('0.500');
   await expect(page.getByLabel('Caption end', { exact: true })).toHaveValue('4.000');

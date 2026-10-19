@@ -73,6 +73,16 @@ pass; require both real TestSprite and Quality checks on main and prove automati
 rerun on a new commit. User was asked to save TestSprite App Frostcut-only scope;
 their last reply asked to open the tab, so scope reduction is still unconfirmed.
 
+Main protection has now been PUT and API-read back: strict required Quality checks
+bound to GitHub Actions App 15368 and TestSprite V3 bound to genuine TestSprite App
+2756476, including admins. No guessed/fake status. 7f1c924 automatically triggered
+TestSprite execution 40ad35dd-5b40-4494-a7db-3c4440f5f8b4 (pending when observed).
+Quality run 39253426754 passed 233 unit tests/build, then Chromium: 4 passed/1 failed.
+Failure artifact 12187396300 showed Text alignment as a real visible combobox;
+the new backup test's exact label selector was wrong. Changed to getByRole combobox;
+commit/push and inspect the actual rerun, no local browser rerun. Other four tests
+genuinely proved real caption gestures/backup roundtrip/invalid JSON+SRT and parts.
+
 Nested sequence source-model work is saved/pushed as ae6997d on
 `codex/nested-sequences`, in the attached managed worktree:
 `C:/Users/Arenb/.codex/worktrees/nested-sequences/Videoeditor`.

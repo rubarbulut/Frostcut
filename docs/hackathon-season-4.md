@@ -75,6 +75,20 @@ public repository. This is a preparation/evidence record, **not a submitted entr
   is exploring editing and autosave/reload checks. It cannot replace file evidence;
   both runners must provide their own genuine results. The original diagnostic
   project, definitions and historical blocked reports are preserved.
+- New commit `7f1c924` automatically triggered the original TestSprite rule after
+  Vercel Ready: genuine pending **TestSprite V3** status by `testsprite[bot]`,
+  [execution 40ad35dd-5b40-4494-a7db-3c4440f5f8b4](https://www.testsprite.com/dashboard-v3/o/ee3a6b41-5680-5bdf-998e-5b37da0e18af/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/40ad35dd-5b40-4494-a7db-3c4440f5f8b4).
+  Main protection is now enabled and API-read back: required **Quality checks**
+  from GitHub Actions (App 15368), **TestSprite V3** from TestSprite (App 2756476),
+  strict up-to-date checks, including admins. The public GitHub App API confirmed
+  TestSprite's real App ID. No fabricated status or guessed check name is used.
+- [First real Chromium file run](https://github.com/rubarbulut/Frostcut/actions/runs/39253426754)
+  reported **4 passed, 1 failed**: caption gestures/persistence, invalid-caption
+  validation, malformed JSON/SRT recovery and equal-parts file roundtrip passed.
+  The remaining test waited for a label selector; its captured DOM showed the
+  actual Text alignment combobox. Its selector is corrected to the accessible
+  combobox role, without changing the application's behavior. A new run is needed.
+  The same GitHub run passed 233 unit tests/38 files and the hosted build.
 - The entrant saved the Vercel GitHub App selection for Frostcut. The repo then
   appeared in Vercel's import list. Existing personal-site selection was retained.
 - `.github/workflows/quality.yml` runs real unit checks, metadata checks and a
