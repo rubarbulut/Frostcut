@@ -23,7 +23,7 @@ import { EffectPreview } from './EffectPreview';
 import { AdjustmentComposite } from './AdjustmentComposite';
 import { frameAspectRatio, frameFillMode, frameObjectFit, needsBlurFill } from './aspect-fill';
 import { AudioPeakMeter } from './AudioPeakMeter';
-import { captionTimelineIndex, clipTimelineIndex } from './timeline-index';
+import { captionTimelineIndex } from './timeline-index';
 import { ensureProxy, previewSource, proxyStatus, type PreviewQuality } from './proxies';
 function VideoLayer({
   clip,
@@ -394,16 +394,13 @@ export default function Preview({
             style={{ aspectRatio: `${p.settings.width}/${p.settings.height}` }}
           >
             <AdjustmentComposite layers={p.adjustments} time={time} draft={previewAdjustment}>
-            {clips.at(time)
-              .map((c) => (
-                <VideoLayer
-                  key={c.id}
-                  clip={c}
-                  quality={quality}
-                  degraded={degraded.includes(c.mediaId)}
-                  onDegrade={onDegrade}
-                />
-              ))}
+              <ActiveWindowDecoder
+                project={p}
+                time={time}
+                quality={quality}
+                degraded={degraded}
+                onDegrade={onDegrade}
+              />
             </AdjustmentComposite>
             <TransformHandles />
             {p.captions.safeArea && (
