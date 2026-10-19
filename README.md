@@ -19,10 +19,20 @@ generated a reviewed 12-case core suite. Its
 finished with 0 passed, 8 failed and 4 blocked: the cloud browser could not decode
 the sample H.264 MP4 and enter the editor. A real additional WebM sample and
 inspected-media fallback are now implemented; their cloud verification is pending.
-No TestSprite pass is claimed. The [coverage brief](docs/testsprite-coverage.md)
+The [real PR execution](https://www.testsprite.com/dashboard-v3/o/ee3a6b41-5680-5bdf-998e-5b37da0e18af/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/69f69260-5615-4ff0-a799-dbd9967d5fa1)
+then reported **3 passed, 0 failed, 9 blocked**: sample opening, split/history and
+caption-time validation passed; downloaded-file inspection remains blocked in
+the TestSprite harness. Its authentic [bot result is on PR #1](https://github.com/rubarbulut/Frostcut/pull/1#issuecomment-6267077384).
+No whole-suite pass is claimed. The [coverage brief](docs/testsprite-coverage.md)
 specifies split/undo/redo, caption text/timing/validation/style, timeline navigation,
 preview speed, equal parts, project downloads and invalid-open recovery. After
-the fix is verified, this section will record the authentic PR result.
+the full checks finish, this section will record their actual results.
+
+Five real Chromium file/gesture/recovery scenarios are being added to GitHub
+Quality checks; their cloud result is pending. A separate
+[FrostCut PR core portal project](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/2b7bdea7-7743-4036-96f1-3527e99a4ea3/settings/source)
+is exploring editing and autosave workflows without pretending to inspect files.
+The original diagnostic project and blocked history remain intact.
 See the [complete entry checklist](docs/hackathon-season-4.md) for all requirements.
 
 The public static editor runs its media workflows in your browser. The optional

@@ -61,6 +61,27 @@ remaining credits and enable extended model/media cases deliberately. No model o
 render runs on site load. No paid plan, artificial engagement, vote automation or
 unbounded run schedule is part of this setup.
 
+## Actual execution boundaries found on October 19
+
+The original 12-case diagnostic suite's first PR execution reported **3 passed,
+0 failed, 9 blocked**, not 12 passes. Its sample, split/history and invalid-caption
+time tests passed after the real WebM compatibility fix. File assertions blocked
+because the agent could not access the browser's JSON/SRT downloads. Test Files
+requires a paid plan/trial, which was declined. An export toast is not file proof.
+
+Five selected Chromium scenarios now live in `playwright.hackathon.config.ts` and
+the GitHub Quality workflow (cloud execution pending): existing caption drag/
+resize/undo/exact-time persistence, existing timing validation, actual backup
+download/content/style/timing reimport, malformed JSON and real SRT rejection with
+edit retention, and actual equal-parts/original file roundtrip. Tests use real
+downloads and the app's file input, not internal Zustand state or mocked passes.
+
+The new portal project **FrostCut PR core**, ID
+`2b7bdea7-7743-4036-96f1-3527e99a4ea3`, is exploring up to ten distinct in-editor
+and IndexedDB autosave/reload scenarios. It does not claim native-file roundtrip,
+drag-gesture, ASR or render coverage. The old diagnostic project and its blocked
+history remain. Completion still requires genuine results for both paths.
+
 ## Account and CI evidence to append after it exists
 
 | Evidence | Value |
@@ -68,10 +89,10 @@ unbounded run schedule is part of this setup.
 | Portal project / suite | Project a34e8de5-bcc5-43f5-8de6-91793ac81697; exploration finished; 12 reviewed distinct cases generated/run |
 | Generated core case IDs/count | 12 selected from 57 proposed across 6 use cases; sample test case 2eb00247-3b2a-4a30-bc8c-d5e41af4cacb; append remaining IDs after completion |
 | Initial execution and failures | [2aeddbd3-edee-4ef0-bcab-936f29b2350a](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/2aeddbd3-edee-4ef0-bcab-936f29b2350a): 0 passed, 8 failed, 4 blocked; sample MP4 cannot be decoded by cloud browser; real failure preserved |
-| Final passing execution | Pending |
-| Entry PR with authentic TestSprite comment/check | PR #1 open; authentic TestSprite result pending |
+| Final passing execution | Pending; first PR run has 3 passed, 9 blocked |
+| Entry PR with authentic TestSprite comment/check | [Authentic bot comment](https://github.com/rubarbulut/Frostcut/pull/1#issuecomment-6267077384); run 69f69260-5615-4ff0-a799-dbd9967d5fa1, 3 passed/9 blocked |
 | New-commit automatic rerun | Pending |
-| Required blocking check/rules | Pending |
+| Required blocking check/rules | Trigger Merge gate enabled; main required-check rule and real new-revision result pending |
 
 After setup, summarize **actual generated coverage** in README and link its portal
 execution/PR evidence. Optional extended cases stay excluded from any core-pass

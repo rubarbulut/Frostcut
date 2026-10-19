@@ -53,6 +53,28 @@ public repository. This is a preparation/evidence record, **not a submitted entr
   to Frostcut is pending the entrant because the repo picker did not show options.
   Do not report Frostcut-only scope until it is visibly saved. No trigger is saved
   yet; the form detected the real Vercel commit-status event and branch URL pattern.
+- That PR trigger is now saved **Active**, watching the real Vercel commit-status
+  event with `https://frostcut-git-{branch-slug}-rubar.vercel.app/`. Its Merge gate
+  (report an actual status check that fails on failing tests) is enabled. Main's
+  required-check rule and a genuine new-commit automatic result still need proof.
+- The genuine manual test event created
+  [TestSprite bot comment 6267077384](https://github.com/rubarbulut/Frostcut/pull/1#issuecomment-6267077384)
+  and [PR run 69f69260-5615-4ff0-a799-dbd9967d5fa1](https://www.testsprite.com/dashboard-v3/o/ee3a6b41-5680-5bdf-998e-5b37da0e18af/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/69f69260-5615-4ff0-a799-dbd9967d5fa1).
+  At verified preview source `d813666` it reported **3 passed, 0 failed, 9 blocked**.
+  Passing cases: ING-001 sample opening, TIM-001 split/undo/redo, CAP-002 invalid
+  caption timing. The equal-parts replay confirmed 8.00/8.00/8.01 s and a retained
+  24.01 s original, but blocked at final downloaded-JSON inspection. Do not treat
+  blocked assertions or the portal's synthetic evaluation score as passing tests.
+- Test Files is not included in Free. The portal offered a Starter trial that
+  becomes $19/mo; it was dismissed. No file was uploaded, trial accepted, or card
+  entered. Free balance showed 132 credits after the first two executions.
+- Actual file roundtrips/invalid files and mouse caption gestures are being wired
+  into GitHub's real Chromium runner: five scenarios, no mocked browser/media data.
+  Local `--list` confirmed selection only; execution has not been claimed yet.
+  A separate [FrostCut PR core project](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/2b7bdea7-7743-4036-96f1-3527e99a4ea3/settings/source)
+  is exploring editing and autosave/reload checks. It cannot replace file evidence;
+  both runners must provide their own genuine results. The original diagnostic
+  project, definitions and historical blocked reports are preserved.
 - The entrant saved the Vercel GitHub App selection for Frostcut. The repo then
   appeared in Vercel's import list. Existing personal-site selection was retained.
 - `.github/workflows/quality.yml` runs real unit checks, metadata checks and a

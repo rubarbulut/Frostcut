@@ -31,6 +31,16 @@ jobs:
         env:
           SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: npm run build:hosted
+      - name: Install the real Chromium browser on the GitHub runner
+        run: npx playwright install --with-deps chromium
+      - name: Verify actual project downloads, imports, caption gestures and recovery
+        run: npx playwright test --config=playwright.hackathon.config.ts
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: browser-file-failure-${{ github.sha }}
+          path: test-results/hackathon/
+          retention-days: 2
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: production-build-${{ github.sha }}

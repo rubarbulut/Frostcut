@@ -14,9 +14,9 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
 
 ## Active development location — resume here
 
-The general autonomous development goal currently reports **paused**. Continue the
-separately requested TestSprite/hackathon setup; do not resume broad nested-sequence
-development automatically after this work.
+The user resumed the general autonomous goal on October 19; `get_goal` now reports
+**active**. Keep the full development objective open. TestSprite/hackathon setup
+remains the immediate priority; all local work must stay light while they animate.
 
 The immediate user priority is TestSprite Season 4 setup, now being prepared on
 `codex/testsprite-hackathon` in this original checkout. Read
@@ -50,6 +50,28 @@ PR trigger form detects Vercel commit status, with target pattern
 https://frostcut-git-{branch-slug}-rubar.vercel.app/ ; it is not saved yet.
 Passing suite/trigger/check/blocking/rerun and Discord/X/eligibility/one final
 submission remain required. No TestSprite pass has been claimed.
+
+Latest real PR run 69f69260-5615-4ff0-a799-dbd9967d5fa1 at d813666: 3 passed,
+0 failed, 9 blocked. Sample, split/history and invalid caption-time tests passed;
+the others blocked mainly at JSON/SRT download inspection. Authentic bot comment:
+https://github.com/rubarbulut/Frostcut/pull/1#issuecomment-6267077384 . The original
+12-case project and history remain. Test Files requires Starter ($19/mo after a
+trial); it was declined. No paid feature enabled. Actual Free balance then 132.
+The old project's Vercel commit-status trigger is Active; Merge gate was saved
+enabled in fresh browser tab 10. No main required-check rule exists yet.
+
+Five real Chromium file/gesture/recovery checks are prepared in GitHub quality.yml,
+playwright.hackathon.config.ts and tests/hackathon-backups.spec.ts; local --list
+confirmed five, no local browsers ran for this addition. Commit/push and inspect
+their genuine cloud run, fixing any real errors. Do not claim a pass before it.
+A second portal project, FrostCut PR core, ID 2b7bdea7-7743-4036-96f1-3527e99a4ea3,
+is exploring the fixed PR preview. It targets ten distinct UI/autosave/reload cases,
+not file downloads, mouse gestures, ASR or rendering. Review/generate/run its real
+plan; keep original blocked reports. Eventually replace the old diagnostic PR
+trigger with a verified core trigger only after both core and real file checks
+pass; require both real TestSprite and Quality checks on main and prove automatic
+rerun on a new commit. User was asked to save TestSprite App Frostcut-only scope;
+their last reply asked to open the tab, so scope reduction is still unconfirmed.
 
 Nested sequence source-model work is saved/pushed as ae6997d on
 `codex/nested-sequences`, in the attached managed worktree:
