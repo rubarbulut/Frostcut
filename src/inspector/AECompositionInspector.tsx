@@ -11,9 +11,13 @@ import {
   CheckCircle2,
   Edit2,
   Check,
+  Sparkles,
+  Scissors,
+  ArrowRight,
 } from 'lucide-react';
-import { type Project, duration, timecode } from '../model';
+import { type Project, isAudioClip, duration, timecode } from '../model';
 import { useEditor } from '../store';
+import { presetKeyframes, clampMotion, type AnimatedProperty } from '../motion';
 import { AEGroup } from './AEGroup';
 import { AEPropertyRow } from './AEPropertyRow';
 import { AEScrubber } from './AEScrubber';
@@ -25,6 +29,25 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
 
   const [renaming, setRenaming] = useState(false);
   const [seqName, setSeqName] = useState<string>(String(p.settings.preset || 'Main Sequence'));
+
+  const is916 =
+    (p.settings.aspectRatio === '9:16' ||
+      (p.settings.width === 1080 && p.settings.height === 1920)) &&
+    !!p.captions.safeArea;
+
+  const isAudioMastered = p.clips.some(
+    (c) => c.voiceEnhance || c.autoDuck || (c.properties.volume && c.properties.volume > 1.0),
+  );
+
+  const isCaptionsActive = p.captions.enabled;
+
+  const firstClip = [...p.clips].sort((a, b) => a.start - b.start)[0];
+  const hasHook =
+    firstClip &&
+    firstClip.properties.animation &&
+    firstClip.properties.animation !== 'None';
+
+  const completedSteps = [is916, isAudioMastered, isCaptionsActive, hasHook].filter(Boolean).length;
 
   const currentRatio =
     p.settings.aspectRatio ||
@@ -50,6 +73,91 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
     commit(next, `Change sequence aspect ratio to ${ratio}`);
   };
 
+  const handleApplyFormat = () => {
+    setRatio('9:16');
+    const next = structuredClone(useEditor.getState().project);
+    next.captions.safeArea = true;
+    commit(next, 'Format: 9:16 Reels/TikTok with safe margins');
+  };
+
+  const handleApplyMasterAudio = () => {
+    const next = structuredClone(p);
+    for (const c of next.clips) {
+      if (!isAudioClip(next, c) || c.audioRole === 'voice') {
+        c.voiceEnhance = true;
+        if (c.properties.volume < 0.85) c.properties.volume = 1.1;
+      }
+      if (isAudioClip(next, c) && c.audioRole === 'music') {
+        c.autoDuck = true;
+        c.properties.volume = Math.min(0.35, c.properties.volume || 0.3);
+      }
+    }
+    commit(next, 'Master audio: -14 LUFS speech leveling & auto-ducking');
+  };
+
+  const handleApplyCaptions = () => {
+    const next = structuredClone(p);
+    next.captions.enabled = true;
+    if (next.captions.preset === 'Clean') next.captions.preset = 'Bold';
+    commit(next, 'Enable dynamic viral captions');
+  };
+
+  const handleApplyHook = () => {
+    if (!firstClip) return;
+    const next = structuredClone(p);
+    const target = next.clips.find((c) => c.id === firstClip.id);
+    if (!target) return;
+    target.properties.animation = 'Punch In';
+    target.keyframes = Object.fromEntries(
+      Object.entries(
+        presetKeyframes(target, 'Punch In', next.settings.width, next.settings.height),
+      ).map(([key, frames]) => [
+        key,
+        frames.map((f) => ({
+          ...f,
+          value: clampMotion(key as AnimatedProperty, f.value),
+        })),
+      ]),
+    );
+    commit(next, 'Apply hook punch-in zoom');
+  };
+
+  const handleApplyAll = () => {
+    const next = structuredClone(p);
+    next.settings.aspectRatio = '9:16';
+    next.settings.width = 1080;
+    next.settings.height = 1920;
+    next.captions.safeArea = true;
+    for (const c of next.clips) {
+      if (!isAudioClip(next, c) || c.audioRole === 'voice') {
+        c.voiceEnhance = true;
+        if (c.properties.volume < 0.85) c.properties.volume = 1.1;
+      }
+      if (isAudioClip(next, c) && c.audioRole === 'music') {
+        c.autoDuck = true;
+        c.properties.volume = Math.min(0.35, c.properties.volume || 0.3);
+      }
+    }
+    next.captions.enabled = true;
+    if (next.captions.preset === 'Clean') next.captions.preset = 'Bold';
+    const primary = [...next.clips].sort((a, b) => a.start - b.start)[0];
+    if (primary) {
+      primary.properties.animation = 'Punch In';
+      primary.keyframes = Object.fromEntries(
+        Object.entries(
+          presetKeyframes(primary, 'Punch In', next.settings.width, next.settings.height),
+        ).map(([key, frames]) => [
+          key,
+          frames.map((f) => ({
+            ...f,
+            value: clampMotion(key as AnimatedProperty, f.value),
+          })),
+        ]),
+      );
+    }
+    commit(next, 'Apply full smart edit workflow polish');
+  };
+
   const handleSaveName = () => {
     setRenaming(false);
     if (!seqName.trim()) return;
@@ -62,6 +170,7 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
 
   const videoTracks = p.tracks.filter((t) => t.kind === 'video').length;
   const audioTracks = p.tracks.filter((t) => t.kind === 'audio').length;
+
 
   return (
     <div className="ae-composition-inspector">
@@ -126,6 +235,69 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
           <span className="ae-meta-val">{p.clips.length}</span>
         </div>
       </div>
+
+      {/* Smart First Steps & Quick Polish */}
+      {p.clips.length > 0 && (
+        <AEGroup
+          title="İlk Adım Önerileri & İş Akışı"
+          icon={<Sparkles size={13} />}
+          defaultOpen={true}
+          badge={`${completedSteps}/4 Hazır`}
+        >
+          <div className="ae-comp-body">
+            <div className="ae-comp-workflow-strip">
+              <button
+                type="button"
+                className={`ae-step-pill ${isAudioMastered ? 'done' : ''}`}
+                onClick={handleApplyMasterAudio}
+                title="Sesi -14 LUFS standardına getir ve arka planı kıs"
+              >
+                <Volume2 size={12} />
+                <span>{isAudioMastered ? '✓ Ses Dengelendi' : '1. Sesi Dengele'}</span>
+              </button>
+
+              <button
+                type="button"
+                className={`ae-step-pill ${isCaptionsActive ? 'done' : ''}`}
+                onClick={handleApplyCaptions}
+                title="Altyazıları aç"
+              >
+                <Captions size={12} />
+                <span>{isCaptionsActive ? '✓ Altyazı Aktif' : '2. Altyazı Ekle'}</span>
+              </button>
+
+              <button
+                type="button"
+                className={`ae-step-pill ${is916 ? 'done' : ''}`}
+                onClick={handleApplyFormat}
+                title="9:16 Dikey Formata ve Güvenli Alana Al"
+              >
+                <Smartphone size={12} />
+                <span>{is916 ? '✓ 9:16 Dikey' : '3. 9:16 Uyarla'}</span>
+              </button>
+
+              <button
+                type="button"
+                className={`ae-step-pill ${hasHook ? 'done' : ''}`}
+                onClick={handleApplyHook}
+                title="İlk 3 saniyeye dikkat çeken punch-in zoom ekle"
+              >
+                <Zap size={12} />
+                <span>{hasHook ? '✓ Hook Hazır' : '4. Hook Ekle'}</span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              className="ae-workflow-all-btn"
+              onClick={handleApplyAll}
+            >
+              <Zap size={12} />
+              <span>✨ Tüm İlk Adımları Tek Tıkla Uygula</span>
+            </button>
+          </div>
+        </AEGroup>
+      )}
 
       {/* Frame Dimensions & Aspect Ratio Group */}
       <AEGroup

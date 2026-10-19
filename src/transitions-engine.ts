@@ -22,6 +22,26 @@ export const defaultTransition = (type: TransitionType = 'cross-dissolve'): Tran
   intensity: 0.5,
 });
 
+export function validTransition(value: unknown): value is TransitionConfig {
+  if (!value || typeof value !== 'object') return false;
+  const t = value as TransitionConfig;
+  return (
+    typeof t.type === 'string' &&
+    [
+      'cross-dissolve',
+      'luma-wipe',
+      'whip-pan',
+      'cross-zoom',
+      'glitch-split',
+      'directional-wipe',
+    ].includes(t.type) &&
+    typeof t.duration === 'number' &&
+    Number.isFinite(t.duration) &&
+    t.duration >= 0.05 &&
+    t.duration <= 10.0
+  );
+}
+
 export function computeTransitionProgress(
   time: number,
   transitionStart: number,

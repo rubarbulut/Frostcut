@@ -44,7 +44,7 @@ export function speechRanges(p: Project, musicId?: string) {
   const ranges = p.clips
     .filter(
       (c) =>
-        c.id !== musicId && clipAudible(p, c) && c.properties.volume > 0 && c.audioRole !== 'music',
+        c.id !== musicId && clipAudible(p, c) && c.properties.volume > 0 && c.audioRole !== 'music' && c.audioRole !== 'sfx',
     )
     .flatMap((c) => {
       const words = c.captionWords?.length

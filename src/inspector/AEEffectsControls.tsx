@@ -7,9 +7,11 @@ import {
   Crosshair,
   Wand2,
   Film,
+  Layers,
 } from 'lucide-react';
 import { type Clip, isLocked } from '../model';
 import { useEditor } from '../store';
+import { defaultTransition, type TransitionType } from '../transitions-engine';
 import {
   defaultChroma,
   defaultCornerPin,
@@ -916,7 +918,100 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
         </div>
       </AEGroup>
 
-      {/* 5. Motion Tracking Group */}
+      {/* 5. Transitions & Dissolve Group */}
+      <AEGroup
+        title="Transition & Dissolve"
+        icon={<Layers size={13} />}
+        defaultOpen={!!clip.transition}
+        hasFx={true}
+        fxEnabled={!!clip.transition}
+        onToggleFx={(enabled) => {
+          const next = structuredClone(useEditor.getState().project);
+          const target = next.clips.find((c) => c.id === clip.id);
+          if (!target) return;
+          target.transition = enabled ? defaultTransition() : undefined;
+          commit(next, enabled ? 'Enable transition' : 'Disable transition');
+        }}
+        onReset={() => {
+          const next = structuredClone(useEditor.getState().project);
+          const target = next.clips.find((c) => c.id === clip.id);
+          if (!target) return;
+          target.transition = undefined;
+          commit(next, 'Reset transition');
+        }}
+        badge={clip.transition ? clip.transition.type.toUpperCase() : undefined}
+      >
+        <div className="ae-effects-body">
+          <AEPropertyRow label="Transition Type">
+            <select
+              className="ae-select"
+              value={clip.transition?.type ?? 'cross-dissolve'}
+              disabled={locked || !clip.transition}
+              onChange={(e) => {
+                const next = structuredClone(useEditor.getState().project);
+                const target = next.clips.find((c) => c.id === clip.id);
+                if (!target) return;
+                target.transition = {
+                  ...(target.transition ?? defaultTransition()),
+                  type: e.target.value as TransitionType,
+                };
+                commit(next, 'Change transition type');
+              }}
+            >
+              <option value="cross-dissolve">Cross Dissolve (Smooth)</option>
+              <option value="whip-pan">Whip Pan (Fast Blur Pan)</option>
+              <option value="cross-zoom">Cross Zoom (Optic Zoom)</option>
+              <option value="glitch-split">Glitch / RGB Split</option>
+              <option value="luma-wipe">Luma Wipe (Gradient)</option>
+              <option value="directional-wipe">Directional Wipe</option>
+            </select>
+          </AEPropertyRow>
+
+          <AEPropertyRow label="Duration">
+            <AEScrubber
+              value={clip.transition?.duration ?? 0.5}
+              min={0.1}
+              max={3.0}
+              step={0.05}
+              unit="s"
+              decimals={2}
+              defaultValue={0.5}
+              disabled={locked || !clip.transition}
+              onChange={(v) => {
+                const next = structuredClone(useEditor.getState().project);
+                const target = next.clips.find((c) => c.id === clip.id);
+                if (!target || !target.transition) return;
+                target.transition.duration = v;
+                commit(next, 'Change transition duration');
+              }}
+            />
+          </AEPropertyRow>
+
+          {['whip-pan', 'directional-wipe'].includes(clip.transition?.type ?? '') && (
+            <AEPropertyRow label="Direction">
+              <select
+                className="ae-select"
+                value={clip.transition?.direction ?? 'right'}
+                disabled={locked || !clip.transition}
+                onChange={(e) => {
+                  const next = structuredClone(useEditor.getState().project);
+                  const target = next.clips.find((c) => c.id === clip.id);
+                  if (!target || !target.transition) return;
+                  target.transition.direction = e.target.value as 'left' | 'right' | 'up' | 'down';
+                  commit(next, 'Change transition direction');
+                }}
+              >
+                <option value="right">Slide Right</option>
+                <option value="left">Slide Left</option>
+                <option value="up">Slide Up</option>
+                <option value="down">Slide Down</option>
+              </select>
+            </AEPropertyRow>
+          )}
+        </div>
+      </AEGroup>
+
+      {/* 6. Motion Tracking Group */}
       <AEGroup
         title="Motion Tracking & AI Anchor"
         icon={<Crosshair size={13} />}

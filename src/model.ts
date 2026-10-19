@@ -10,6 +10,7 @@ import {
 import type { PublishingMetadata } from './publishing';
 import type { Attribution } from './stock';
 import { validVisualEffects, type VisualEffects } from './visual-effects';
+import { validTransition, type TransitionConfig } from './transitions-engine';
 import { validChapterSet, type ChapterSet } from './chapter-data';
 import type { CutOptions } from './ai';
 import { validAdjustments, cutAdjustments, remapAdjustments, speedAdjustments, type AdjustmentLayer } from './adjustments';
@@ -99,7 +100,8 @@ export type ClipProps = {
 };
 export type Clip = {
   effects?: VisualEffects;
-  audioRole?: 'music' | 'voice';
+  transition?: TransitionConfig;
+  audioRole?: 'music' | 'voice' | 'sfx';
   autoDuck?: boolean;
   voiceEnhance?: boolean;
   audioDetached?: boolean;
@@ -856,7 +858,7 @@ export function validateProject(value: unknown): Project {
         !string(c.id) ||
         !p.tracks.some((t) => t.id === c.trackId) ||
         (c.audioDetached !== undefined && typeof c.audioDetached !== 'boolean') ||
-        (c.audioRole !== undefined && !['voice', 'music'].includes(c.audioRole)) ||
+        (c.audioRole !== undefined && !['voice', 'music', 'sfx'].includes(c.audioRole)) ||
         (c.autoDuck !== undefined && typeof c.autoDuck !== 'boolean') ||
         (c.voiceEnhance !== undefined && typeof c.voiceEnhance !== 'boolean') ||
         !finite(c.start) ||
@@ -866,6 +868,7 @@ export function validateProject(value: unknown): Project {
         fail();
       if (c.captionWords !== undefined) validateWords(c.captionWords, m!.duration);
       if (c.effects !== undefined && !validVisualEffects(c.effects)) fail();
+      if (c.transition !== undefined && !validTransition(c.transition)) fail();
       if (c.tracking !== undefined && (isAudioClip(p, c) || !validClipTracking(c.tracking, m!.duration))) fail();
       if (c.keyframes !== undefined) {
         if (

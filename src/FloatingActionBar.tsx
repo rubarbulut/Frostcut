@@ -12,6 +12,7 @@ import {
 import { useEditor } from './store';
 import { isLocked, clipEnd, uid, type Project, type Clip } from './model';
 import { splitSelected, deleteSelected } from './Timeline';
+import { addSfxToProject } from './sfx-library';
 
 export function FloatingActionBar() {
   const selected = useEditor((s) => s.selected);
@@ -21,6 +22,7 @@ export function FloatingActionBar() {
 
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [showVolumeMenu, setShowVolumeMenu] = useState(false);
+  const [showSfxMenu, setShowSfxMenu] = useState(false);
 
   if (!selected.length) return null;
 
@@ -152,6 +154,54 @@ export function FloatingActionBar() {
                   type="button"
                   className="floating-menu-item"
                   onClick={() => handleSetVolume(item.val)}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* SFX Quick Dropdown */}
+        <div className="floating-dropdown-wrapper">
+          <button
+            type="button"
+            className={`floating-action-btn ${showSfxMenu ? 'active' : ''}`}
+            disabled={hasLocked}
+            onClick={() => {
+              setShowSfxMenu(!showSfxMenu);
+              setShowSpeedMenu(false);
+              setShowVolumeMenu(false);
+            }}
+            title="Add sound effect at clip start"
+            aria-label="Add sound effect"
+            aria-expanded={showSfxMenu}
+          >
+            <Sparkles size={14} className="text-sky-400" />
+            <span>SFX</span>
+          </button>
+          {showSfxMenu && (
+            <div className="floating-dropdown-menu">
+              {[
+                { id: 'whoosh-clean', label: 'Clean Whoosh' },
+                { id: 'whoosh-whip', label: 'Whip Swoosh' },
+                { id: 'impact-bass-drop', label: '808 Bass Drop' },
+                { id: 'pop-bubble', label: 'Bubble Pop' },
+                { id: 'camera-shutter', label: 'Camera Shutter' },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="floating-menu-item"
+                  onClick={() => {
+                    const firstClip = selectedClips[0];
+                    if (firstClip) {
+                      const { nextProject, clipId } = addSfxToProject(p, item.id, firstClip.start, 'A2');
+                      commit(nextProject, `Add SFX: ${item.label}`);
+                      select([clipId]);
+                    }
+                    setShowSfxMenu(false);
+                  }}
                 >
                   {item.label}
                 </button>

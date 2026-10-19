@@ -3149,40 +3149,26 @@ details > summary {
   animation: spin 1.5s linear infinite;
 }
 /* ==========================================================================
-   MASTER GOTHIC CATHEDRAL SCROLLBAR (OBSIDIAN & GLACIAL ICICLE)
+   PRECISION SCROLLBAR (SLIM, MODERN & UNCLUTTERED)
    ========================================================================== */
 html, body {
   scrollbar-width: thin;
-  scrollbar-color: #38bdf8 #020408;
+  scrollbar-color: #1e293b #030508;
 }
 ::-webkit-scrollbar {
-  width: 13px;
-  height: 13px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #03060b;
-  border-left: 1px solid rgba(125, 211, 252, 0.2);
-  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.95);
+  background: #030508;
 }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #7dd3fc 0%, #0284c7 15%, #0f172a 50%, #0284c7 85%, #7dd3fc 100%);
-  border: 1px solid #38bdf8;
-  border-radius: 4px;
-  box-shadow: 
-    0 0 14px rgba(56, 189, 248, 0.55),
-    inset 0 0 6px rgba(255, 255, 255, 0.4);
+  background: #1e293b;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #a5f3fc 0%, #38bdf8 25%, #0369a1 50%, #38bdf8 75%, #a5f3fc 100%);
-  border-color: #ffffff;
-  box-shadow: 
-    0 0 24px rgba(103, 232, 249, 0.9),
-    0 0 6px #ffffff,
-    inset 0 0 10px rgba(255, 255, 255, 0.7);
-}
-::-webkit-scrollbar-corner {
-  background: #020408;
-  border: 1px solid rgba(125, 211, 252, 0.2);
+  background: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
 }
 @keyframes spin {
   to {
@@ -6031,4 +6017,232 @@ html, body {
   font-size: 10px;
   color: #8da4b5;
   line-height: 1.35;
+}
+
+/* ==========================================================================
+   SMART EDIT WORKFLOW & FIRST STEP RECOMMENDATIONS BAR
+   ========================================================================== */
+.smart-workflow-bar {
+  background: #151820;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.smart-workflow-bar.is-collapsed {
+  background: #13161c;
+}
+
+.workflow-bar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  gap: 10px;
+}
+
+.workflow-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.workflow-wand-icon {
+  color: #38bdf8;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.5));
+  flex-shrink: 0;
+}
+
+.workflow-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #f0f6fc;
+  letter-spacing: 0.1px;
+}
+
+.workflow-progress-pill {
+  font-size: 9.5px;
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+
+.workflow-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.workflow-master-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  border-radius: 4px;
+  color: #ffffff;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  transition: all 0.15s ease;
+}
+.workflow-master-btn:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.35);
+}
+
+.workflow-icon-btn {
+  background: transparent;
+  border: none;
+  color: #8b949e;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s ease;
+}
+.workflow-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #e6edf3;
+}
+
+.workflow-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  padding: 0 12px 10px;
+}
+
+@media (max-width: 1200px) {
+  .workflow-steps-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+.workflow-step-card {
+  background: #1b1f28;
+  border: 1px solid #282f3c;
+  border-radius: 6px;
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.15s ease;
+}
+.workflow-step-card:hover {
+  border-color: #38bdf8;
+  background: #202632;
+  transform: translateY(-1px);
+}
+.workflow-step-card.completed {
+  border-color: rgba(74, 222, 128, 0.3);
+  background: rgba(74, 222, 128, 0.03);
+}
+
+.step-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.step-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+}
+.step-icon-badge.scissors {
+  background: rgba(244, 63, 94, 0.15);
+  color: #fb7185;
+}
+.step-icon-badge.audio {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+}
+.step-icon-badge.captions {
+  background: rgba(250, 204, 21, 0.15);
+  color: #facc15;
+}
+.step-icon-badge.format {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+.step-icon-badge.hook {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+}
+
+.step-num {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #6e7681;
+  text-transform: uppercase;
+}
+
+.step-done-badge {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 700;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.12);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.step-title {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #e6edf3;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.step-desc {
+  font-size: 9.5px;
+  line-height: 1.35;
+  color: #8b949e;
+  margin: 0 0 8px;
+  flex: 1;
+}
+
+.step-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  padding: 5px 8px;
+  background: #232936;
+  border: 1px solid #323b4c;
+  border-radius: 4px;
+  color: #38bdf8;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.step-action-btn:hover {
+  background: #2d3546;
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+.step-action-btn.is-done {
+  background: rgba(74, 222, 128, 0.1);
+  border-color: rgba(74, 222, 128, 0.25);
+  color: #4ade80;
 }

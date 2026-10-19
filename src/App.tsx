@@ -34,6 +34,7 @@ import {
   Captions,
   Camera,
   Share2,
+  Volume2,
 } from 'lucide-react';
 import { Modal, Field, Range } from './components';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
@@ -75,7 +76,6 @@ import {
   suggestCuts,
   silenceFromSamples,
   mapSilences,
-  promptOperations,
   type CutOptions,
 } from './ai';
 import { transcribe, parseSrt } from './transcription';
@@ -89,9 +89,11 @@ import {
   ThumbnailGrabber,
   SocialPostKit,
   SocialCaptionsPanel,
+  SfxPanel,
 } from './Panels';
 import CaptionEditor from './CaptionEditor';
 import TranscriptionSetup from './TranscriptionSetup';
+import { SmartWorkflowGuide } from './SmartWorkflowGuide';
 import { resolveQuality, recommendedQuality, transcriptionModels } from './transcription-config';
 import LandingPage from './LandingPage';
 import { MediaImporterModal } from './importer/MediaImporterModal';
@@ -170,14 +172,7 @@ export default function App() {
     [newFps, setNewFps] = useState(30),
     [job, setJob] = useState<Job | null>(null),
     [suggestionsOpen, setSuggestionsOpen] = useState(false),
-    [aiOpen, setAiOpen] = useState(false),
-    [prompt, setPrompt] = useState(''),
-    [aiPreview, setAiPreview] = useState<{
-      operations: Operation[];
-      description: string;
-      needsAnalysis?: boolean;
-    }>(),
-    [oneClick, setOneClick] = useState(false),
+
     [exportUrl, setExportUrl] = useState<string>(),
     [exportBlob, setExportBlob] = useState<Blob>(),
     [mobileTab, setMobileTab] = useState('Clips'),
@@ -215,8 +210,6 @@ export default function App() {
     }
   }, [modal]);
   useEffect(() => {
-    // Proposals are tied to the exact timeline they were generated against.
-    setAiPreview(undefined);
     setSelectedSuggestion(undefined);
     setSelectedShorts([]);
   }, [p]);
@@ -988,6 +981,14 @@ export default function App() {
                   Post Kit
                 </button>
                 <button
+                  className={panel === 'sfx' ? 'active' : ''}
+                  onClick={() => setPanel('sfx')}
+                  title="Sound Effects & Production Audio"
+                >
+                  <Volume2 size={13} />
+                  SFX
+                </button>
+                <button
                   className={panel === 'transcript' ? 'active' : ''}
                   onClick={() => setPanel('transcript')}
                   title="Transcript & Speech Search"
@@ -1010,6 +1011,8 @@ export default function App() {
                 <ThumbnailGrabber />
               ) : panel === 'postkit' ? (
                 <SocialPostKit />
+              ) : panel === 'sfx' ? (
+                <SfxPanel onToast={setToast} />
               ) : (
                 <TranscriptPanel
                   onTranscribe={() => setModal('transcribe')}
@@ -1055,6 +1058,10 @@ export default function App() {
                   </label>
                 </div>
               </div>
+              <SmartWorkflowGuide
+                onTranscribeRequest={() => setModal('transcribe')}
+                onSilenceCutRequest={() => void runAnalysis(true)}
+              />
               <Preview onImport={() => importClick()} processing={!!job} />
               {pending.length > 0 && (
                 <button className="suggestion-banner" onClick={() => setSuggestionsOpen(true)}>
@@ -1164,164 +1171,7 @@ export default function App() {
               <PropertiesPanel />
             )}
           </section>
-          <button
-            className={`ai-toggle ${aiOpen ? 'active' : ''}`}
-            onClick={() => setAiOpen(!aiOpen)}
-          >
-            <Sparkles size={18} />
-            <span>Ask FrostCut</span>
-          </button>
-          {aiOpen && (
-            <section className="ai-panel">
-              <div className="panel-title">
-                <span>
-                  <Sparkles size={15} />
-                  Your editing assistant
-                </span>
-                <button
-                  className="icon"
-                  aria-label="Close AI assistant"
-                  onClick={() => setAiOpen(false)}
-                >
-                  <X size={16} />
-                </button>
-              </div>
-              <p>One good idea. A faster first cut.</p>
-              <div className="prompt-chips">
-                {[
-                  'Make this faster',
-                  'Remove silences',
-                  'Add dynamic captions',
-                  'Find the best hook',
-                  'Make 3 Shorts',
-                ].map((chip) => (
-                  <button
-                    key={chip}
-                    onClick={() => {
-                      setPrompt(chip);
-                      setAiPreview(promptOperations(p, chip));
-                    }}
-                  >
-                    {chip}
-                  </button>
-                ))}
-              </div>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const proposal = promptOperations(p, prompt);
-                  if (oneClick && proposal.operations.length) {
-                    try {
-                    commit(
-                      applyOperations(p, proposal.operations, proposal.description),
-                      'AI edit',
-                      true,
-                    );
-                    setAiPreview(undefined);
-                    setToast('AI edit applied.');
-                    } catch (error) { setToast((error as Error).message); }
-                  } else setAiPreview(proposal);
-                }}
-              >
-                <input
-                  aria-label="Ask AI to edit"
-                  placeholder="Ask AI to edit…"
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                />
-                <button className="icon" aria-label="Preview AI command" type="submit">
-                  <ArrowUpRight size={18} />
-                </button>
-              </form>
-              <label className="check-row">
-                <input
-                  type="checkbox"
-                  checked={oneClick}
-                  onChange={(e) => setOneClick(e.target.checked)}
-                />
-                One-click mode
-              </label>
-              <small className="subtle">
-                Local command assistant · supports the actions above.
-              </small>
-              {aiPreview && (
-                <div className="ai-proposal">
-                  <b>
-                    {aiPreview.operations.length
-                      ? `${aiPreview.operations.length} changes will be made`
-                      : 'Let’s shape this edit'}
-                  </b>
-                  <p>{aiPreview.description}</p>
-                  {aiPreview.operations.length > 0 && (
-                    <OperationsPreview project={p} operations={aiPreview.operations} />
-                  )}
-                  {aiPreview.operations.length > 0 ? (
-                    <div className="button-row">
-                      <button
-                        className="primary small"
-                        onClick={() => {
-                          try {
-                          commit(
-                            applyOperations(p, aiPreview.operations, aiPreview.description),
-                            'AI edit',
-                            true,
-                          );
-                          setAiPreview(undefined);
-                          } catch (error) { setToast((error as Error).message); }
-                        }}
-                      >
-                        Apply changes
-                      </button>
-                      <button className="text-button" onClick={() => setAiPreview(undefined)}>
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    aiPreview.needsAnalysis && (
-                      <button
-                        className="primary small"
-                        onClick={() => {
-                          setAiOpen(false);
-                          setModal('auto');
-                        }}
-                      >
-                        Open Auto Cut
-                      </button>
-                    )
-                  )}
-                </div>
-              )}
-              {past.some((h) => h.ai) && (
-                <>
-                  <button
-                    className="text-button"
-                    onClick={() => {
-                      useEditor.getState().revertAI();
-                      setToast(
-                        'Restored the project to before the last AI edit, including later edits.',
-                      );
-                    }}
-                  >
-                    Revert last AI edit
-                  </button>
-                  <button
-                    className="text-button"
-                    onClick={() => {
-                      useEditor.getState().revertAI(true);
-                      setToast(
-                        'Restored the project to before all AI edits, including later edits.',
-                      );
-                    }}
-                  >
-                    Undo all AI cuts
-                  </button>
-                  <small className="subtle">
-                    Restores the earlier project, including manual edits made afterward.
-                  </small>
-                </>
-              )}
-            </section>
-          )}
+
           {drop && (
             <div className="drop-overlay">
               <Upload size={42} />

@@ -1,0 +1,316 @@
+/* ==========================================================================
+   FrostCut Sound Effects (SFX) Studio Styles
+   ========================================================================== */
+
+.sfx-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 14px;
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.sfx-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 8px;
+}
+
+.sfx-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sfx-title-wrap b {
+  font-size: 13px;
+  color: #e2f1fc;
+  letter-spacing: 0.2px;
+}
+
+.sfx-count-pill {
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+/* Smart SFX Section */
+.sfx-smart-section {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.sfx-smart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sfx-smart-header-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #7dd3fc;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sfx-smart-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.sfx-smart-btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: #cde4f7;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.sfx-smart-btn:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #f0f9ff;
+  transform: translateY(-1px);
+}
+
+.sfx-smart-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sfx-smart-btn.clear {
+  grid-column: span 2;
+  justify-content: center;
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  font-size: 10px;
+}
+
+.sfx-smart-btn.clear:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fef2f2;
+}
+
+/* Search & Filters */
+.sfx-search-bar {
+  display: flex;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 4px 8px;
+  gap: 6px;
+}
+
+.sfx-search-bar input {
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  font-size: 11px;
+  width: 100%;
+  outline: none;
+}
+
+.sfx-search-bar input::placeholder {
+  color: #64748b;
+}
+
+.sfx-categories {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.sfx-cat-pill {
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: #94a3b8;
+  font-size: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.sfx-cat-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+}
+
+.sfx-cat-pill.active {
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* SFX List Cards */
+.sfx-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 55vh;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.sfx-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  gap: 8px;
+}
+
+.sfx-card:hover {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(56, 189, 248, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.sfx-card-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sfx-play-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.sfx-play-btn:hover {
+  background: #0284c7;
+  color: #ffffff;
+  transform: scale(1.06);
+}
+
+.sfx-play-btn.playing {
+  background: #f43f5e;
+  border-color: #fda4af;
+  color: #ffffff;
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.08); }
+}
+
+.sfx-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sfx-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sfx-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sfx-duration-tag {
+  font-size: 9px;
+  font-family: monospace;
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.sfx-desc {
+  font-size: 10px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.sfx-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 5px;
+  color: #7dd3fc;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.sfx-add-btn:hover {
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.sfx-empty-state {
+  text-align: center;
+  padding: 24px 12px;
+  color: #64748b;
+  font-size: 12px;
+}

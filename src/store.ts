@@ -20,35 +20,37 @@ export function registerMedia(asset: MediaAsset, file: File) {
   mediaUrls.set(asset.id, url);
   audioWaveforms.delete(asset.id);
   mediaThumbnails.delete(asset.id);
-  const video = document.createElement('video');
-  video.muted = true;
-  video.preload = 'auto';
-  video.src = url;
-  const cleanup = () => {
-    video.removeAttribute('src');
-    video.load();
-  };
-  const timeout = setTimeout(cleanup, 10000);
-  video.onloadeddata = () => {
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = 160;
-      canvas.height = Math.round((160 * asset.height) / asset.width);
-      const ctx = canvas.getContext('2d');
-      ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
-      if (ctx) mediaThumbnails.set(asset.id, canvas.toDataURL('image/jpeg', 0.6));
-      useEditor.getState().mediaChanged();
-    } catch {
-      /* Thumbnail is optional; playback still uses the source. */
-    } finally {
+  if (typeof document !== 'undefined') {
+    const video = document.createElement('video');
+    video.muted = true;
+    video.preload = 'auto';
+    video.src = url;
+    const cleanup = () => {
+      video.removeAttribute('src');
+      video.load();
+    };
+    const timeout = setTimeout(cleanup, 10000);
+    video.onloadeddata = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 160;
+        canvas.height = Math.round((160 * asset.height) / asset.width);
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+        if (ctx) mediaThumbnails.set(asset.id, canvas.toDataURL('image/jpeg', 0.6));
+        useEditor.getState().mediaChanged();
+      } catch {
+        /* Thumbnail is optional; playback still uses the source. */
+      } finally {
+        clearTimeout(timeout);
+        cleanup();
+      }
+    };
+    video.onerror = () => {
       clearTimeout(timeout);
       cleanup();
-    }
-  };
-  video.onerror = () => {
-    clearTimeout(timeout);
-    cleanup();
-  };
+    };
+  }
 }
 export function unregisterMedia(assetId: string) {
   clearProxies(assetId);

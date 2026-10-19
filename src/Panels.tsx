@@ -484,5 +484,6 @@ export { SocialFormatPanel } from './SocialFormatPanel';
 export { ThumbnailGrabber } from './ThumbnailGrabber';
 export { SocialPostKit } from './SocialPostKit';
 export { SocialCaptionsPanel } from './SocialCaptionsPanel';
+export { SfxPanel } from './SfxPanel';
 export { AEInspector, AEInspector as PropertiesPanel } from './inspector/AEInspector';
 
