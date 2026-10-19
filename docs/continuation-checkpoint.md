@@ -19,6 +19,21 @@ the original checkout; no install or extra dev server is needed.
 
 ## Current state
 
+- Actual ranged audio preparation is implemented in sequence-preview-audio.ts and
+  media.ts. It reuses the real MP4 hierarchical mixer, trims the completed root bus
+  by sample, retains child/group DSP history and wraps stereo48kHz float32 PCM in
+  a lossless WAV header. Per-window64MiB output budget, any project location; not a
+  total worker-memory bound. Explicit request only, never mount/import-triggered.
+  File-identity preflight and queued checks, cancellation/foreground priority,
+  probe/report validation and resource cleanup reject stale/failed/short output.
+  Eight new tests plus report/graph regressions:22 passed in840ms; final source
+  type-check passed. Fake-engine tests, no actual FFmpeg/media/sound/model/GPU/build.
+  Next implement owned edit/File-version cache and real audio transport with decoded
+  metadata, pitch-preserving preview rate, shared mute/metering and window joins;
+  then mount main/proposed visual/audio controllers. Late-window prep can process
+  preceding graph history, so latency/cache/memory acceptance is still required.
+  Do not expose nested playback or replace nonlinear child buses with per-leaf gain.
+
 - Hackathon technical setup is now merged on stable main as **42f3b43**, PR #1.
   Public https://frostcut.vercel.app/ verified that exact revision/headers/assets.
   Required PR checks passed: 233 unit + seven real Chromium cases, and the actual
@@ -35,9 +50,9 @@ the original checkout; no install or extra dev server is needed.
   no per-seek project copies; 2,048 active audio-placement bound fails explicitly.
   Eight new checks and existing graph/window checks: 19 passed in 1.17s, one active
   worker; final source type-check passed. No real sound/media/model/GPU/build ran.
-  This is not a live mixer. Next implement actual hierarchical audio bus/transport
-  ownership and group pitch/processing semantics, then connect main/proposed
-  preview controllers; preserve child caption rollup/insertion UI/output acceptance.
+  This is not a live mixer. Actual preparation now uses the export bus compiler;
+  transport/cache ownership and main/proposed connection remain, preserving group
+  pitch/processing semantics and child caption rollup/insertion UI/output acceptance.
 
 - Latest audio increment shares real checked source audio reports across native/
   nested export, with File-identity caching, relink/error/abort guards and native

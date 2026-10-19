@@ -27,6 +27,8 @@ import { videoBitrate } from './export-settings';
 import { hasVisualEffects } from './visual-effects';
 import { compileSequenceAudio } from './sequence-audio';
 import { SourceAudioReports, type MountedAudioSource } from './source-audio-reports';
+import { sequenceViews } from './sequences';
+import { planSequencePreviewAudio, renderSequencePreviewAudio, type PreviewAudioRange } from './sequence-preview-audio';
 const sourceAudioReports = new SourceAudioReports();
 let engine: FFmpeg | undefined;
 let busy = false;
@@ -36,13 +38,16 @@ function withEngine<T>(
   onProgress: (message: string, value?: number) => void,
   fn: (ff: FFmpeg) => Promise<T>,
   background = false,
+  progressLabel = 'Rendering your video…',
+  beforeStart?: () => void,
 ): Promise<T> {
   if (!background) cancelBackgroundMediaJobs();
   const task = engineQueue
     .catch(() => {})
     .then(() => {
       if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
-      return runEngine(signal, onProgress, fn);
+      beforeStart?.();
+      return runEngine(signal, onProgress, fn, progressLabel);
     });
   engineQueue = task.catch(() => {});
   return task;
@@ -87,6 +92,35 @@ export async function inspectSourceAudio(sources: ReadonlyMap<string, File>, sig
         for (const directory of mounted) await unmountSource(ff, directory);
       }
     }, true);
+  } finally {
+    signal.removeEventListener('abort', cancel); backgroundMediaJobs.delete(controller);
+  }
+}
+
+/** Explicit, cancellable preparation; never invoked by importing/mounting a project. */
+export async function prepareSequencePreviewAudio(project: Project, range: PreviewAudioRange,
+  signal: AbortSignal, onProgress: (message: string, value?: number) => void) {
+  signal.throwIfAborted();
+  const plan = planSequencePreviewAudio(project, range), sources = new Map<string, File>();
+  for (const id of plan.sourceIds) {
+    const file = mediaFiles.get(id);
+    if (!file) throw new Error('Relink missing media before preparing sequence audio.');
+    sources.set(id, file);
+  }
+  const snapshot = structuredClone({ ...project, sequences: sequenceViews(project) });
+  const controller = new AbortController(), cancel = () => controller.abort(signal.reason);
+  const assertCurrent = () => {
+    for (const [id, file] of sources) if (mediaFiles.get(id) !== file)
+      throw new Error('Source media changed. Prepare the sequence audio again.');
+  };
+  signal.addEventListener('abort', cancel, { once: true }); backgroundMediaJobs.add(controller);
+  try {
+    if (signal.aborted) cancel();
+    return await withEngine(controller.signal, onProgress, async (ff) => renderSequencePreviewAudio(
+      snapshot, { start: plan.start, end: plan.end }, sources, ff, {
+        mount: (file, directory) => mountSource(ff, file, directory),
+        unmount: (directory) => unmountSource(ff, directory), assertCurrent,
+      }, sourceAudioReports, controller.signal, onProgress), true, 'Preparing sequence audio…', assertCurrent);
   } finally {
     signal.removeEventListener('abort', cancel); backgroundMediaJobs.delete(controller);
   }
@@ -150,6 +184,7 @@ async function runEngine<T>(
   signal: AbortSignal,
   onProgress: (message: string, value?: number) => void,
   fn: (ff: FFmpeg) => Promise<T>,
+  progressLabel: string,
 ): Promise<T> {
   if (busy) throw new Error('Another media job is running. Wait for it to finish.');
   busy = true;
@@ -160,7 +195,7 @@ async function runEngine<T>(
     logs = logs.slice(-15);
   };
   const progress = ({ progress }: { progress: number }) =>
-    onProgress('Rendering your video…', Math.min(99, Math.max(0, progress * 100)));
+    onProgress(progressLabel, Math.min(99, Math.max(0, progress * 100)));
   const abort = () => {
     ff.terminate();
     engine = undefined;

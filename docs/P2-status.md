@@ -268,6 +268,17 @@ rendering must be updated together for visual features.
 
 ## Transcript chapter delivery
 
+Explicit nested-audio preparation now reuses the actual hierarchical export mix,
+trims only the completed root bus by sample, and returns stereo48kHz float32 WAV
+without integer quantization or extra compression. File/relink/cancel/cleanup and
+per-window output bounds are implemented in the real media-engine entry, which is
+not called on import/mount. Eight new fake-engine/byte checks plus report/graph
+tests passed (22,840ms,one worker); final source type-check passed. No actual media,
+sound, FFmpeg, GPU, model or build ran. Owned cache/transport, decoded format checks,
+window joins, master mute/metering and main/proposed mounting remain. Long-window
+latency/total memory and actual audible/export acceptance are unverified; nested
+editing stays unexposed and P2 stays open.
+
 The development branch now also has independent hierarchical audio-window queries
 in `sequence-audio-timeline.ts`, including real crossfade handles, owner/source
 clocks, distinct placement paths, local gain/duck envelopes, checked source audio,

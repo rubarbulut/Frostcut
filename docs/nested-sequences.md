@@ -264,13 +264,57 @@ dependencies; no install/model download or extra dev server was started.
   small real project metadata and checked availability flags, not real sound.
   No decoder, playback, FFmpeg, model, GPU, browser suite or build was started.
 
-This is the required query/clock layer, not a live audio mixer. Main/proposed
-preview still does not mount nested playback. Next, implement actual hierarchical
-bus/source ownership with cancellation, pitch-preserving group timing, local
-processing/envelopes and shared master mute/metering; then connect both previews.
-Do not replace completed-child processing with per-leaf gain/rate shortcuts or
-claim audible preview/export parity from metadata tests. Caption rollup, insertion
-UI and actual media acceptance remain in scope.
+This is the query/clock layer, not a live audio mixer. The subsequent preparation
+path below uses the actual export mixer to retain completed-child processing.
+Main/proposed preview still does not mount nested playback. Cache/transport
+ownership, shared master mute/metering, caption rollup, insertion UI and actual
+media acceptance remain in scope. Do not claim audible parity from metadata tests.
+
+## Lossless audio preparation increment
+
+- `prepareSequencePreviewAudio` is a real, explicit entry into the existing
+  serialized media-engine queue. It snapshots the current edit/sequence views,
+  captures immutable original File identities, preflights the requested range and
+  missing originals, and rejects queued stale files before loading the engine.
+  Foreground work cancels this registered background job; caller cancellation and
+  relinking are checked across mount/probe/process/read boundaries. Temporary
+  reports, PCM files and source mounts participate in cleanup on every outcome.
+- Preparation uses `compileSequenceAudio`, the same hierarchical mix as MP4.
+  Native processing and completed child buses retain their local trim, pitch-
+  preserving tempo, nonlinear voice processing, gain, ducking, fades and delay.
+  The requested preview range is trimmed by sample **after** the completed root
+  bus. Seeking each native input directly to the requested root range would reset
+  preceding group processing; this path does not take that shortcut.
+- The output is stereo/48kHz PCM float32, matching the mixer's internal format.
+  A WAVE_FORMAT_EXTENSIBLE wrapper declares IEEE float, front-left/right channels
+  and actual sample count. Samples are not normalized, clipped, quantized to
+  integer PCM or compressed again. Short, failed or missing output is rejected;
+  no padding or generated sound disguises an unsuccessful job.
+- The **one-window output** budget is 64 MiB including the header. Any location in
+  a longer project can be prepared in smaller windows; this is not a project-
+  duration limit or a reduced-quality mode. Returned endpoints identify their real
+  sample-aligned clocks. This is not a bound on all FFmpeg/filter/source memory.
+  Late windows may require processing the preceding graph to preserve DSP history;
+  cache reuse/prefetch and actual latency/memory measurement remain necessary.
+- Eight new small tests plus existing report/graph checks passed: **22 tests in
+  840 ms**, one active worker; final source type-check passed. Tests inspect real
+  graph construction, float WAV bytes, window/source validation and fake engine
+  cleanup/cancellation/relink outcomes. No real FFmpeg job, decoding, sound,
+  browser suite, model, GPU or production build ran.
+
+Next, own these windows in a cancellable edit/File-version cache and actual media
+transport, check real decoded metadata/format, preserve pitch for preview-rate
+changes, feed shared master mute/metering, and connect main/proposed preview.
+Importing/mounting a project must not start audio preparation. Current native
+preview paths remain; nested editing is still unexposed. Actual codec support,
+sound quality, seek/window joins, performance and preview/export acceptance remain
+unverified. This preparation API does not by itself deliver nested playback.
+
+Primary format/behavior references:
+[FFmpeg atrim](https://ffmpeg.org/ffmpeg-filters.html#atrim),
+[PCM float32 codec](https://www.ffmpeg.org/doxygen/6.1/libavcodec_2pcm_8c_source.html),
+[WAVEFORMATEXTENSIBLE](https://learn.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatextensible),
+[HTML pitch preservation](https://html.spec.whatwg.org/dev/media.html).
 
 ## Implemented reference plan
 
@@ -334,11 +378,11 @@ browser suite or production build was started.
    controller ownership, draft edits, viewport/font/media/quality revisions and
    seek epochs once real hierarchical audio works. Preserve existing preview
    quality/controls and actual audio routing; do not expose silent nested playback.
-5. Actual hierarchical export audio filters/routing are implemented. Connect live
-   playback to real hierarchical buses, gains/fades/ducking and local clock rates,
-   including source audio availability and nonlinear group processing. Independent
-   audio-window/clock queries now exist in sequence-audio-timeline.ts; they are not
-   a live mixer and must not be replaced by visual-only timing. Define child
+5. Actual hierarchical export audio filters/routing and explicit ranged PCM
+   preparation are implemented. Connect live playback with owned prepared windows,
+   pitch-preserving transport, gains and shared master mute/metering; preserve
+   actual source availability and completed-child nonlinear processing. Independent
+   audio-window/clock queries also exist; visual-only timing is insufficient. Define child
    caption text/sidecar rollup alongside visual compositing; do not drop child text.
 6. Brief unit/type checks can continue now. Actual interaction, decoder timing,
    nested captions/audio/effects, playback and decoded MP4/parts/batch quality need
