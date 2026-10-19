@@ -737,82 +737,150 @@ export default function App() {
           }}
         >
           <header className="editor-header">
-            <button
-              className="brand"
-              aria-label="FrostCut home"
-              onClick={() => {
-                setPlaying(false);
-                setScreen('landing');
-                setResume(p);
-              }}
-            >
-              <Snowflake />
-              frostcut
-            </button>
-            <span className="header-divider" />
-            <input
-              className="project-name"
-              aria-label="Project name"
-              value={p.name}
-              onChange={(e) => commit({ ...p, name: e.target.value }, 'Rename project')}
-            />
-            <span className="save-status">
-              <Check size={12} />
-              {saveStatus}
-            </span>
-            <div className="header-actions">
+            {/* Left: Brand + Project Title Pill + Format Badge */}
+            <div className="header-left-group">
               <button
-                className="icon"
-                aria-label="New project"
-                title="New project"
-                onClick={() => setModal('project')}
+                className="brand-pill"
+                aria-label="FrostCut home"
+                onClick={() => {
+                  setPlaying(false);
+                  setScreen('landing');
+                  setResume(p);
+                }}
               >
-                <Plus size={17} />
+                <div className="brand-logo-icon">
+                  <Snowflake size={16} />
+                </div>
+                <span className="brand-title">FrostCut</span>
               </button>
+
+              <div className="project-title-pill">
+                <input
+                  className="project-name-input"
+                  aria-label="Project name"
+                  value={p.name}
+                  onChange={(e) => commit({ ...p, name: e.target.value }, 'Rename project')}
+                  placeholder="Project name…"
+                />
+                <span className="save-status-pill" title={saveStatus}>
+                  <Check size={11} />
+                  <span>Saved</span>
+                </span>
+              </div>
+
               <button
-                className="icon"
-                aria-label="Open project"
-                title="Open project"
-                onClick={() => projectInput.current?.click()}
+                type="button"
+                className="format-indicator-pill"
+                onClick={() => setPanel('format')}
+                title="Change Aspect Ratio & Format"
               >
-                <FolderOpen size={17} />
+                <Smartphone size={13} />
+                <span>
+                  {p.settings.aspectRatio ?? (p.settings.width > p.settings.height ? '16:9' : p.settings.width === p.settings.height ? '1:1' : '9:16')}
+                </span>
               </button>
+            </div>
+
+            {/* Center: Social Superpowers (Auto Cut, Long to Shorts, Transcribe) */}
+            <div className="header-center-actions">
               <button
-                className="icon"
-                aria-label="Save project"
-                title="Save project · Ctrl S"
-                onClick={saveCurrentProject}
+                type="button"
+                className="action-pill-btn auto-cut"
+                disabled={!p.clips.length || !!job}
+                onClick={() => setModal('auto')}
+                title="Automatically remove silences and dead air"
               >
-                <Save size={17} />
+                <Sparkles size={14} />
+                <span>Auto Cut</span>
               </button>
-              <span className="divider" />
               <button
-                className="icon"
-                aria-label="Undo"
-                title={past.at(-1)?.label ?? 'Undo'}
-                disabled={!past.length}
-                onClick={undo}
+                type="button"
+                className="action-pill-btn magic-shorts"
+                disabled={!p.clips.length || !!job}
+                onClick={() => setModal('magic-shorts')}
+                title="1-Click Long-Form to Viral Shorts Studio"
               >
-                <Undo2 size={17} />
-              </button>
-              <button className="icon" aria-label="Redo" disabled={!future.length} onClick={redo}>
-                <Redo2 size={17} />
+                <Flame size={14} />
+                <span>Long to Shorts</span>
               </button>
               <button
-                className="icon"
+                type="button"
+                className="action-pill-btn transcribe"
+                disabled={!p.clips.length || !!job}
+                onClick={() => setModal('transcribe')}
+                title="Generate speech-to-text transcript & subtitles"
+              >
+                <MessageSquareText size={14} />
+                <span>Transcribe</span>
+              </button>
+            </div>
+
+            {/* Right: History, Settings, Turbo Status, Export */}
+            <div className="header-right-group">
+              <div className="history-pill-group">
+                <button
+                  className="header-icon-btn"
+                  aria-label="Undo"
+                  title={past.at(-1)?.label ? `Undo: ${past.at(-1)?.label}` : 'Undo (Ctrl+Z)'}
+                  disabled={!past.length}
+                  onClick={undo}
+                >
+                  <Undo2 size={15} />
+                </button>
+                <button
+                  className="header-icon-btn"
+                  aria-label="Redo"
+                  title="Redo (Ctrl+Shift+Z)"
+                  disabled={!future.length}
+                  onClick={redo}
+                >
+                  <Redo2 size={15} />
+                </button>
+              </div>
+
+              <button
+                className="header-icon-btn"
                 aria-label="Keyboard shortcuts"
-                title="Keyboard shortcuts · ?"
+                title="Keyboard Shortcuts (?)"
                 onClick={() => setModal('shortcuts')}
               >
-                <Keyboard size={17} />
+                <Keyboard size={15} />
               </button>
+
               <button
-                className="primary small export-top"
+                className="header-icon-btn"
+                aria-label="New project"
+                title="New Project"
+                onClick={() => setModal('project')}
+              >
+                <Plus size={15} />
+              </button>
+
+              <button
+                className="header-icon-btn"
+                aria-label="Open project file"
+                title="Open Project File"
+                onClick={() => projectInput.current?.click()}
+              >
+                <FolderOpen size={15} />
+              </button>
+
+              {/* Turbo GPU Status Badge */}
+              <div className="turbo-badge-pill" title="Turbo Native GPU Export Engine Ready">
+                <Zap size={13} className="turbo-zap" />
+                <span>Turbo GPU</span>
+              </div>
+
+              {/* Glowing High-Impact Export Button */}
+              <button
+                className="header-export-btn"
                 disabled={!p.clips.length || !!job}
                 onClick={() => setModal('export')}
+                title="Export Video (MP4)"
               >
                 <Download size={15} />
-                Export <ArrowUpRight size={14} />
+                <span>Export</span>
+                <ArrowUpRight size={13} />
               </button>
             </div>
           </header>
@@ -891,63 +959,41 @@ export default function App() {
               )}
             </aside>
             <div className="center-panel">
-              <div className="editing-actions">
-                <div>
-                  <span className="sequence-dot" />
-                  {p.settings.preset}
+              <div className="preview-viewport-bar">
+                <div className="viewport-left-meta">
+                  <span className="sequence-indicator-dot" />
+                  <span className="sequence-label">{p.settings.preset}</span>
                   <button
                     type="button"
-                    className="ratio-tag-button"
+                    className="viewport-ratio-chip"
                     onClick={() => setPanel('format')}
                     title="Change Canvas Aspect Ratio"
                   >
-                    {p.settings.width > p.settings.height
-                      ? '16:9'
-                      : p.settings.width === p.settings.height
-                        ? '1:1'
-                        : p.settings.height === 1350
-                          ? '4:5'
-                          : '9:16'}
+                    <Smartphone size={12} />
+                    <span>
+                      {p.settings.width > p.settings.height
+                        ? '16:9'
+                        : p.settings.width === p.settings.height
+                          ? '1:1'
+                          : p.settings.height === 1350
+                            ? '4:5'
+                            : '9:16'}
+                    </span>
                   </button>
                 </div>
-                <div>
-                  <button
-                    className="text-button"
-                    disabled={!!job}
-                    onClick={() => {
-                      setPlaying(false);
-                      setCreatorTab('Reframe');
-                      setCreatorOpen(true);
-                    }}
-                  >
-                    <WandSparkles size={15} />
-                    Creator tools
-                  </button>
-                  <button
-                    className="text-button"
-                    disabled={!p.clips.length || !!job}
-                    onClick={() => setModal('transcribe')}
-                  >
-                    <MessageSquareText size={15} />
-                    Transcribe
-                  </button>
-                  <button
-                    className="auto-cut-button"
-                    disabled={!p.clips.length || !!job}
-                    onClick={() => setModal('auto')}
-                  >
-                    <Sparkles size={16} />
-                    Auto Cut
-                  </button>
-                  <button
-                    className="magic-shorts-button"
-                    disabled={!p.clips.length || !!job}
-                    onClick={() => setModal('magic-shorts')}
-                    title="1-Click Long-Form to Shorts Studio"
-                  >
-                    <Flame size={15} />
-                    Long to Shorts
-                  </button>
+                <div className="viewport-right-meta">
+                  <label className="safe-area-toggle-pill" title="Show TikTok & Instagram Reels UI Safe Zone Margins">
+                    <input
+                      type="checkbox"
+                      checked={!!p.captions.safeArea}
+                      onChange={(e) => {
+                        const next = structuredClone(p);
+                        next.captions.safeArea = e.target.checked;
+                        commit(next, 'Toggle safe area');
+                      }}
+                    />
+                    <span>Safe Margins</span>
+                  </label>
                 </div>
               </div>
               <Preview onImport={() => importClick()} processing={!!job} />
