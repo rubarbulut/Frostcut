@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useEditor, mediaFiles } from './store';
 import { switchSequence, sequenceViews } from './sequences';
 import { exportMp4 } from './media';
+import { tryTurboExport } from './turbo-export';
 import { zipFiles, type ZipProgress } from './zip';
 import { duration, timecode } from './model';
 import { estimatedMegabytes } from './export-settings';
@@ -102,12 +103,20 @@ export function BatchExport() {
         currentId = sequence.id;
         setQueue((q) => ({ ...q, [sequence.id]: 'Rendering' }));
         const project = switchSequence(snapshot, sequence.id);
-        const rendered = await exportMp4(project, c.signal, (message, percent) => {
+        let rendered = await tryTurboExport(project, mediaFiles, c.signal, (message, percent) => {
           if (c.signal.aborted || abort.current !== c) return;
           setStatus(
             `${i + 1}/${parts.length} · ${sequence.name} · ${message}${percent === undefined ? '' : ` ${Math.round(percent)}%`}`,
           );
         });
+        if (!rendered) {
+          rendered = await exportMp4(project, c.signal, (message, percent) => {
+            if (c.signal.aborted || abort.current !== c) return;
+            setStatus(
+              `${i + 1}/${parts.length} · ${sequence.name} · ${message}${percent === undefined ? '' : ` ${Math.round(percent)}%`}`,
+            );
+          });
+        }
         c.signal.throwIfAborted();
         files.push({
           name: sequence.filename,

@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { youtubeIngestPlugin } from './src/server/youtube-plugin';
+import { turboExportPlugin } from './src/server/export-plugin';
 
 export default defineConfig({
-  plugins: [react(), youtubeIngestPlugin()],
+  plugins: [react(), youtubeIngestPlugin(), turboExportPlugin()],
   worker: { format: 'es' },
   optimizeDeps: { exclude: ['@ffmpeg/ffmpeg', '@huggingface/transformers'] },
   server: {

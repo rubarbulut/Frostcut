@@ -316,10 +316,12 @@ export async function renderCanvasVideo(
           video.duration - 0.001,
           Math.max(0, clip.sourceStart + (time - clip.start) * clip.properties.speed),
         );
-        if (Math.abs(video.currentTime - source) > 0.0001)
+        // Avoid sub-frame jitter seeks (0.005s is < 1/60s frame duration)
+        if (Math.abs(video.currentTime - source) > 0.005) {
           await videoEvent(video, 'seeked', signal, () => {
             video!.currentTime = source;
           });
+        }
         const props = transformAt(clip as MotionClip, time, p.settings.width, p.settings.height, p.settings.fillMode);
         const sourceSize = { width: video.videoWidth, height: video.videoHeight };
         const frameSize = { width, height };
@@ -370,7 +372,10 @@ export async function renderCanvasVideo(
         } finally {
           videoFrame.close();
         }
-        if (encoder.encodeQueueSize > 4) await encoder.flush();
+        // Throttle without stalling GPU hardware pipeline
+        if (encoder.encodeQueueSize > 16) {
+          await new Promise<void>((resolve) => setTimeout(resolve, 0));
+        }
         aborted(signal);
       } else {
         const name = `visual-frame-${String(pendingImages.length).padStart(3, '0')}.png`;

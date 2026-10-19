@@ -29,10 +29,12 @@ import {
   Home,
   Keyboard,
   Flame,
+  Zap,
 } from 'lucide-react';
 import { Modal, Field, Range } from './components';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { readProjectFile } from './project-file';
+import { tryTurboExport, checkTurboEngine } from './turbo-export';
 import {
   useEditor,
   registerMedia,
@@ -167,6 +169,7 @@ export default function App() {
     [mobileTab, setMobileTab] = useState('Clips'),
     [drop, setDrop] = useState(false),
     [selectedSuggestion, setSelectedSuggestion] = useState<string>();
+  const [turboEngineActive, setTurboEngineActive] = useState<boolean | null>(null);
   const [selectedShorts, setSelectedShorts] = useState<string[]>([]);
   const [autoMode, setAutoMode] = useState<'highlights' | 'parts'>('highlights');
   const [opts, setOpts] = useState<CutOptions>({
@@ -186,6 +189,17 @@ export default function App() {
   useEffect(() => {
     restoreProject().then(setResume);
   }, []);
+  useEffect(() => {
+    if (modal === 'export') {
+      let cancelled = false;
+      checkTurboEngine().then((ok) => {
+        if (!cancelled) setTurboEngineActive(ok);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [modal]);
   useEffect(() => {
     // Proposals are tied to the exact timeline they were generated against.
     setAiPreview(undefined);
@@ -569,10 +583,21 @@ export default function App() {
     abortRef.current = controller;
     setJob({ kind: 'export', step: 0, message: 'Preparing your export…' });
     try {
-      const blob = await exportMp4(structuredClone(p), controller.signal, (message, progress) => {
+      const cloned = structuredClone(p);
+      // 1. Attempt ultra-fast Turbo Hardware Export (native FFmpeg with NVENC/MediaFoundation)
+      let blob = await tryTurboExport(cloned, mediaFiles, controller.signal, (message, progress) => {
         if (abortRef.current === controller && !controller.signal.aborted)
           jobProgress(message, progress);
       });
+
+      // 2. If turbo engine is unavailable (e.g. static hosting on Vercel), fall back to in-browser engine
+      if (!blob) {
+        blob = await exportMp4(cloned, controller.signal, (message, progress) => {
+          if (abortRef.current === controller && !controller.signal.aborted)
+            jobProgress(message, progress);
+        });
+      }
+
       if (controller.signal.aborted || abortRef.current !== controller) return;
       setExportBlob(blob);
       setExportUrl(URL.createObjectURL(blob));
@@ -1502,6 +1527,14 @@ export default function App() {
       {modal === 'export' && (
         <Modal title="Ready for the world." onClose={() => setModal(null)}>
           <p className="modal-intro">A polished MP4. Rendered right here on your device.</p>
+          {turboEngineActive && (
+            <div className="turbo-badge-banner">
+              <Zap size={14} style={{ color: '#fbbf24', flexShrink: 0 }} />
+              <span>
+                <b>Turbo GPU Rendering Active:</b> Instant native hardware acceleration enabled (~2-3s export).
+              </span>
+            </div>
+          )}
           {!!p.sequences?.length && (
             <button
               className="secondary"
