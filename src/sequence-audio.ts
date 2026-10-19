@@ -2,7 +2,7 @@ import { clipAudible, duration, isMediaClip, isSequenceClip, type Clip, type Pro
 import { sequenceProject } from './clip-source';
 import { sequenceViews } from './sequences';
 import { validateSequenceGraph } from './nested-sequence-plan';
-import { audioFadeFilter, audioWindow } from './audio-crossfades';
+import { audioFadeFilter, createAudioWindowResolver, type AudioWindow } from './audio-crossfades';
 import { audioEffectsFilter } from './audio-tools';
 
 export type SequenceAudioInput = { mediaId: string; start: number; end: number; index: number };
@@ -22,18 +22,24 @@ export function compileSequenceAudio(p: Project, hasAudio: ReadonlyMap<string, b
   const rootId = p.activeSequenceId;
   if (!rootId || !sequences.some((s) => s.id === rootId)) throw new Error('The active sequence is missing.');
   if (!Number.isInteger(inputOffset) || inputOffset < 0) throw new Error('Use a valid audio input offset.');
-  const nodes = new Map(sequences.map((s, index) => [s.id, { project: sequenceProject(p, s), tag: `seqaudio${index}`,
-    seconds: duration(sequenceProject(p, s)), consumers: 0, used: 0, outputs: [] as string[] }]));
+  const nodes = new Map(sequences.map((s, index) => {
+    const project = sequenceProject(p, s);
+    const node = { project, tag: `seqaudio${index}`, seconds: duration(project),
+      window: undefined as ReturnType<typeof createAudioWindowResolver> | undefined,
+      consumers: 0, used: 0, outputs: [] as string[] };
+    return [s.id, node] as const;
+  }));
   const reachable = new Set<string>();
   const visit = (id: string) => {
     if (reachable.has(id)) return;
     reachable.add(id);
     const node = nodes.get(id)!;
+    node.window = createAudioWindowResolver(node.project);
     for (const clip of node.project.clips) {
       if (!clipAudible(node.project, clip) || !isSequenceClip(clip)) continue;
       const child = nodes.get(clip.sequenceId)!;
       child.consumers++;
-      child.seconds = Math.max(child.seconds, audioWindow(node.project, clip).end);
+      child.seconds = Math.max(child.seconds, node.window(clip).end);
       visit(clip.sequenceId);
     }
   };
@@ -45,7 +51,7 @@ export function compileSequenceAudio(p: Project, hasAudio: ReadonlyMap<string, b
     const branches: string[] = [];
     for (const [index, clip] of node.project.clips.entries()) {
       if (!clipAudible(node.project, clip)) continue;
-      const window = audioWindow(node.project, clip);
+      const window = node.window!(clip);
       let from: string;
       let trim: string;
       if (isMediaClip(clip)) {
@@ -76,7 +82,7 @@ export function compileSequenceAudio(p: Project, hasAudio: ReadonlyMap<string, b
   return { inputs, filters, output: nodes.get(rootId)!.outputs[0] };
 }
 
-function placementProcessing(p: Project, clip: Clip, window: ReturnType<typeof audioWindow>, hasAudio: ReadonlyMap<string, boolean>) {
+function placementProcessing(p: Project, clip: Clip, window: AudioWindow, hasAudio: ReadonlyMap<string, boolean>) {
   const fade = audioFadeFilter(window);
   // Preserve fades/duck envelopes before cutting a crossfade handle that extends before t=0.
   const negative = window.timelineStart < 0 ? `,atrim=start=${number(-window.timelineStart)},asetpts=PTS-STARTPTS` : '';

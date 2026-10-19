@@ -11,6 +11,29 @@ real codec/filter/decoded-output acceptance has not run.
 This branch is not a complete nested feature and must not be merged as one yet.
 Main retains the earlier plan.
 
+## Audio preparation and indexed windows — 2026-10-19
+
+Native and nested MP4 export now share checked ffprobe audio reports, cached by
+immutable File identity. Silent files cache false; relinking to another File
+rechecks it, even with identical metadata. Errors, malformed reports and aborted
+reads never establish silence. Captured files stay paired with their mount paths.
+Native ducking now uses actual stream availability too. inspectSourceAudio is an
+explicit abortable preparation API with cleanup/background-job registration; it
+is not called on import/mount or connected to the preview UI yet.
+
+Both export paths now reuse crossfade-window resolvers with per-audio-route
+boundary indexes, preserving original first-match order, strict 1 ms tolerance,
+source bounds and fixed reference out points. Compiled gain plans can consume
+these windows without scanning every clip for neighbours.
+
+Seven source-report checks passed in 842 ms; 21 window/native-gain/sequence-audio
+checks passed in 1.00 s, one active worker. Final source type-check passed. Tests
+use tiny File metadata and a fake probe interface; no actual ffprobe, decode,
+playback, render, model, browser suite or build ran. Hierarchical live audio buses,
+preview integration, text rollup and insertion UI remain required. Development
+next turns to the user's TestSprite hackathon setup; do not lose those remaining
+nested consumers or merge this incomplete feature as finished.
+
 ## Source-model increment on the development branch
 
 - `Clip` now has exclusive real media or sequence identity (`MediaClip`/`SequenceClip`).

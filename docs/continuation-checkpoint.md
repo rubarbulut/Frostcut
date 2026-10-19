@@ -1,4 +1,4 @@
-# Continuation checkpoint — 2026-09-30
+# Continuation checkpoint — 2026-10-19
 
 The user requested checkpoints before credits run out, and now authorizes an
 ongoing autonomous improvement loop until they say stop. Keep the full development
@@ -18,6 +18,17 @@ its production consumers are complete. node_modules is an ignored junction to
 the original checkout; no install or extra dev server is needed.
 
 ## Current state
+
+- Latest audio increment shares real checked source audio reports across native/
+  nested export, with File-identity caching, relink/error/abort guards and native
+  no-audio ducking. Explicit preview preparation exists but is not mounted.
+  Crossfade-window indexes now feed both export paths and optional gain plans.
+  Seven report tests passed in 842 ms; 21 focused audio/window tests passed in
+  1.00 s, one active worker; final source type-check passed. No actual media, AI,
+  codec or heavy workload ran. Next nested work remains hierarchical audio query
+  windows/buses and preview ownership. The user now prioritizes researching and
+  implementing TestSprite Season 4 entry requirements; preserve the nested
+  branch while preparing the stable application and real portal/PR evidence.
 
 - cf82af6: optional local accepted-edit preference memory, linked to actual
   Undo/Redo. Ten focused tests/type-check passed; browser review pending.

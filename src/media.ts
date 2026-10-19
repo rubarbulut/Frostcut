@@ -16,8 +16,8 @@ import {
 import { mediaFiles } from './store';
 import { captionAppearance } from './caption-style';
 import { needsTypographyRenderer } from './caption-typography';
-import { cancelBackgroundMediaJobs } from './media-runtime';
-import { audioFadeFilter, audioWindow } from './audio-crossfades';
+import { backgroundMediaJobs, cancelBackgroundMediaJobs } from './media-runtime';
+import { audioFadeFilter, createAudioWindowResolver } from './audio-crossfades';
 import { audioEffectsFilter } from './audio-tools';
 import { renderCanvasVideo } from './visual-renderer';
 import { hasAdjustments } from './adjustments';
@@ -26,6 +26,8 @@ import { captionEmoji } from './caption-layout';
 import { videoBitrate } from './export-settings';
 import { hasVisualEffects } from './visual-effects';
 import { compileSequenceAudio } from './sequence-audio';
+import { SourceAudioReports, type MountedAudioSource } from './source-audio-reports';
+const sourceAudioReports = new SourceAudioReports();
 let engine: FFmpeg | undefined;
 let busy = false;
 let engineQueue: Promise<unknown> = Promise.resolve();
@@ -53,6 +55,41 @@ async function mountSource(ff: FFmpeg, file: File, directory: string) {
 async function unmountSource(ff: FFmpeg, directory: string) {
   await ff.unmount(directory).catch(() => {});
   await ff.deleteDir(directory).catch(() => {});
+}
+/** Explicit playback preparation only. No import/mount effect or full audio decode. */
+export async function inspectSourceAudio(sources: ReadonlyMap<string, File>, signal: AbortSignal,
+  onProgress: (message: string, value?: number) => void): Promise<Map<string, boolean>> {
+  signal.throwIfAborted();
+  const snapshot = new Map(sources), cached = sourceAudioReports.cached(snapshot);
+  if (cached.size === snapshot.size) return cached;
+  const controller = new AbortController(), cancel = () => controller.abort(signal.reason);
+  signal.addEventListener('abort', cancel, { once: true });
+  backgroundMediaJobs.add(controller);
+  try {
+    if (signal.aborted) cancel();
+    return await withEngine(controller.signal, onProgress, async (ff) => {
+      // An earlier queued job may already have checked these exact File objects.
+      const available = sourceAudioReports.cached(snapshot);
+      const mounted: string[] = [], files: string[] = [], inputs = new Map<string, MountedAudioSource>();
+      try {
+        onProgress('Inspecting source audio…');
+        for (const [i, [id, file]] of [...snapshot].entries()) {
+          controller.signal.throwIfAborted();
+          if (available.has(id)) continue;
+          const directory = `/preview-audio${i}`;
+          mounted.push(directory);
+          inputs.set(id, { file, path: await mountSource(ff, file, directory) });
+        }
+        const reports = await sourceAudioReports.probe(ff, inputs, files, controller.signal, 'preview');
+        return new Map([...available, ...reports]);
+      } finally {
+        for (const file of files) await ff.deleteFile(file).catch(() => {});
+        for (const directory of mounted) await unmountSource(ff, directory);
+      }
+    }, true);
+  } finally {
+    signal.removeEventListener('abort', cancel); backgroundMediaJobs.delete(controller);
+  }
 }
 export async function inspectMedia(file: File): Promise<MediaAsset> {
   if (file.size > 1_500_000_000)
@@ -293,8 +330,13 @@ export async function exportMp4(
   if (!p.clips.length) throw new Error('Add a video before exporting.');
   if (p.clips.some(isSequenceClip)) return exportNestedMp4(p, signal, onProgress);
   const mediaClips = p.clips.map(requireMediaClip);
-  for (const c of mediaClips)
-    if (!mediaFiles.has(c.mediaId)) throw new Error('Relink missing media before exporting.');
+  const resolveWindow = createAudioWindowResolver(p);
+  const sourceFiles = new Map<string, File>();
+  for (const c of mediaClips) {
+    const file = mediaFiles.get(c.mediaId);
+    if (!file) throw new Error('Relink missing media before exporting.');
+    sourceFiles.set(c.mediaId, file);
+  }
   return withEngine(signal, onProgress, async (ff) => {
     const files: string[] = [],
       w = Math.round(p.exportSettings.width / 2) * 2,
@@ -329,12 +371,14 @@ export async function exportMp4(
         `anullsrc=r=48000:cl=stereo:d=${number(total)}`,
       ];
       const mediaIds = [...new Set(mediaClips.map((c) => c.mediaId))];
-      const inputPaths = new Map<string, string>();
-      for (const [i, id] of mediaIds.entries())
-        inputPaths.set(id, await mountSource(ff, mediaFiles.get(id)!, `/input${i}`));
+      const inputPaths = new Map<string, string>(), inputs = new Map<string, MountedAudioSource>();
+      for (const [i, id] of mediaIds.entries()) {
+        const file = sourceFiles.get(id)!, path = await mountSource(ff, file, `/input${i}`);
+        inputPaths.set(id, path); inputs.set(id, { file, path });
+      }
       // One input per clip keeps trim timestamps independent, including duplicated clips.
       for (const c of mediaClips) {
-        const window = audioWindow(p, c);
+        const window = resolveWindow(c);
         args.push(
           '-ss',
           number(window.start),
@@ -352,40 +396,14 @@ export async function exportMp4(
           p.tracks.findIndex((t) => t.id === b.trackId) -
           p.tracks.findIndex((t) => t.id === a.trackId),
       );
-      // Probe each asset's audio rather than assuming every imported video has sound.
-      const hasAudio = new Map<string, boolean>();
-      for (const [i, id] of mediaIds.entries()) {
-        const probe = `probe${i}.json`;
-        files.push(probe);
-        const code = await ff.ffprobe([
-          '-v',
-          'error',
-          '-select_streams',
-          'a',
-          '-show_entries',
-          'stream=codec_type',
-          '-of',
-          'json',
-          inputPaths.get(id)!,
-          '-o',
-          probe,
-        ]);
-        // core 0.12.10 can return -1 after a successful probe (upstream issue #817).
-        // Validate the actual report; never interpret probe failure as silent footage.
-        if (code !== 0 && code !== -1)
-          throw new Error('Could not inspect source audio. Relink the video and retry.');
-        const result = JSON.parse((await ff.readFile(probe, 'utf8')) as string);
-        if (!Array.isArray(result.streams))
-          throw new Error('The source audio report is incomplete. Try relinking this video.');
-        hasAudio.set(id, !!result.streams?.length);
-      }
+      const hasAudio = await sourceAudioReports.probe(ff, inputs, files, signal, 'export');
       for (const [index, c] of ordered.entries()) {
         const input = p.clips.findIndex((x) => x.id === c.id) + 2,
           props = c.properties,
           track = p.tracks.find((t) => t.id === c.trackId)!,
           len = clipDuration(c),
           tag = `v${index}`;
-        const window = audioWindow(p, c);
+        const window = resolveWindow(c);
         const sw = Math.max(2, Math.round((w * props.scale) / 2) * 2),
           sh = Math.max(2, Math.round((h * props.scale) / 2) * 2),
           crop = props.crop / 100;
@@ -405,7 +423,7 @@ export async function exportMp4(
                 ? `atempo=2,atempo=${props.speed / 2}`
                 : `atempo=${props.speed}`;
           filters.push(
-            `[${input}:a]atrim=duration=${number(window.end - window.start)},asetpts=PTS-STARTPTS,${tempo},${audioEffectsFilter(p, c, window.timelineStart)},${audioFadeFilter(window)},adelay=${Math.round(window.timelineStart * 1000)}|${Math.round(window.timelineStart * 1000)}[a${index}]`,
+            `[${input}:a]atrim=duration=${number(window.end - window.start)},asetpts=PTS-STARTPTS,${tempo},${audioEffectsFilter(p, c, window.timelineStart, hasAudio)},${audioFadeFilter(window)},adelay=${Math.round(window.timelineStart * 1000)}|${Math.round(window.timelineStart * 1000)}[a${index}]`,
           );
           audios.push(`[a${index}]`);
         }
@@ -471,18 +489,24 @@ export async function exportMp4(
 /** Actual hierarchical audio mix alongside the recursively composed visual stream. */
 async function exportNestedMp4(p: Project, signal: AbortSignal, onProgress: (message: string, value?: number) => void): Promise<Blob> {
   const mediaIds = sourceMediaIds(p);
-  for (const id of mediaIds) if (!mediaFiles.has(id)) throw new Error('Relink missing media before exporting.');
+  const sourceFiles = new Map<string, File>();
+  for (const id of mediaIds) {
+    const file = mediaFiles.get(id);
+    if (!file) throw new Error('Relink missing media before exporting.');
+    sourceFiles.set(id, file);
+  }
   return withEngine(signal, onProgress, async (ff) => {
-    const files: string[] = [], mounted: string[] = [], paths = new Map<string, string>();
+    const files: string[] = [], mounted: string[] = [], paths = new Map<string, string>(), inputs = new Map<string, MountedAudioSource>();
     const sourceTime = (n: number) => Number(n.toFixed(6)).toString();
     const width = Math.round(p.exportSettings.width / 2) * 2, height = Math.round(p.exportSettings.height / 2) * 2;
     try {
       for (const [i, id] of mediaIds.entries()) {
         const directory = `/nested-input${i}`;
         mounted.push(directory);
-        paths.set(id, await mountSource(ff, mediaFiles.get(id)!, directory));
+        const file = sourceFiles.get(id)!, path = await mountSource(ff, file, directory);
+        paths.set(id, path); inputs.set(id, { file, path });
       }
-      const hasAudio = await probeSourceAudio(ff, paths, files);
+      const hasAudio = await sourceAudioReports.probe(ff, inputs, files, signal, 'nested');
       const graph = compileSequenceAudio(p, hasAudio);
       const visual = await renderCanvasVideo(p, width, height, p.exportSettings.fps, ff, files, signal, onProgress);
       const args = [...(visual.raw ? ['-f', 'h264', '-r', String(p.exportSettings.fps)] : []), '-i', visual.path];
@@ -501,21 +525,6 @@ async function exportNestedMp4(p: Project, signal: AbortSignal, onProgress: (mes
       for (const directory of mounted) await unmountSource(ff, directory);
     }
   });
-}
-
-async function probeSourceAudio(ff: FFmpeg, paths: ReadonlyMap<string, string>, files: string[]) {
-  const hasAudio = new Map<string, boolean>();
-  for (const [i, [id, path]] of [...paths].entries()) {
-    const probe = `nested-probe${i}.json`;
-    files.push(probe);
-    const code = await ff.ffprobe(['-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=codec_type', '-of', 'json', path, '-o', probe]);
-    // The bundled core can return -1 after a successful probe; trust the checked report.
-    if (code !== 0 && code !== -1) throw new Error('Could not inspect source audio. Relink the video and retry.');
-    const report = JSON.parse((await ff.readFile(probe, 'utf8')) as string);
-    if (!Array.isArray(report.streams)) throw new Error('The source audio report is incomplete. Relink and retry.');
-    hasAudio.set(id, report.streams.length > 0);
-  }
-  return hasAudio;
 }
 
 export const animationTransform = (c: Clip, time: number) => {

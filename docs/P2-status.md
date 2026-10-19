@@ -268,6 +268,15 @@ rendering must be updated together for visual features.
 
 ## Transcript chapter delivery
 
+The latest nested-branch audio preparation reuses checked File-identity ffprobe
+reports, preserves relink/error/cancellation semantics, and supplies indexed
+crossfade windows to both actual export paths. Native ducking excludes checked
+silent sources. Seven report tests and 21 focused window/audio tests passed in
+separate brief runs with one active worker; final source type-check passed.
+No actual codec/media/model/browser/build ran. Live hierarchical audio remains
+unconnected; this does not close nested sequences or P2. The user's TestSprite
+hackathon setup is now the immediate priority alongside this saved development.
+
 - Creator tools → Chapters offers manual editing, a non-model transcript structure
   mode and a real local semantic embedding worker. Both suggestion paths use
   existing timeline-adjusted transcript text; titles are extracted from that text.
