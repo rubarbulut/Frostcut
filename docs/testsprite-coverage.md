@@ -1,7 +1,7 @@
 # FrostCut: portal generation brief and coverage evidence
 
 The FC labels below are requirements supplied to the **TestSprite 3.0 web portal**,
-not generated test IDs or passing results. A real reviewed 12-case initial run has
+not generated test IDs or passing results. A real reviewed 12-case diagnostic run has
 now finished; see its actual evidence below. Use the deployed source in
 `_deployment.json`, never a hardcoded old source revision in future PR cases.
 
@@ -20,7 +20,7 @@ must verify observable changes/downloaded project content, not merely click butt
 or check that the page is present. The source's existing Playwright tests can help
 explain controls; they are not a substitute for generating the portal suite.
 
-## Core PR suite: review/generate these scenarios first
+## Original diagnostic requirements (preserved)
 
 | ID | User action and assertions | Regression prevented |
 | --- | --- | --- |
@@ -61,39 +61,82 @@ remaining credits and enable extended model/media cases deliberately. No model o
 render runs on site load. No paid plan, artificial engagement, vote automation or
 unbounded run schedule is part of this setup.
 
-## Actual execution boundaries found on October 19
+## Actual verified coverage on October 19
 
-The original 12-case diagnostic suite's first PR execution reported **3 passed,
-0 failed, 9 blocked**, not 12 passes. Its sample, split/history and invalid-caption
-time tests passed after the real WebM compatibility fix. File assertions blocked
-because the agent could not access the browser's JSON/SRT downloads. Test Files
-requires a paid plan/trial, which was declined. An export toast is not file proof.
+The portal-generated **FrostCut PR core** project is
+`2b7bdea7-7743-4036-96f1-3527e99a4ea3`. After exploration proposed 70 plans across
+seven use cases, ten distinct scenarios were selected and reviewed before
+Generate & Run. Its
+[initial execution 8ccb1dc9-ee0e-4def-9f96-c853b108c56f](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/2b7bdea7-7743-4036-96f1-3527e99a4ea3/execution/8ccb1dc9-ee0e-4def-9f96-c853b108c56f)
+finished **10 passed, 0 failed, 0 blocked** on verified source `9fbecb8`.
 
-Five selected Chromium scenarios now live in `playwright.hackathon.config.ts` and
-the GitHub Quality workflow (cloud execution pending): existing caption drag/
-resize/undo/exact-time persistence, existing timing validation, actual backup
-download/content/style/timing reimport, malformed JSON and real SRT rejection with
-edit retention, and actual equal-parts/original file roundtrip. Tests use real
-downloads and the app's file input, not internal Zustand state or mocked passes.
-
-The new portal project **FrostCut PR core**, ID
-`2b7bdea7-7743-4036-96f1-3527e99a4ea3`, is exploring up to ten distinct in-editor
-and IndexedDB autosave/reload scenarios. It does not claim native-file roundtrip,
-drag-gesture, ASR or render coverage. The old diagnostic project and its blocked
-history remain. Completion still requires genuine results for both paths.
-
-## Account and CI evidence to append after it exists
-
-| Evidence | Value |
+| Generated case title | Observable assertions |
 | --- | --- |
-| Portal project / suite | Project a34e8de5-bcc5-43f5-8de6-91793ac81697; exploration finished; 12 reviewed distinct cases generated/run |
-| Generated core case IDs/count | 12 selected from 57 proposed across 6 use cases; sample test case 2eb00247-3b2a-4a30-bc8c-d5e41af4cacb; append remaining IDs after completion |
-| Initial execution and failures | [2aeddbd3-edee-4ef0-bcab-936f29b2350a](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/2aeddbd3-edee-4ef0-bcab-936f29b2350a): 0 passed, 8 failed, 4 blocked; sample MP4 cannot be decoded by cloud browser; real failure preserved |
-| Final passing execution | Pending; first PR run has 3 passed, 9 blocked |
-| Entry PR with authentic TestSprite comment/check | [Authentic bot comment](https://github.com/rubarbulut/Frostcut/pull/1#issuecomment-6267077384); run 69f69260-5615-4ff0-a799-dbd9967d5fa1, 3 passed/9 blocked |
-| New-commit automatic rerun | Pending |
-| Required blocking check/rules | Trigger Merge gate enabled; main required-check rule and real new-revision result pending |
+| Open sample project from landing page | Real V1 clip, eight C1 blocks, title, playable sample; initial duration 24 s with explicit codec-padding tolerance |
+| Split a clip and restore with history | Two clips after split, one after Undo, two after Redo; total baseline duration unchanged |
+| Edit and persist a caption's text and timing | Exact text, 0.500-4.000 s, Saved locally, reload same context and Continue, retained values |
+| Reject an invalid caption end time and keep draft edits | End-before-start validation, retained draft, correction can save |
+| Edit a manual caption and preserve changes through undo redo | Add 4.3-5.2 s, edit 4.4-5.3, shorten to 5.25; Undo/Redo exact end time; V1 unchanged |
+| Persist caption styling controls across reload | Color #00ff88, size 80, Left, spacing 0.1; undo/redo spacing then reload with retained fields |
+| Preview at double speed without changing source properties | Top preview selector 2x advances playback; clip speed remains 1.00x / 100%; source bounds preserved; reset 1x |
+| Pan the timeline while preserving disabled undo state | Zoom/pan changes viewport; Undo stays disabled and content/times stay unchanged |
+| Create equal short-form parts from the source clip | Three approximately 8 s parts within one frame, Original edit retained; sequence list survives reload |
+| Rename the project and recover it after reload | Core autosave proof name, Continue after reload, retained name/clip/captions/duration |
 
-After setup, summarize **actual generated coverage** in README and link its portal
-execution/PR evidence. Optional extended cases stay excluded from any core-pass
-claim until genuinely executed. A GitHub build/unit pass is separate evidence.
+The core suite proves UI plus actual IndexedDB autosave/reload. Missing-media
+relink notices after reload are expected: original bytes are deliberately omitted.
+It does **not** pretend to inspect native downloaded files, prove native drag
+semantics, run speech recognition, or verify media renders.
+
+### Real file and gesture assertions: GitHub Chromium
+
+[Quality run 39253972919](https://github.com/rubarbulut/Frostcut/actions/runs/39253972919)
+passed **233 unit tests in 38 files, production build and 5/5 real Chromium cases**
+(10.9 s for the browser cases). `playwright.hackathon.config.ts` selects:
+
+1. Existing caption text/exact-time/add/drag/resize/Undo and file persistence.
+2. Existing invalid caption-time validation.
+3. Actual backup download: inspect JSON name, exact caption/timing/style and absent
+   media bytes/blob URLs, then import that same downloaded file and verify values.
+4. Actual malformed JSON and downloaded SRT supplied to Open project: assert
+   rejection and retained edit, then save valid backup.
+5. Equal parts plus retained original: inspect actual downloaded JSON, reimport it,
+   verify three saved sequences and original full duration.
+
+The browser runner uses actual downloads and file inputs, no internal Zustand
+injection or mocked media. A first run had four passes and one test-selector
+failure; the recorded DOM exposed the real Text alignment combobox. Correcting
+the test to the accessible role produced all five passes without weakening the app.
+The core portal pass and these real file passes provide distinct evidence.
+
+### PR automation and genuine failure history
+
+TestSprite GitHub App **173013929** is connected from the same suite account and
+GitHub settings confirmed **only rubarbulut/Frostcut** selected. The core project's
+active trigger watches Vercel commit status and tests
+`https://frostcut-git-{branch-slug}-rubar.vercel.app/`, after deployment is Ready.
+Merge gate is enabled. The manual PR event started
+[72f0b84b-a955-4be9-9688-4a4c4996b58f](https://www.testsprite.com/dashboard-v3/o/ee3a6b41-5680-5bdf-998e-5b37da0e18af/projects/2b7bdea7-7743-4036-96f1-3527e99a4ea3/execution/72f0b84b-a955-4be9-9688-4a4c4996b58f);
+it finished **10 passed, 0 failed, 0 blocked** and genuine TestSprite V3 status success on source `9fbecb8`.
+
+Main requires strict up-to-date **Quality checks** from GitHub Actions App 15368
+and **TestSprite V3** from genuine TestSprite App 2756476, including admins. The
+[entry PR](https://github.com/rubarbulut/Frostcut/pull/1) carries authoritative checks
+and bot comments for its latest head. A failed TestSprite run left that PR blocked.
+
+The original diagnostic project `a34e8de5-bcc5-43f5-8de6-91793ac81697`, its 12
+case definitions and all execution history are preserved. Only its duplicate
+trigger is disabled; cases and failed/blocked reports were not deleted:
+
+| Execution | Actual outcome / finding |
+| --- | --- |
+| [2aeddbd3-edee-4ef0-bcab-936f29b2350a](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/2aeddbd3-edee-4ef0-bcab-936f29b2350a) | 0 pass, 8 fail, 4 blocked; cloud Chromium could not decode H.264 sample |
+| [69f69260-5615-4ff0-a799-dbd9967d5fa1](https://www.testsprite.com/dashboard-v3/o/ee3a6b41-5680-5bdf-998e-5b37da0e18af/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/69f69260-5615-4ff0-a799-dbd9967d5fa1) | 3 pass, 0 fail, 9 blocked after WebM fix; native JSON/SRT download inspection blocked |
+| [40ad35dd-5b40-4494-a7db-3c4440f5f8b4](https://www.testsprite.com/dashboard-v3/o/ee3a6b41-5680-5bdf-998e-5b37da0e18af/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/40ad35dd-5b40-4494-a7db-3c4440f5f8b4) | New substantive commit 7f1c924 automatically ran after Vercel; 2 pass, 2 fail, 8 blocked. Split/history visibly worked, but overbroad final JSON assertion could not be fulfilled by harness |
+| [4aad333e-19e0-4f9c-9b1b-54db47e41f20](https://www.testsprite.com/dashboard-v3/o/ee3a6b41-5680-5bdf-998e-5b37da0e18af/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/4aad333e-19e0-4f9c-9b1b-54db47e41f20) | Genuine later failing status on 9fbecb8 retained; never reported as passing |
+
+The additional WebM sample preserves all 576 decoded video frames; original MP4
+is unchanged. See [sample format evidence](sample-format-evidence.json).
+TestSprite Test Files requires a paid plan/trial, which was declined. An export
+toast is not file proof, and speculative AI report suggestions are not app defects.
+No whole-diagnostic-suite pass, ASR/render result, paid trial or deleted failure is claimed.

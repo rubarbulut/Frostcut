@@ -25,63 +25,52 @@ remaining account/portal/social/submission proof and publication state. Keep the
 user's account email out of public files. Free publication was explicitly approved;
 no paid service or duplicate submission is authorized by that choice.
 
-Current TestSprite setup: PR #1 is open, head 9b4a9a9. Quality runs 39246105008
-and 39247659854 passed; the first verified 229 unit tests/37 suites, metadata and
-build. The Vercel Hobby project `rubar/frostcut` now serves source 9b4a9a9 on both
-production and the entry branch preview. The public verifier passed actual source,
-isolation headers and core assets. Production was promoted from the PR, not merged.
-The entrant approved Frostcut-only preview authentication removal; it was saved,
-with the personal rubar.me project untouched. The entrant's TestSprite email is
-verified; profile Rubar, Free/150 before generation. Actual portal project
-a34e8de5-bcc5-43f5-8de6-91793ac81697 finished exploration; 12 distinct reviewed
-cases from 57 mostly duplicates finished in real execution
-2aeddbd3-edee-4ef0-bcab-936f29b2350a: 0 passed, 8 failed, 4 blocked. The sample-opening case failed because cloud
-Chromium cannot decode the H.264 MP4; it opened locally in a brief UI smoke check.
-A GitHub-only workflow prepared a VP9 lossless-video/Opus-audio sample in successful
-run 39250091522; all 576 decoded frames match. The original MP4 remains unchanged;
-the additional WebM has 8 ms codec padding. Actual-inspection fallback is implemented
-with four focused tests (324 ms) and a passed source type-check. No local encode ran.
-See docs/sample-format-evidence.json. Deploy and rerun the real suite; don't claim
-TestSprite success yet. Allow one-frame timing tolerance in test requirements and
-use the real selected media filename (MP4 or WebM), not a hardcoded MP4-only label.
-TestSprite App 173013929 is connected but initially All repositories; user was
-asked to save Frostcut-only scope because the agent's repo picker stayed empty.
-PR trigger form detects Vercel commit status, with target pattern
-https://frostcut-git-{branch-slug}-rubar.vercel.app/ ; it is not saved yet.
-Passing suite/trigger/check/blocking/rerun and Discord/X/eligibility/one final
-submission remain required. No TestSprite pass has been claimed.
+Current hackathon branch: codex/testsprite-hackathon; PR #1 open, source 9fbecb8.
+Vercel production and branch preview were verified at that source, including actual
+metadata, isolation headers, MP4/WebM and runtime assets. Production deployment
+6BDmSSTVxML1maSXipaFiJCKGtXH was promoted from the PR. Personal rubar.me untouched.
+Frostcut-only preview authentication removal was explicitly approved/saved.
 
-Latest real PR run 69f69260-5615-4ff0-a799-dbd9967d5fa1 at d813666: 3 passed,
-0 failed, 9 blocked. Sample, split/history and invalid caption-time tests passed;
-the others blocked mainly at JSON/SRT download inspection. Authentic bot comment:
-https://github.com/rubarbulut/Frostcut/pull/1#issuecomment-6267077384 . The original
-12-case project and history remain. Test Files requires Starter ($19/mo after a
-trial); it was declined. No paid feature enabled. Actual Free balance then 132.
-The old project's Vercel commit-status trigger is Active; Merge gate was saved
-enabled in fresh browser tab 10. No main required-check rule exists yet.
+Actual quality run 39253972919 passed 233 unit tests/38 files, metadata/build and
+5/5 real Chromium scenarios: caption gestures/history/exact timing, real backup
+JSON download/content/reimport/style, invalid JSON/SRT recovery, equal-parts file
+roundtrip. A prior 4/5 run had a test selector error, fixed to actual combobox role.
+No new local full build/browser/media/model workload ran; cloud execution did.
 
-Five real Chromium file/gesture/recovery checks are prepared in GitHub quality.yml,
-playwright.hackathon.config.ts and tests/hackathon-backups.spec.ts; local --list
-confirmed five, no local browsers ran for this addition. Commit/push and inspect
-their genuine cloud run, fixing any real errors. Do not claim a pass before it.
-A second portal project, FrostCut PR core, ID 2b7bdea7-7743-4036-96f1-3527e99a4ea3,
-is exploring the fixed PR preview. It targets ten distinct UI/autosave/reload cases,
-not file downloads, mouse gestures, ASR or rendering. Review/generate/run its real
-plan; keep original blocked reports. Eventually replace the old diagnostic PR
-trigger with a verified core trigger only after both core and real file checks
-pass; require both real TestSprite and Quality checks on main and prove automatic
-rerun on a new commit. User was asked to save TestSprite App Frostcut-only scope;
-their last reply asked to open the tab, so scope reduction is still unconfirmed.
+Actual FrostCut PR core portal project 2b7bdea7-7743-4036-96f1-3527e99a4ea3 generated
+10 reviewed scenarios and passed 10/10, zero failed/blocked, in execution
+8ccb1dc9-ee0e-4def-9f96-c853b108c56f. Scope is visible editing and IndexedDB reload,
+not native-file/drag/ASR/render proof. Separate real Chromium checks cover files
+and gestures. Original diagnostic project a34e8de5-bcc5-43f5-8de6-91793ac81697 and
+all failures/blocked reports remain. Its old duplicate trigger is disabled.
+Initial real failure exposed H.264 incompatibility; additional WebM is implemented
+with mandatory metadata inspection and all 576 decoded video frames identical.
+See docs/sample-format-evidence.json; original MP4 retained. Preparation ran on GitHub.
 
-Main protection has now been PUT and API-read back: strict required Quality checks
-bound to GitHub Actions App 15368 and TestSprite V3 bound to genuine TestSprite App
-2756476, including admins. No guessed/fake status. 7f1c924 automatically triggered
-TestSprite execution 40ad35dd-5b40-4494-a7db-3c4440f5f8b4 (pending when observed).
-Quality run 39253426754 passed 233 unit tests/build, then Chromium: 4 passed/1 failed.
-Failure artifact 12187396300 showed Text alignment as a real visible combobox;
-the new backup test's exact label selector was wrong. Changed to getByRole combobox;
-commit/push and inspect the actual rerun, no local browser rerun. Other four tests
-genuinely proved real caption gestures/backup roundtrip/invalid JSON+SRT and parts.
+Core Vercel commit-status trigger saved Active; Merge gate enabled. Target pattern
+https://frostcut-git-{branch-slug}-rubar.vercel.app/ . Real manual PR event execution
+72f0b84b-a955-4be9-9688-4a4c4996b58f passed 10/10; actual TestSprite V3 success.
+Need genuine
+new-commit core auto result on final head before merging; do not infer success.
+Prior substantive commit 7f1c924 automatically ran diagnostic execution 40ad35dd,
+which genuinely failed (2 pass, 2 fail, 8 blocked). Main is protected: strict required
+Quality checks App15368 and TestSprite V3 App2756476, enforce admins and conversation
+resolution. Real failed status kept PR blocked. No fake status or bypass.
+
+Entrant profile/email verified in same Free TestSprite account; no paid trial.
+User saved TestSprite App installation173013929 to only Frostcut; fresh GitHub UI
+confirmed exactly one selected repo. User confirms Discord unique/display name
+Rubar, membership with badge, X @RubarAren following TestSprite. Discord web
+membership/session is verified, actual username rubar. Official Season 4 rules show the
+submission channel as No access (opens Oct19); channel browser search returns only
+archived Seasons1-3 forums. Season4 discussion has no pins and confirms Oct22
+23:59PT deadline. Do not submit to the old forum. Current template/duplicate check
+and one final entry remain unavailable until the actual Season4 channel opens.
+User reports credit boost form submitted; do not
+duplicate or attest zero balance. Entrant age/region/IP/marketing/event-terms
+acknowledgements must precede final submission. No final entry sent by this agent.
+Read latest PR checks and full evidence docs before claiming current pass/merge.
+Keep email out of public repo. Do not enable a paid plan or duplicate entry.
 
 Nested sequence source-model work is saved/pushed as ae6997d on
 `codex/nested-sequences`, in the attached managed worktree:

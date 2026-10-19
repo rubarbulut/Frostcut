@@ -6,106 +6,89 @@ public repository. This is a preparation/evidence record, **not a submitted entr
 
 ## Current implementation
 
-- GitHub's repository API confirmed the repository is public on 2026-10-19.
-- User selected free **Vercel Hobby** hosting. The new `rubar/frostcut` project
-  serves https://frostcut.vercel.app/. Production deployment
-  [7kwrAgP4yBAxdRBtohkC2suNwFsn](https://vercel.com/rubar/frostcut/7kwrAgP4yBAxdRBtohkC2suNwFsn)
-  is Ready at source `9b4a9a9`. Its metadata, isolation headers and core assets were
-  verified through unauthenticated HTTPS requests. The previous `main` deployment
-  66ea8dd was replaced by promoting this prepared PR revision; PR #1 is not merged.
-- The entrant explicitly approved removing Vercel Authentication **only for the
-  frostcut project** so independent PR previews can be tested by the cloud service.
-  The setting was saved and the actual
-  [entry branch preview](https://frostcut-git-codex-testsprite-hackathon-rubar.vercel.app/)
-  passed the same source/header/asset verifier. The personal rubar.me project was
-  not changed. No bypass secret or paid feature was created.
-- [PR #1](https://github.com/rubarbulut/Frostcut/pull/1) opened 2026-10-19 and
-  [quality run 39246105008](https://github.com/rubarbulut/Frostcut/actions/runs/39246105008)
-  passed: 229 tests in 37 files (6.72 s), hosted metadata test, and production build.
-  The latest head `9b4a9a9` also has a successful
-  [quality run 39247659854](https://github.com/rubarbulut/Frostcut/actions/runs/39247659854).
-- The actual TestSprite account matches the entrant's provided email. Profile
-  name is Rubar; Free plan shows 150 credits before generation. No trial/upgrade
-  was accepted. The real portal project
-  [a34e8de5-bcc5-43f5-8de6-91793ac81697](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/settings/source)
-  was created with no application sign-in and a public editing/persistence brief.
-  Exploration finished, then proposed 57 mostly repeated cases across six use cases.
-  Twelve distinct core cases were selected and reviewed with exact UI labels,
-  edit values, file assertions and undo/redo checks before generating/running.
-- First real portal execution:
-  [2aeddbd3-edee-4ef0-bcab-936f29b2350a](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/2aeddbd3-edee-4ef0-bcab-936f29b2350a).
-  It finished with **0 passed, 8 failed, 4 blocked**. Its sample-opening case failed
-  with the actual message
-  "Your browser cannot preview this format. Try an H.264 MP4."
-  A short local check opened the real sample editor (one V1 clip, eight C1 blocks).
-  A second built-in sample format was prepared by
-  [GitHub run 39250091522](https://github.com/rubarbulut/Frostcut/actions/runs/39250091522):
-  all **576 decoded video frames match**, dimensions remain 360×640, audio remains
-  present as Opus, and the container adds 8 ms of codec padding (24.008 s). The
-  unchanged original MP4 remains the first choice on supporting browsers. Actual
-  metadata inspection is mandatory for either format; no fake playable asset is
-  synthesized. [Hashes and probe evidence](sample-format-evidence.json) are saved.
-  Four focused compatibility checks passed in 324 ms and source type-check passed;
-  no video encoding or full browser suite ran on the user's computer. The real
-  cloud rerun is still needed before claiming the fix passed TestSprite.
-- The portal now reports TestSprite GitHub App installation `173013929` connected
-  on rubarbulut. GitHub showed it installed with All repositories access; narrowing
-  to Frostcut is pending the entrant because the repo picker did not show options.
-  Do not report Frostcut-only scope until it is visibly saved. No trigger is saved
-  yet; the form detected the real Vercel commit-status event and branch URL pattern.
-- That PR trigger is now saved **Active**, watching the real Vercel commit-status
-  event with `https://frostcut-git-{branch-slug}-rubar.vercel.app/`. Its Merge gate
-  (report an actual status check that fails on failing tests) is enabled. Main's
-  required-check rule and a genuine new-commit automatic result still need proof.
-- The genuine manual test event created
-  [TestSprite bot comment 6267077384](https://github.com/rubarbulut/Frostcut/pull/1#issuecomment-6267077384)
-  and [PR run 69f69260-5615-4ff0-a799-dbd9967d5fa1](https://www.testsprite.com/dashboard-v3/o/ee3a6b41-5680-5bdf-998e-5b37da0e18af/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/69f69260-5615-4ff0-a799-dbd9967d5fa1).
-  At verified preview source `d813666` it reported **3 passed, 0 failed, 9 blocked**.
-  Passing cases: ING-001 sample opening, TIM-001 split/undo/redo, CAP-002 invalid
-  caption timing. The equal-parts replay confirmed 8.00/8.00/8.01 s and a retained
-  24.01 s original, but blocked at final downloaded-JSON inspection. Do not treat
-  blocked assertions or the portal's synthetic evaluation score as passing tests.
-- Test Files is not included in Free. The portal offered a Starter trial that
-  becomes $19/mo; it was dismissed. No file was uploaded, trial accepted, or card
-  entered. Free balance showed 132 credits after the first two executions.
-- Actual file roundtrips/invalid files and mouse caption gestures are being wired
-  into GitHub's real Chromium runner: five scenarios, no mocked browser/media data.
-  Local `--list` confirmed selection only; execution has not been claimed yet.
-  A separate [FrostCut PR core project](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/2b7bdea7-7743-4036-96f1-3527e99a4ea3/settings/source)
-  is exploring editing and autosave/reload checks. It cannot replace file evidence;
-  both runners must provide their own genuine results. The original diagnostic
-  project, definitions and historical blocked reports are preserved.
-- New commit `7f1c924` automatically triggered the original TestSprite rule after
-  Vercel Ready: genuine pending **TestSprite V3** status by `testsprite[bot]`,
-  [execution 40ad35dd-5b40-4494-a7db-3c4440f5f8b4](https://www.testsprite.com/dashboard-v3/o/ee3a6b41-5680-5bdf-998e-5b37da0e18af/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/40ad35dd-5b40-4494-a7db-3c4440f5f8b4).
-  Main protection is now enabled and API-read back: required **Quality checks**
-  from GitHub Actions (App 15368), **TestSprite V3** from TestSprite (App 2756476),
-  strict up-to-date checks, including admins. The public GitHub App API confirmed
-  TestSprite's real App ID. No fabricated status or guessed check name is used.
-- [First real Chromium file run](https://github.com/rubarbulut/Frostcut/actions/runs/39253426754)
-  reported **4 passed, 1 failed**: caption gestures/persistence, invalid-caption
-  validation, malformed JSON/SRT recovery and equal-parts file roundtrip passed.
-  The remaining test waited for a label selector; its captured DOM showed the
-  actual Text alignment combobox. Its selector is corrected to the accessible
-  combobox role, without changing the application's behavior. A new run is needed.
-  The same GitHub run passed 233 unit tests/38 files and the hosted build.
-- The entrant saved the Vercel GitHub App selection for Frostcut. The repo then
-  appeared in Vercel's import list. Existing personal-site selection was retained.
-- `.github/workflows/quality.yml` runs real unit checks, metadata checks and a
-  production build on GitHub. Vercel's GitHub integration will deploy the app and
-  independent PR previews; no publishing token is placed in this repository.
-- `build:hosted` records the real Vercel/CI source revision in `_deployment.json`.
-  scripts/verify-deployment.mjs checks that revision and runtime/demo/font/model
-  assets over HTTPS, and requires the actual document isolation headers. It rejects
-  authentication responses and redirects rather than mistaking login HTML for an app.
-- Asset URLs respect Vite's public base. `vercel.json` preserves the existing
-  COOP/COEP headers directly; no new service worker or host shim is bundled.
-- Nested-sequence work stays separately on `codex/nested-sequences` (73396b1).
-  It is incomplete and is not included in this entry's public editor as finished.
+- Public app: https://frostcut.vercel.app/ on the entrant's free Vercel Hobby
+  project `rubar/frostcut`. Production
+  [6BDmSSTVxML1maSXipaFiJCKGtXH](https://vercel.com/rubar/frostcut/6BDmSSTVxML1maSXipaFiJCKGtXH)
+  is Ready at source `9fbecb8`. Production and the
+  [PR preview](https://frostcut-git-codex-testsprite-hackathon-rubar.vercel.app/)
+  passed unauthenticated source-revision, isolation-header and core-asset checks,
+  including both sample formats. PR #1 remains open; production was promoted.
+- The entrant approved removing preview authentication only from Frostcut. That
+  saved setting makes PR previews reachable by TestSprite. The personal rubar.me
+  project/domain was untouched. No bypass secret or paid feature was enabled.
+- [PR #1](https://github.com/rubarbulut/Frostcut/pull/1) opened October 19, within
+  the published build window. Its
+  [quality run 39253972919](https://github.com/rubarbulut/Frostcut/actions/runs/39253972919)
+  passed **233 unit tests in 38 files, metadata checks, production build and five
+  real Chromium browser scenarios**. Native caption drag/resize/history, exact
+  timing, JSON download/content/reimport, invalid JSON/SRT recovery and equal-parts
+  file persistence are verified on GitHub, without mocked media or internal state.
+- TestSprite's actual account matches the entrant's supplied email; profile Rubar,
+  Free plan. The portal-generated **FrostCut PR core** suite
+  [passed all 10 cases](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/2b7bdea7-7743-4036-96f1-3527e99a4ea3/execution/8ccb1dc9-ee0e-4def-9f96-c853b108c56f),
+  with zero failures/blocks, on the verified preview. Plans were reviewed with
+  exact text/times/style values and observable persistence assertions before run.
+  Coverage: sample, split/history, caption editing/validation/manual edits/style,
+  preview speed, timeline pan, equal parts and project rename/autosave recovery.
+  This suite proves UI/IndexedDB reloads; it does not claim native-file, ASR or
+  rendering evidence. The separate five Chromium cases provide actual file/gesture proof.
+- TestSprite GitHub App installation **173013929** is connected from that account.
+  The entrant saved **Only select repositories: rubarbulut/Frostcut**; a fresh GitHub
+  settings read confirmed exactly one selected repository and disabled Save.
+- The core project's PR trigger is **Active**, watches only the completed **Vercel
+  commit status**, and uses `https://frostcut-git-{branch-slug}-rubar.vercel.app/`.
+  **Merge gate is enabled**. A genuine Send Test Event started core PR execution
+  [72f0b84b-a955-4be9-9688-4a4c4996b58f](https://www.testsprite.com/dashboard-v3/o/ee3a6b41-5680-5bdf-998e-5b37da0e18af/projects/2b7bdea7-7743-4036-96f1-3527e99a4ea3/execution/72f0b84b-a955-4be9-9688-4a4c4996b58f).
+  It finished **10 passed, 0 failed, 0 blocked** and the genuine TestSprite V3
+  status is success on source `9fbecb8`.
+- Main protection was enabled and API-read back: strict required **Quality checks**
+  bound to GitHub Actions App **15368**, and **TestSprite V3** bound to the real
+  TestSprite App **2756476**, including admins and conversation resolution. A real
+  failing TestSprite status left the PR blocked. No status is fabricated or bypassed.
+- A prior substantive commit `7f1c924` automatically ran TestSprite after Vercel
+  Ready: [40ad35dd-5b40-4494-a7db-3c4440f5f8b4](https://www.testsprite.com/dashboard-v3/o/ee3a6b41-5680-5bdf-998e-5b37da0e18af/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/40ad35dd-5b40-4494-a7db-3c4440f5f8b4),
+  **2 passed, 2 failed, 8 blocked**. The original plan incorrectly required file
+  inspection even after successful visible split/history actions. This report and
+  all original definitions/history remain; the old diagnostic trigger is disabled
+  to avoid duplicate runs. The core trigger and real Chromium file checks replace
+  those unsupported file assertions with independently verifiable evidence.
+- Initial diagnostic run
+  [2aeddbd3-edee-4ef0-bcab-936f29b2350a](https://www.testsprite.com/dashboard-v3/o/my-workspace-ee3a6b41/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/2aeddbd3-edee-4ef0-bcab-936f29b2350a)
+  was **0 passed, 8 failed, 4 blocked** and exposed a real H.264 decoding failure.
+  The fix adds a genuinely inspected WebM sample while preserving the original MP4.
+  [Cloud preparation run](https://github.com/rubarbulut/Frostcut/actions/runs/39250091522)
+  verified **all 576 decoded video frames identical**, 360x640 and present Opus audio;
+  WebM adds 8 ms codec padding. [Hashes/probes](sample-format-evidence.json) are saved.
+  Four focused tests and source type-check passed locally; encoding happened on GitHub.
+- First post-fix diagnostic PR run
+  [69f69260-5615-4ff0-a799-dbd9967d5fa1](https://www.testsprite.com/dashboard-v3/o/ee3a6b41-5680-5bdf-998e-5b37da0e18af/projects/a34e8de5-bcc5-43f5-8de6-91793ac81697/execution/69f69260-5615-4ff0-a799-dbd9967d5fa1)
+  was **3 passed, 0 failed, 9 blocked**, with an authentic
+  [bot comment](https://github.com/rubarbulut/Frostcut/pull/1#issuecomment-6267077384).
+  Sample opening, split/history and invalid-caption validation passed; blocked
+  downloaded-file assertions were not counted as passes. Test Files required a
+  $19/mo-after-trial plan; it was declined. No upgrade/card/upload was accepted.
+- The first Chromium file run had 4 passes and one incorrect test selector. Its
+  saved DOM identified the real Text alignment combobox. Correcting the selector
+  produced the linked **5/5 pass**; no application behavior was weakened for a test.
+- The entrant reports Discord membership with badge and unique/display name
+  **Rubar**, and following TestSprite on X as **@RubarAren**. Discord web membership
+  and username `rubar` were observed. The
+  [official rules channel](https://discord.com/channels/1227394620623949934/1476641368615948453)
+  still shows the Season 4 submission mention as **No access (opens Oct 19)**.
+  The channel browser's submission search lists only archived Seasons 1-3 forums.
+  The [Season 4 discussion](https://discord.com/channels/1227394620623949934/1556776381894099117)
+  confirms the October 22 deadline and has no pins. The current submission template,
+  duplicate check and final message remain unavailable; do not post in an old
+  season or infer age/region/rights/terms consent from these handles.
+- `_deployment.json` identifies the real source. The public verifier rejects
+  redirects/authentication/HTML asset fallbacks and requires COOP/COEP. Asset paths
+  respect Vite public base. No service worker or publishing token was added.
+- Nested-sequence development remains separate on `codex/nested-sequences`
+  (`73396b1`), incomplete and excluded from this public entry.
 
-GitHub CI/Vercel is **not the TestSprite integration**. No local test result,
-hand-authored plan, green build, or readiness document proves a generated portal
-suite, GitHub App installation, or a real TestSprite PR result.
+GitHub unit/build/browser checks and TestSprite portal/PR results are distinct.
+The latest exact-revision checks are authoritative on PR #1; an old green run,
+blocked case or readiness document cannot prove a newer revision passed.
 
 ## Execution order and acceptance
 
@@ -148,13 +131,13 @@ Dates/changes must also be checked in the server's pinned announcements.
 
 | Rule | Required proof / disposition | Current state |
 | --- | --- | --- |
-| 1 Eligibility | X follow and Discord membership with badge | Handles/access and actual verification pending |
+| 1 Eligibility | X follow and Discord membership with badge | Discord membership/username observed; entrant confirms badge and X @RubarAren follow |
 | 2 Single entry | Check channel for an existing entry, submit once | No entry sent by this agent |
 | 3 Team | List every member | Entrant confirmed Rubar, solo |
-| 4 Portal + GitHub App | Portal-generated suite, same-account App, in-window PR with authentic result | 12-case initial run: 0 pass, 8 fail, 4 blocked; portable sample fix awaits rerun; App scope/trigger/PR result pending |
-| 5 Public app throughout build | Reachable URL, version evidence, continued uptime | Production and PR preview verified Oct 19 at 9b4a9a9; earlier uptime unproven |
-| 6 Public repo/materials | Public source, README app/live URL/actual coverage, proper channel template | Public repo verified; live/tests/submission still pending |
-| 7 Account match | Submission account equals suite-generation and App account | Portal email verified; use this same account for pending generation/App steps |
+| 4 Portal + GitHub App | Portal-generated suite, same-account App, in-window PR with authentic result | Core portal 10/10; same-account App scoped to Frostcut; active PR trigger and required checks; latest PR results linked above |
+| 5 Public app throughout build | Reachable URL, version evidence, continued uptime | Production and PR preview verified Oct 19 at 9fbecb8; earlier uptime unproven |
+| 6 Public repo/materials | Public source, README app/live URL/actual coverage, proper channel template | Public repo/live/README and real suites verified; channel submission pending |
+| 7 Account match | Submission account equals suite-generation and App account | Portal email verified; same account generated both projects and connected the App |
 | 8 CLI bonus | Optional separate genuine issue/fix/test/PR, checkbox, handle and maintainer merge | Not entered; not required for the project track |
 | 9 Marketing rights | Entrant understands submission permits credited marketing use | Entrant acknowledgement required at submission |
 | 10 Prize payment | Winner handles organizer's legitimate payout request privately | Conditional on winning; no payment or financial data supplied |
@@ -165,10 +148,10 @@ Dates/changes must also be checked in the server's pinned announcements.
 | 15 Conduct | No prohibited/deceptive content; follow community rules | No fake tests, participants, results, votes, or engagement |
 | 16 Disqualification | One entry, matching account, public repo and real PR checks | Must finish the outstanding evidence before claiming eligibility |
 | 17 Privacy | Only required entrant details in the actual authorized submission | Email omitted from public files |
-| 18 Changes/cancellation | Recheck official announcements before entry | Website read; server announcements still need access |
+| 18 Changes/cancellation | Recheck official announcements before entry | Official rules/discussion read Oct 19; deadline unchanged; Season 4 submission channel inaccessible |
 | 19 Governing terms | Entrant reviews applicable event terms | Acknowledgement at final submission; no legal eligibility claim |
 | 20 Account/credits | Same account; real balance; credit form only when depleted | Free plan/150 credits verified; entrant reports filling form; no duplicate boost requested |
-| 21 Scoring/Creator Picks | Quality 40, autonomous tests 40, innovation 20; authentic engagement only | Coverage/PR integration being built; no score or recognition claimed |
+| 21 Scoring/Creator Picks | Quality 40, autonomous tests 40, innovation 20; authentic engagement only | Actual core/file coverage, automatic trigger and strict required checks; no score or recognition claimed |
 
 The [credit boost form](https://docs.google.com/forms/d/e/1FAIpQLSf5F0r-16l5RkBbnHaYEYaDAbacZ4wESjbPyyXygjd7Ny_WWg/viewform)
 was inspected: it requires **completely depleted** credits, Discord username,
@@ -208,5 +191,5 @@ Frostcut Pages setup was removed; no working Pages site was deployed.
 
 Local checks: the public-asset path test passed (162 ms), hosted metadata test
 passed (491 ms), and source type-check passed. No local production build, model
-or media/render job ran. The full unit suite/build will run in GitHub Actions;
+or media/render job ran. The full unit suite/build ran in GitHub Actions;
 the first run passed as linked above. No TestSprite run has been substituted for it.
