@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { publicAsset } from './public-asset';
 import { useShallow } from 'zustand/react/shallow';
 import {
   Snowflake,
@@ -304,7 +305,7 @@ export default function App() {
   async function demo() {
     try {
       setToast('Opening the sample project…');
-      const response = await fetch('/demo.mp4');
+      const response = await fetch(publicAsset('demo.mp4'));
       if (!response.ok)
         throw new Error('Sample video is unavailable. Import your own footage to start.');
       const file = new File([await response.blob()], 'A better story — sample.mp4', {
@@ -331,8 +332,8 @@ export default function App() {
     try {
       setToast('Opening the spoken demo…');
       const [video, captions] = await Promise.all([
-        fetch('/spoken-demo.mp4'),
-        fetch('/spoken-demo.srt'),
+        fetch(publicAsset('spoken-demo.mp4')),
+        fetch(publicAsset('spoken-demo.srt')),
       ]);
       if (!video.ok || !captions.ok)
         throw new Error('The spoken demo is unavailable. Import your footage to start.');

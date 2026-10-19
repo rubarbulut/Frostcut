@@ -1,4 +1,5 @@
 import { FFmpeg, FFFSType } from '@ffmpeg/ffmpeg';
+import { publicAsset } from './public-asset';
 import {
   type Project,
   type MediaAsset,
@@ -132,7 +133,7 @@ async function runEngine<T>(
     if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
     if (!ff.loaded) {
       onProgress('Loading the local media engine…');
-      const response = await fetch('/runtime/ffmpeg-core.js', { signal });
+      const response = await fetch(publicAsset('runtime/ffmpeg-core.js'), { signal });
       if (!response.ok)
         throw new Error(
           'Media engine is unavailable. Run npm install to restore the local runtime.',
@@ -143,7 +144,7 @@ async function runEngine<T>(
       try {
         await ff.load({
           coreURL,
-          wasmURL: new URL('/runtime/ffmpeg-core.wasm', location.origin).href,
+          wasmURL: new URL(publicAsset('runtime/ffmpeg-core.wasm'), location.origin).href,
         });
       } finally {
         URL.revokeObjectURL(coreURL);
@@ -411,7 +412,7 @@ export async function exportMp4(
       if (!visual && p.captions.enabled && captionGroups(p).length) {
         files.push('captions.ass', 'NotoSans.ttf');
         await ff.writeFile('captions.ass', createAss(p, w, h));
-        const response = await fetch('/fonts/NotoSans.ttf');
+        const response = await fetch(publicAsset('fonts/NotoSans.ttf'));
         if (!response.ok) throw new Error('Caption font is unavailable.');
         await ff.writeFile('NotoSans.ttf', new Uint8Array(await response.arrayBuffer()));
         filters.push(`[${base}]subtitles=captions.ass:fontsdir=/[out]`);

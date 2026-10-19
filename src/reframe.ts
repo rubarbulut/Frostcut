@@ -1,4 +1,5 @@
 import type { Clip, MediaAsset, Project } from './model';
+import { publicAsset } from './public-asset';
 export type FacePoint = { time: number; x: number; y: number; found: boolean };
 /** Coordinates are normalized to the source, then constrained so the canvas stays covered. */
 export function reframeClip(p: Project, clip: Clip, asset: MediaAsset, points: FacePoint[]): Clip {
@@ -87,9 +88,9 @@ export async function detectFacePath(
   const { FaceDetector, FilesetResolver } = await import('@mediapipe/tasks-vision');
   signal.throwIfAborted();
   const detector = await FaceDetector.createFromOptions(
-    await FilesetResolver.forVisionTasks('/runtime/vision'),
+    await FilesetResolver.forVisionTasks(publicAsset('runtime/vision')),
     {
-      baseOptions: { modelAssetPath: '/models/blaze_face_short_range.tflite' },
+      baseOptions: { modelAssetPath: publicAsset('models/blaze_face_short_range.tflite') },
       runningMode: 'IMAGE',
       minDetectionConfidence: 0.5,
     },

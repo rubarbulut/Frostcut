@@ -1,4 +1,4 @@
-# Continuation checkpoint — 2026-09-30
+# Continuation checkpoint — 2026-10-19
 
 The user requested checkpoints before credits run out, and now authorizes an
 ongoing autonomous improvement loop until they say stop. Keep the full development
@@ -14,11 +14,22 @@ Repository: https://github.com/rubarbulut/Frostcut, branch main.
 
 ## Active development location — resume here
 
+The immediate user priority is TestSprite Season 4 setup, now being prepared on
+`codex/testsprite-hackathon` in this original checkout. Read
+docs/hackathon-season-4.md and docs/testsprite-coverage.md for actual requirements,
+remaining account/portal/social/submission proof and publication state. Keep the
+user's account email out of public files. Free publication was explicitly approved;
+no paid service or duplicate submission is authorized by that choice.
+
 Nested sequence source-model work is saved/pushed as ae6997d on
 `codex/nested-sequences`, in the attached managed worktree:
 `C:/Users/Arenb/.codex/worktrees/nested-sequences/Videoeditor`.
-Latest saved/pushed increment: da6a77d, actual independent visual preview source/
-publication driver, following 39cf340's Shorts source fix and 178c8ae's MP4 audio.
+Latest saved/pushed increment: 73396b1, checked File-identity audio report reuse
+and indexed crossfade windows in both actual export paths; explicit preview
+preparation exists but is unconnected. Seven report checks and 21 focused audio/
+window tests passed in separate brief runs, one active worker; source type-check
+passed. No actual media/AI job ran. This follows da6a77d's independent visual
+driver, 39cf340's Shorts source fix and 178c8ae's hierarchical MP4 audio.
 Continue from that branch's current HEAD, not ae6997d.
 Use that directory and its current docs/nested-sequences.md for continuing code.
 Main retains the prior working editor and timing-plan foundation. Do not recreate

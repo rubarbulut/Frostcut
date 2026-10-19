@@ -2,6 +2,26 @@
 
 A local-first video editor built from the FrostCut master spec, with P0 and P1 workflows implemented. React, TypeScript, Vite, Zustand, IndexedDB, Transformers.js, MediaPipe, and FFmpeg.wasm. Core editing, transcription, translation and export run on the device, without an account or a media upload endpoint. Public stock and topic searches are explicit network actions.
 
+## Public app and TestSprite Season 4
+
+Live URL: pending the first verified **Vercel Hobby** deployment. Vercel's GitHub
+integration will provide independent PR previews, each identifying its source
+revision in `_deployment.json`. GitHub runs unit checks and production builds
+remotely. Production and PR URLs will be recorded here after publication.
+
+The TestSprite **3.0 portal suite and GitHub App are being configured**. No generated
+suite or TestSprite pass is claimed yet. The [coverage brief](docs/testsprite-coverage.md)
+specifies split/undo/redo, caption text/timing/validation/style, timeline navigation,
+preview speed, equal parts, project downloads and invalid-open recovery. After
+generation this section will list actual coverage, the entry PR and run evidence.
+See the [complete entry checklist](docs/hackathon-season-4.md) for all requirements.
+
+The public static editor runs its media workflows in your browser. The optional
+YouTube URL downloader needs the local Vite/Python helper and is not a hosted API.
+First model use requires a model download; it never starts on opening the app.
+`vercel.json` preserves the editor's COOP/COEP isolation headers. Original local
+editing and quality settings are unchanged. No paid hosting plan is configured.
+
 ## Run locally
 
 ```sh
