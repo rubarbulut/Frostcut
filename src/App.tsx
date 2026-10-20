@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { publicAsset } from './public-asset';
 import { loadBuiltinSample } from './builtin-sample';
 import { useShallow } from 'zustand/react/shallow';
+import { PixelSnowOwl } from './PixelSnowOwl';
 import {
   Snowflake,
   ArrowUpRight,
@@ -35,7 +36,13 @@ import {
   Camera,
   Share2,
   Volume2,
+  RotateCcw,
 } from 'lucide-react';
+import { RecipeReviewScreen } from './social/RecipeReviewScreen';
+import { CreatorProfileForm } from './social/CreatorProfileForm';
+import { creatorPipeline } from './social/creator-pipeline';
+import { DEFAULT_CREATOR_PROFILE, loadCreatorProfile } from './social/profile-storage';
+import type { CreatorProfile } from './creator-recipe';
 import { Modal, Field, Range } from './components';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { handleShuttleDeckKeyboard } from './shuttle-controller';
@@ -72,13 +79,7 @@ import {
   timelineWords,
 } from './model';
 import { inspectMedia, extractAudio, exportMp4 } from './media';
-import {
-  makeDemoWords,
-  suggestCuts,
-  silenceFromSamples,
-  mapSilences,
-  type CutOptions,
-} from './ai';
+import { makeDemoWords, suggestCuts, silenceFromSamples, mapSilences, type CutOptions } from './ai';
 import { transcribe, parseSrt } from './transcription';
 import Preview from './Preview';
 import Timeline, { deleteSelected, splitSelected } from './Timeline';
@@ -100,6 +101,11 @@ import LandingPage from './LandingPage';
 import { MediaImporterModal } from './importer/MediaImporterModal';
 import './importer/importer.css';
 import './editor-gothic.css';
+import './workspace-clarity.css';
+import './studio-workspace.css';
+import { StudioDock } from './StudioDock';
+import { StudioMenu } from './StudioMenu';
+import { frameAspectRatio } from './aspect-fill';
 import { SequencePicker } from './SequencePicker';
 import { ExportDestination } from './ExportDestination';
 import { createShortSequences } from './sequences';
@@ -164,22 +170,34 @@ export default function App() {
     [importerOpen, setImporterOpen] = useState(false),
     [creatorOpen, setCreatorOpen] = useState(false),
     [creatorTab, setCreatorTab] = useState('Reframe'),
+    [inspectorOpen, setInspectorOpen] = useState(true),
     [resume, setResume] = useState<Project>(),
     [toast, setToast] = useState(''),
     [projectName, setProjectName] = useState('My first cut'),
-    [preset, setPreset] = useState<Preset>('YouTube Shorts'),
+    [preset, setPreset] = useState<Preset>('YouTube'),
     [customW, setCustomW] = useState(1080),
     [customH, setCustomH] = useState(1920),
     [newFps, setNewFps] = useState(30),
     [job, setJob] = useState<Job | null>(null),
     [suggestionsOpen, setSuggestionsOpen] = useState(false),
-
     [exportUrl, setExportUrl] = useState<string>(),
     [exportBlob, setExportBlob] = useState<Blob>(),
     [mobileTab, setMobileTab] = useState('Clips'),
     [drop, setDrop] = useState(false),
     [selectedSuggestion, setSelectedSuggestion] = useState<string>();
   const [turboEngineActive, setTurboEngineActive] = useState<boolean | null>(null);
+  const [recipeReviewOpen, setRecipeReviewOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [creatorProfile, setCreatorProfile] = useState<CreatorProfile>(DEFAULT_CREATOR_PROFILE);
+  const [pipelinePreparing, setPipelinePreparing] = useState(false);
+
+  useEffect(() => {
+    loadCreatorProfile().then((res) => {
+      if (res.ok && res.data) {
+        setCreatorProfile(res.data);
+      }
+    });
+  }, []);
   const [selectedShorts, setSelectedShorts] = useState<string[]>([]);
   const [autoMode, setAutoMode] = useState<'highlights' | 'parts'>('highlights');
   const [opts, setOpts] = useState<CutOptions>({
@@ -200,7 +218,7 @@ export default function App() {
     restoreProject().then(setResume);
   }, []);
   useEffect(() => {
-    if (modal === 'export') {
+    if (screen === 'editor') {
       let cancelled = false;
       checkTurboEngine().then((ok) => {
         if (!cancelled) setTurboEngineActive(ok);
@@ -209,7 +227,7 @@ export default function App() {
         cancelled = true;
       };
     }
-  }, [modal]);
+  }, [screen, modal]);
   useEffect(() => {
     setSelectedSuggestion(undefined);
     setSelectedShorts([]);
@@ -278,10 +296,10 @@ export default function App() {
     relinkId.current = id;
     mediaInput.current?.click();
   }
-  async function importFile(file: File) {
+  async function importFile(file: File, freshRecording = false) {
     try {
       const asset = await inspectMedia(file),
-        id = relinkId.current;
+        id = freshRecording ? undefined : relinkId.current;
       relinkId.current = undefined;
       if (id) {
         const old = useEditor.getState().project.media.find((m) => m.id === id);
@@ -311,7 +329,17 @@ export default function App() {
         setToast('Media relinked.');
       } else {
         registerMedia(asset, file);
-        commit(addMedia(useEditor.getState().project, asset), 'Import footage');
+        if (freshRecording) {
+          const project = createProject(
+            file.name.replace(/\.[^.]+$/, '') || 'My recording',
+            'YouTube',
+          );
+          load(addMedia(project, asset));
+          setScreen('editor');
+          setInspectorOpen(true);
+        } else {
+          commit(addMedia(useEditor.getState().project, asset), 'Import footage');
+        }
         mediaChanged();
         setPanel('media');
         setToast('Footage imported. Ready when you are.');
@@ -387,6 +415,8 @@ export default function App() {
     load(next);
     setScreen('editor');
     setModal(null);
+    setPanel('media');
+    setInspectorOpen(true);
   }
   async function openProject(file: File) {
     try {
@@ -402,8 +432,12 @@ export default function App() {
   function saveCurrentProject() {
     try {
       saveProject();
-      setToast('Project download started. Original media stays separate; keep it with your backup.');
-    } catch (error) { notify(error); }
+      setToast(
+        'Project download started. Original media stays separate; keep it with your backup.',
+      );
+    } catch (error) {
+      notify(error);
+    }
   }
   function jobProgress(message: string, progress?: number) {
     setJob((current) =>
@@ -429,11 +463,13 @@ export default function App() {
   }
   async function runAnalysis(
     auto: boolean,
-    targetOptions?: {
-      scope?: 'timeline' | 'selected' | 'all';
-      mediaId?: string;
-      clipIds?: string[];
-    } | string,
+    targetOptions?:
+      | {
+          scope?: 'timeline' | 'selected' | 'all';
+          mediaId?: string;
+          clipIds?: string[];
+        }
+      | string,
   ) {
     if (job) return;
     if (!p.clips.length) {
@@ -450,12 +486,20 @@ export default function App() {
       const ranges: { start: number; end: number }[] = [];
       const mediaId = typeof targetOptions === 'string' ? targetOptions : targetOptions?.mediaId;
       const currentSelected = useEditor.getState().selected;
-      const scope = typeof targetOptions === 'object'
-        ? (targetOptions.scope ?? 'timeline')
-        : (auto ? 'all' : (currentSelected.length > 0 ? 'selected' : 'timeline'));
-      const clipIds = typeof targetOptions === 'object'
-        ? targetOptions.clipIds
-        : (scope === 'selected' ? currentSelected : undefined);
+      const scope =
+        typeof targetOptions === 'object'
+          ? (targetOptions.scope ?? 'timeline')
+          : auto
+            ? 'all'
+            : currentSelected.length > 0
+              ? 'selected'
+              : 'timeline';
+      const clipIds =
+        typeof targetOptions === 'object'
+          ? targetOptions.clipIds
+          : scope === 'selected'
+            ? currentSelected
+            : undefined;
 
       for (const media of next.media.filter(
         (m) =>
@@ -486,7 +530,9 @@ export default function App() {
         // Determine specific time ranges to transcribe!
         let timeRanges: { start: number; end: number }[] | undefined = undefined;
         if (scope === 'selected' && clipIds?.length) {
-          const matching = next.clips.filter((c) => c.mediaId === media.id && clipIds.includes(c.id));
+          const matching = next.clips.filter(
+            (c) => c.mediaId === media.id && clipIds.includes(c.id),
+          );
           if (!matching.length) continue; // Skip media not in selected clips
           timeRanges = matching.map((c) => ({ start: c.sourceStart, end: c.sourceEnd }));
         } else if (scope === 'timeline') {
@@ -510,7 +556,8 @@ export default function App() {
         }
 
         const isNoSpeech = opts.noSpeech ?? next.settings.noSpeech ?? false;
-        const needTranscript = !isNoSpeech && (!auto || (!existing && opts.goal !== 'Remove silences'));
+        const needTranscript =
+          !isNoSpeech && (!auto || (!existing && opts.goal !== 'Remove silences'));
         setJob((j) => (j ? { ...j, step: needTranscript ? 1 : 0 } : j));
         const analyzed = await analyzeSource(
           media,
@@ -560,7 +607,9 @@ export default function App() {
                 .filter((c) => c.mediaId === media.id && (!clipIds || clipIds.includes(c.id)))
                 .forEach((c) => delete c.captionWords);
             } else {
-              next.clips.filter((c) => c.mediaId === media.id).forEach((c) => delete c.captionWords);
+              next.clips
+                .filter((c) => c.mediaId === media.id)
+                .forEach((c) => delete c.captionWords);
             }
           }
         }
@@ -586,7 +635,7 @@ export default function App() {
         setToast(
           scope === 'selected'
             ? `Transcribed selected clip (${countWords} words ready).`
-            : `Transcript ready (${countWords} words on timeline). Click any word to jump.`
+            : `Transcript ready (${countWords} words on timeline). Click any word to jump.`,
         );
       }
       setJob(null);
@@ -605,8 +654,12 @@ export default function App() {
       return;
     }
     let next: Project;
-    try { next = applyOperations(p, s.operations, s.reason); }
-    catch (error) { setToast((error as Error).message); return; }
+    try {
+      next = applyOperations(p, s.operations, s.reason);
+    } catch (error) {
+      setToast((error as Error).message);
+      return;
+    }
     next.suggestions = [];
     commit(next, `AI: ${s.title}`, true, s.sourceOptions);
     seek(0);
@@ -646,10 +699,15 @@ export default function App() {
     try {
       const cloned = structuredClone(p);
       // 1. Attempt ultra-fast Turbo Hardware Export (native FFmpeg with NVENC/MediaFoundation)
-      let blob = await tryTurboExport(cloned, mediaFiles, controller.signal, (message, progress) => {
-        if (abortRef.current === controller && !controller.signal.aborted)
-          jobProgress(message, progress);
-      });
+      let blob = await tryTurboExport(
+        cloned,
+        mediaFiles,
+        controller.signal,
+        (message, progress) => {
+          if (abortRef.current === controller && !controller.signal.aborted)
+            jobProgress(message, progress);
+        },
+      );
 
       // 2. If turbo engine is unavailable (e.g. static hosting on Vercel), fall back to in-browser engine
       if (!blob) {
@@ -737,12 +795,15 @@ export default function App() {
           try {
             const selId = useEditor.getState().selected[0];
             const mediaId = selId
-              ? cur.clips.find((c) => c.id === selId)?.mediaId ?? cur.media[0].id
+              ? (cur.clips.find((c) => c.id === selId)?.mediaId ?? cur.media[0].id)
               : cur.media[0].id;
             const t = parseSrt(await f.text(), mediaId);
             const fresh = useEditor.getState().project;
             commit(
-              { ...fresh, transcripts: [...fresh.transcripts.filter((x) => x.mediaId !== mediaId), t] },
+              {
+                ...fresh,
+                transcripts: [...fresh.transcripts.filter((x) => x.mediaId !== mediaId), t],
+              },
               'Import transcript',
             );
             setPanel('transcript');
@@ -762,14 +823,11 @@ export default function App() {
             setScreen('editor');
           }}
           resumeProject={resume}
-          onImportFile={(file) => {
-            setScreen('editor');
-            void importFile(file);
-          }}
+          onImportFile={(file) => void importFile(file, true)}
         />
       ) : (
         <main
-          className={`editor ${drop ? 'drag-over' : ''}`}
+          className={`editor workspace-clarity studio-workspace ${panel === 'postkit' ? 'publishing-workspace' : ''} ${!p.clips.length ? 'empty-workspace' : ''} ${inspectorOpen ? 'inspector-open' : 'inspector-closed'} ${drop ? 'drag-over' : ''}`}
           onDragOver={(e) => {
             e.preventDefault();
             setDrop(true);
@@ -785,6 +843,16 @@ export default function App() {
             if (f) void importFile(f);
           }}
         >
+          <StudioMenu
+            onNew={() => { setPlaying(false); setModal('project'); }}
+            onOpen={() => projectInput.current?.click()}
+            onImport={() => importClick()}
+            onSave={saveCurrentProject}
+            onUndo={undo} onRedo={redo}
+            onShortcuts={() => setModal('shortcuts')}
+            onInspectorChange={setInspectorOpen}
+            inspectorOpen={inspectorOpen} canUndo={!!past.length} canRedo={!!future.length} busy={!!job}
+          />
           <header className="editor-header">
             {/* Left: Brand + Project Title Pill + Format Badge */}
             <div className="header-left-group">
@@ -798,7 +866,7 @@ export default function App() {
                 }}
               >
                 <div className="brand-logo-icon">
-                  <Snowflake size={15} />
+                  <PixelSnowOwl size={18} />
                 </div>
                 <span className="brand-title">FrostCut</span>
               </button>
@@ -812,8 +880,14 @@ export default function App() {
                   placeholder="Project name…"
                 />
                 <span className="save-status-pill" title={saveStatus}>
-                  <Check size={11} />
-                  <span>Saved</span>
+                  {saveStatus === 'Saved locally' ? (
+                    <Check size={11} />
+                  ) : saveStatus === 'Saving…' ? (
+                    <LoaderCircle size={11} />
+                  ) : (
+                    <Save size={11} />
+                  )}
+                  <span role="status">{saveStatus}</span>
                 </span>
               </div>
 
@@ -824,9 +898,7 @@ export default function App() {
                 title="Change Aspect Ratio & Format"
               >
                 <Smartphone size={13} />
-                <span>
-                  {p.settings.aspectRatio ?? (p.settings.width > p.settings.height ? '16:9' : p.settings.width === p.settings.height ? '1:1' : '9:16')}
-                </span>
+                <span>{frameAspectRatio(p.settings) ?? 'Custom'}</span>
               </button>
             </div>
 
@@ -847,7 +919,7 @@ export default function App() {
                 className="action-pill-btn magic-shorts"
                 disabled={!p.clips.length || !!job}
                 onClick={() => setModal('magic-shorts')}
-                title="1-Click Long-Form to Viral Shorts Studio"
+                title="Create and review Shorts from your long video"
               >
                 <Flame size={13} />
                 <span>Long to Shorts</span>
@@ -900,6 +972,11 @@ export default function App() {
                 className="header-icon-btn"
                 aria-label="New project"
                 title="New Project"
+                disabled={!!job}
+                onClick={() => {
+                  setPlaying(false);
+                  setModal('project');
+                }}
               >
                 <Plus size={15} />
               </button>
@@ -912,11 +989,28 @@ export default function App() {
               >
                 <FolderOpen size={15} />
               </button>
+              <button
+                className="header-icon-btn"
+                aria-label="Save project"
+                title="Download project backup (Ctrl+S)"
+                onClick={saveCurrentProject}
+              >
+                <Save size={15} />
+              </button>
 
               {/* Turbo GPU Status Badge */}
-              <div className="turbo-badge-pill" title="Turbo Native GPU Export Engine Ready">
-                <Zap size={13} className="turbo-zap" />
-                <span>Turbo GPU</span>
+              <div
+                className="turbo-badge-pill"
+                title="Native export availability. Hardware acceleration and project compatibility are checked during export."
+              >
+                <Zap size={13} />
+                <span>
+                  {turboEngineActive === null
+                    ? 'Checking export…'
+                    : turboEngineActive
+                      ? 'Native export available'
+                      : 'Browser export'}
+                </span>
               </div>
 
               {/* Glowing High-Impact Export Button */}
@@ -932,10 +1026,103 @@ export default function App() {
               </button>
             </div>
           </header>
-          <SequencePicker />
-          <div className="editor-workspace">
+          <nav className="creator-path" aria-label="Creation workflow">
+            <button disabled={!!job} onClick={() => importClick()}>
+              <Upload size={14} />
+              <span>1. Add recording</span>
+            </button>
+            <span className="path-divider" aria-hidden="true">
+              ›
+            </span>
+            <button
+              onClick={() => setPanel('media')}
+              aria-current={panel !== 'postkit' ? 'step' : undefined}
+            >
+              <Scissors size={14} />
+              <span>2. Review your edit</span>
+            </button>
+            <span className="path-divider" aria-hidden="true">
+              ›
+            </span>
+            <button
+              onClick={() => setPanel('postkit')}
+              aria-current={panel === 'postkit' ? 'step' : undefined}
+            >
+              <Share2 size={14} />
+              <span>3. Prepare publishing draft</span>
+            </button>
+            <span className="path-divider" aria-hidden="true">
+              ›
+            </span>
+            <button
+              onClick={async () => {
+                if (!p.clips.length) {
+                  setToast("Önce kurguya bir video kaydı ekleyin.");
+                  return;
+                }
+                setPipelinePreparing(true);
+                try {
+                  await creatorPipeline.preparePlan(p, mediaFiles, creatorProfile);
+                  setRecipeReviewOpen(true);
+                } catch (err: any) {
+                  setToast('Plan hazırlanamadı: ' + ((err as Error)?.message || String(err)));
+                } finally {
+                  setPipelinePreparing(false);
+                }
+              }}
+              disabled={pipelinePreparing || !p.clips.length}
+              aria-label="4. Recipe and Shorts"
+              title="YouTube uzun video ve Shorts taslaklarını hazırla ve incele"
+            >
+              <Sparkles size={14} />
+              <span>{pipelinePreparing ? "Hazırlanıyor…" : "4. Recipe & Shorts"}</span>
+            </button>
+            <button
+              onClick={() => setProfileModalOpen(true)}
+              aria-label="Kanal Profili"
+              title="Kanal profili ve hedef süre tercihlerini düzenle"
+            >
+              <Settings2 size={14} />
+              <span>Profil</span>
+            </button>
+            {creatorPipeline.getSession()?.activeOutputId && (
+              <button
+                className="return-source-pill"
+                onClick={() => {
+                  const src = creatorPipeline.returnToSource(p);
+                  load(src);
+                  setToast("Ana kurguya geri dönüldü.");
+                }}
+                title="Çıktıyı kaydedip orijinal kurguya geri dön"
+              >
+                <RotateCcw size={13} />
+                <span>Kaynağa Dön</span>
+              </button>
+            )}
+            <button
+              aria-label="Creator tools"
+              onClick={() => {
+                setPlaying(false);
+                setCreatorTab('Reframe');
+                setCreatorOpen(true);
+              }}
+            >
+              <WandSparkles size={14} />
+              More tools
+            </button>
+            <button
+              className="inspector-toggle"
+              aria-pressed={inspectorOpen}
+              onClick={() => setInspectorOpen(!inspectorOpen)}
+            >
+              <Settings2 size={14} />
+              Inspector
+            </button>
+          </nav>
+          <StudioDock inspectorOpen={inspectorOpen} timeline={<><SequencePicker /><Timeline /></>}>
             <aside className="left-panel">
-              <div className="panel-tabs">
+              <div className="studio-panel-title"><span>Project</span><small>Files & tools</small></div>
+              <div className="panel-tabs" aria-label="Editing tools">
                 <button
                   className={panel === 'media' ? 'active' : ''}
                   onClick={() => setPanel('media')}
@@ -971,7 +1158,7 @@ export default function App() {
                 <button
                   className={panel === 'postkit' ? 'active' : ''}
                   onClick={() => setPanel('postkit')}
-                  title="Social Post Kit & Trending Hashtags"
+                  title="Publishing title, description and hashtags"
                 >
                   <Share2 size={13} />
                   Post Kit
@@ -1017,6 +1204,7 @@ export default function App() {
               )}
             </aside>
             <div className="center-panel">
+              <div className="studio-panel-title"><span><i className="studio-comp-label" />Composition</span><b>{p.sequences?.find((sequence) => sequence.id === p.activeSequenceId)?.name ?? p.name}</b></div>
               <div className="preview-viewport-bar">
                 <div className="viewport-left-meta">
                   <span className="sequence-indicator-dot" />
@@ -1028,19 +1216,14 @@ export default function App() {
                     title="Change Canvas Aspect Ratio"
                   >
                     <Smartphone size={12} />
-                    <span>
-                      {p.settings.width > p.settings.height
-                        ? '16:9'
-                        : p.settings.width === p.settings.height
-                          ? '1:1'
-                          : p.settings.height === 1350
-                            ? '4:5'
-                            : '9:16'}
-                    </span>
+                    <span>{frameAspectRatio(p.settings) ?? 'Custom'}</span>
                   </button>
                 </div>
                 <div className="viewport-right-meta">
-                  <label className="safe-area-toggle-pill" title="Show TikTok & Instagram Reels UI Safe Zone Margins">
+                  <label
+                    className="safe-area-toggle-pill"
+                    title="Show TikTok & Instagram Reels UI Safe Zone Margins"
+                  >
                     <input
                       type="checkbox"
                       checked={!!p.captions.safeArea}
@@ -1055,6 +1238,7 @@ export default function App() {
                 </div>
               </div>
               <SmartWorkflowGuide
+                key={`${p.id}:${p.activeSequenceId ?? ''}`}
                 onTranscribeRequest={() => setModal('transcribe')}
                 onSilenceCutRequest={() => void runAnalysis(true)}
               />
@@ -1068,8 +1252,7 @@ export default function App() {
               )}
             </div>
             <PropertiesPanel />
-          </div>
-          <Timeline />
+          </StudioDock>
           <section className="mobile-flow">
             <div className="panel-tabs">
               {['Clips', 'Format', 'Transcript', 'Style'].map((t) => (
@@ -1260,194 +1443,225 @@ export default function App() {
       {modal === 'auto' && (
         <Modal title="Find your next great clip." onClose={() => setModal(null)} wide>
           <div className="creator-tabs" role="tablist" aria-label="Cut mode">
-            <button role="tab" aria-selected={autoMode === 'highlights'} onClick={() => setAutoMode('highlights')}>AI highlights</button>
-            <button role="tab" aria-selected={autoMode === 'parts'} onClick={() => setAutoMode('parts')}>Equal parts</button>
-          </div>
-          {autoMode === 'parts' ? <EqualParts onCreated={() => setModal(null)} /> : <>
-          <p className="modal-intro">
-            A first cut you can make your own. Preview every change before applying.
-          </p>
-          <StyleMemoryCutSuggestion options={opts} onApply={setOpts} />
-          <div className="setup-grid">
-            <div>
-              <Field label="What do you want to create?">
-                <select
-                  value={opts.goal}
-                  onChange={(e) => setOpts({ ...opts, goal: e.target.value })}
-                >
-                  {[
-                    'Short-form clips',
-                    'Clean full video',
-                    'Highlights only',
-                    'Remove silences',
-                    'Custom',
-                  ].map((v) => (
-                    <option key={v}>{v}</option>
-                  ))}
-                </select>
-              </Field>
-              <div className="number-grid">
-                <Field label="Clip count">
-                  <select
-                    value={opts.count}
-                    onChange={(e) => setOpts({ ...opts, count: +e.target.value })}
-                  >
-                    <option value="3">3 clips</option>
-                    <option value="5">5 clips</option>
-                    <option value="10">10 clips</option>
-                    <option value="0">Auto</option>
-                  </select>
-                </Field>
-                <Field label="Target length">
-                  <select
-                    value={opts.length}
-                    onChange={(e) => setOpts({ ...opts, length: +e.target.value })}
-                  >
-                    <option value="14">Less than 15s</option>
-                    <option value="25">15–30s</option>
-                    <option value="45">30–60s</option>
-                    <option value="75">60–90s</option>
-                    <option value="0">Auto</option>
-                  </select>
-                </Field>
-              </div>
-              <Field label="Spoken language">
-                <select
-                  value={p.settings.language}
-                  onChange={(e) =>
-                    commit(
-                      {
-                        ...p,
-                        settings: {
-                          ...p.settings,
-                          language: e.target.value,
-                          transcriptionQuality:
-                            resolveQuality(p.settings.transcriptionQuality) === 'balanced'
-                              ? recommendedQuality(e.target.value)
-                              : p.settings.transcriptionQuality,
-                        },
-                      },
-                      'Language',
-                    )
-                  }
-                >
-                  {languages.map((v) => (
-                    <option key={v}>{v}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Speech quality">
-                <select
-                  value={resolveQuality(p.settings.transcriptionQuality)}
-                  onChange={(e) =>
-                    commit(
-                      {
-                        ...p,
-                        settings: {
-                          ...p.settings,
-                          transcriptionQuality: resolveQuality(e.target.value),
-                        },
-                      },
-                      'Speech quality',
-                    )
-                  }
-                >
-                  {Object.entries(transcriptionModels).map(([key, model]) => (
-                    <option key={key} value={key}>
-                      {model.label} · {model.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <label
-                className="check-row"
-                style={{
-                  margin: '0.4rem 0 0.6rem 0',
-                  padding: '7px 9px',
-                  background: (opts.noSpeech ?? p.settings.noSpeech) ? 'rgba(245, 158, 11, 0.12)' : 'rgba(255, 255, 255, 0.04)',
-                  border: (opts.noSpeech ?? p.settings.noSpeech) ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '6px',
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={opts.noSpeech ?? p.settings.noSpeech ?? false}
-                  onChange={(e) => {
-                    const val = e.target.checked;
-                    setOpts({ ...opts, noSpeech: val });
-                    commit(
-                      { ...p, settings: { ...p.settings, noSpeech: val } },
-                      'Toggle speech mode',
-                    );
-                  }}
-                />
-                <span style={{ fontSize: '11.5px', fontWeight: 500, color: (opts.noSpeech ?? p.settings.noSpeech) ? '#fbbf24' : '#cbd5e1' }}>
-                  🔇 Videoda metin / konuşma yok (Görsel & müzik ritmi modu · Deşifreyi atla)
-                </span>
-              </label>
-              <label className="check-row">
-                <input
-                  type="checkbox"
-                  checked={opts.composite}
-                  onChange={(e) => setOpts({ ...opts, composite: e.target.checked })}
-                />
-                Combine multiple moments
-              </label>
-              <label className="check-row">
-                <input
-                  type="checkbox"
-                  checked={opts.reorder}
-                  onChange={(e) => setOpts({ ...opts, reorder: e.target.checked })}
-                />
-                Allow AI to reorder clips
-              </label>
-            </div>
-            <div className="setup-aside">
-              <b>Set the pace</b>
-              <div className="segmented">
-                {['Natural', 'Fast', 'Hyper'].map((v) => (
-                  <button
-                    className={opts.pacing === v ? 'active' : ''}
-                    key={v}
-                    onClick={() => setOpts({ ...opts, pacing: v })}
-                  >
-                    {v}
-                  </button>
-                ))}
-              </div>
-              <Range
-                label="Silence sensitivity"
-                value={opts.sensitivity}
-                onChange={(sensitivity) => setOpts({ ...opts, sensitivity })}
-              />
-              <p className="subtle">
-                {estimatedSilence
-                  ? `Estimated removed: ${timecode(estimatedSilence)}`
-                  : 'Silence duration is measured when analysis runs.'}
-              </p>
-              <div className="property-divider" />
-              <div className="analysis-note">
-                <ShieldCheck size={19} />
-                <div>
-                  <b>Local, from start to finish.</b>
-                  <p>First transcription downloads a speech model. Your media is never uploaded.</p>
-                </div>
-              </div>
-              <small className="subtle">
-                Highlights use transcript scoring. Repeated takes are suggestions for you to review.
-              </small>
-            </div>
-          </div>
-          <div className="modal-footer">
-            <span>
-              <Sparkles size={15} />
-              Your edit. Your final say.
-            </span>
-            <button className="primary" onClick={() => void runAnalysis(true)}>
-              Find the good parts <ArrowRight size={16} />
+            <button
+              role="tab"
+              aria-selected={autoMode === 'highlights'}
+              onClick={() => setAutoMode('highlights')}
+            >
+              AI highlights
+            </button>
+            <button
+              role="tab"
+              aria-selected={autoMode === 'parts'}
+              onClick={() => setAutoMode('parts')}
+            >
+              Equal parts
             </button>
           </div>
-          </>}
+          {autoMode === 'parts' ? (
+            <EqualParts onCreated={() => setModal(null)} />
+          ) : (
+            <>
+              <p className="modal-intro">
+                A first cut you can make your own. Preview every change before applying.
+              </p>
+              <StyleMemoryCutSuggestion options={opts} onApply={setOpts} />
+              <div className="setup-grid">
+                <div>
+                  <Field label="What do you want to create?">
+                    <select
+                      value={opts.goal}
+                      onChange={(e) => setOpts({ ...opts, goal: e.target.value })}
+                    >
+                      {[
+                        'Short-form clips',
+                        'Clean full video',
+                        'Highlights only',
+                        'Remove silences',
+                        'Custom',
+                      ].map((v) => (
+                        <option key={v}>{v}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <div className="number-grid">
+                    <Field label="Clip count">
+                      <select
+                        value={opts.count}
+                        onChange={(e) => setOpts({ ...opts, count: +e.target.value })}
+                      >
+                        <option value="3">3 clips</option>
+                        <option value="5">5 clips</option>
+                        <option value="10">10 clips</option>
+                        <option value="0">Auto</option>
+                      </select>
+                    </Field>
+                    <Field label="Target length">
+                      <select
+                        value={opts.length}
+                        onChange={(e) => setOpts({ ...opts, length: +e.target.value })}
+                      >
+                        <option value="14">Less than 15s</option>
+                        <option value="25">15–30s</option>
+                        <option value="45">30–60s</option>
+                        <option value="75">60–90s</option>
+                        <option value="0">Auto</option>
+                      </select>
+                    </Field>
+                  </div>
+                  <Field label="Spoken language">
+                    <select
+                      value={p.settings.language}
+                      onChange={(e) =>
+                        commit(
+                          {
+                            ...p,
+                            settings: {
+                              ...p.settings,
+                              language: e.target.value,
+                              transcriptionQuality:
+                                resolveQuality(p.settings.transcriptionQuality) === 'balanced'
+                                  ? recommendedQuality(e.target.value)
+                                  : p.settings.transcriptionQuality,
+                            },
+                          },
+                          'Language',
+                        )
+                      }
+                    >
+                      {languages.map((v) => (
+                        <option key={v}>{v}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Speech quality">
+                    <select
+                      value={resolveQuality(p.settings.transcriptionQuality)}
+                      onChange={(e) =>
+                        commit(
+                          {
+                            ...p,
+                            settings: {
+                              ...p.settings,
+                              transcriptionQuality: resolveQuality(e.target.value),
+                            },
+                          },
+                          'Speech quality',
+                        )
+                      }
+                    >
+                      {Object.entries(transcriptionModels).map(([key, model]) => (
+                        <option key={key} value={key}>
+                          {model.label} · {model.name}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <label
+                    className="check-row"
+                    style={{
+                      margin: '0.4rem 0 0.6rem 0',
+                      padding: '7px 9px',
+                      background:
+                        (opts.noSpeech ?? p.settings.noSpeech)
+                          ? 'rgba(245, 158, 11, 0.12)'
+                          : 'rgba(255, 255, 255, 0.04)',
+                      border:
+                        (opts.noSpeech ?? p.settings.noSpeech)
+                          ? '1px solid rgba(245, 158, 11, 0.35)'
+                          : '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: '6px',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={opts.noSpeech ?? p.settings.noSpeech ?? false}
+                      onChange={(e) => {
+                        const val = e.target.checked;
+                        setOpts({ ...opts, noSpeech: val });
+                        commit(
+                          { ...p, settings: { ...p.settings, noSpeech: val } },
+                          'Toggle speech mode',
+                        );
+                      }}
+                    />
+                    <span
+                      style={{
+                        fontSize: '11.5px',
+                        fontWeight: 500,
+                        color: (opts.noSpeech ?? p.settings.noSpeech) ? '#fbbf24' : '#cbd5e1',
+                      }}
+                    >
+                      🔇 Videoda metin / konuşma yok (Görsel & müzik ritmi modu · Deşifreyi atla)
+                    </span>
+                  </label>
+                  <label className="check-row">
+                    <input
+                      type="checkbox"
+                      checked={opts.composite}
+                      onChange={(e) => setOpts({ ...opts, composite: e.target.checked })}
+                    />
+                    Combine multiple moments
+                  </label>
+                  <label className="check-row">
+                    <input
+                      type="checkbox"
+                      checked={opts.reorder}
+                      onChange={(e) => setOpts({ ...opts, reorder: e.target.checked })}
+                    />
+                    Allow AI to reorder clips
+                  </label>
+                </div>
+                <div className="setup-aside">
+                  <b>Set the pace</b>
+                  <div className="segmented">
+                    {['Natural', 'Fast', 'Hyper'].map((v) => (
+                      <button
+                        className={opts.pacing === v ? 'active' : ''}
+                        key={v}
+                        onClick={() => setOpts({ ...opts, pacing: v })}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                  <Range
+                    label="Silence sensitivity"
+                    value={opts.sensitivity}
+                    onChange={(sensitivity) => setOpts({ ...opts, sensitivity })}
+                  />
+                  <p className="subtle">
+                    {estimatedSilence
+                      ? `Estimated removed: ${timecode(estimatedSilence)}`
+                      : 'Silence duration is measured when analysis runs.'}
+                  </p>
+                  <div className="property-divider" />
+                  <div className="analysis-note">
+                    <ShieldCheck size={19} />
+                    <div>
+                      <b>Local, from start to finish.</b>
+                      <p>
+                        First transcription downloads a speech model. Your media is never uploaded.
+                      </p>
+                    </div>
+                  </div>
+                  <small className="subtle">
+                    Highlights use transcript scoring. Repeated takes are suggestions for you to
+                    review.
+                  </small>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <span>
+                  <Sparkles size={15} />
+                  Your edit. Your final say.
+                </span>
+                <button className="primary" onClick={() => void runAnalysis(true)}>
+                  Find the good parts <ArrowRight size={16} />
+                </button>
+              </div>
+            </>
+          )}
         </Modal>
       )}
       {suggestionsOpen && (
@@ -1558,20 +1772,64 @@ export default function App() {
       {creatorOpen && (
         <CreatorTools initialTab={creatorTab} onClose={() => setCreatorOpen(false)} />
       )}
-      {modal === 'shortcuts' && (
-        <KeyboardShortcutsModal onClose={() => setModal(null)} />
+      {recipeReviewOpen && (
+        <RecipeReviewScreen
+          isOpen={recipeReviewOpen}
+          onClose={() => setRecipeReviewOpen(false)}
+          project={p}
+          sourceFiles={mediaFiles}
+          profile={creatorProfile}
+          proposals={creatorPipeline.getSession()?.proposals}
+          onApplyProject={(materialized, output) => {
+            const target = creatorPipeline.switchToOutput(output.id, p);
+            load(target);
+            setToast('Kurguya yüklendi: ' + output.name);
+            setRecipeReviewOpen(false);
+          }}
+          onExportDraft={async (materialized, output) => {
+            setRecipeReviewOpen(false);
+            setToast(output.name + ' dışa aktarma kuyruğuna alındı.');
+            try {
+              await creatorPipeline.renderOutput(output.id, {
+                onProgress: (prog) => {
+                  setToast(output.name + ': %' + Math.round(prog.percentage) + ' ' + prog.message);
+                },
+              });
+              setToast(output.name + ' render tamamlandı.');
+            } catch (err: any) {
+              setToast('Render hatası: ' + ((err as Error)?.message || String(err)));
+            }
+          }}
+        />
       )}
+      {profileModalOpen && (
+        <Modal title="Kanal Profili ve Hedef Süreler" onClose={() => setProfileModalOpen(false)}>
+          <CreatorProfileForm
+            initialProfile={creatorProfile}
+            onSave={(saved) => {
+              setCreatorProfile(saved);
+              setProfileModalOpen(false);
+              setToast('Kanal profili güncellendi.');
+            }}
+            onCancel={() => setProfileModalOpen(false)}
+          />
+        </Modal>
+      )}
+      {modal === 'shortcuts' && <KeyboardShortcutsModal onClose={() => setModal(null)} />}
       {modal === 'magic-shorts' && (
         <LongToShortsModal onClose={() => setModal(null)} onNotify={setToast} />
       )}
       {modal === 'export' && (
         <Modal title="Ready for the world." onClose={() => setModal(null)}>
-          <p className="modal-intro">A polished MP4. Rendered right here on your device.</p>
+          <p className="modal-intro">
+            Export your edit as an MP4 on this device. Review the result before publishing.
+          </p>
           {turboEngineActive && (
             <div className="turbo-badge-banner">
               <Zap size={14} style={{ color: '#fbbf24', flexShrink: 0 }} />
               <span>
-                <b>Turbo GPU Rendering Active:</b> Instant native hardware acceleration enabled (~2-3s export).
+                <b>Native export available.</b> Compatible edits can use the local encoder. Speed
+                and hardware acceleration depend on your device and project.
               </span>
             </div>
           )}

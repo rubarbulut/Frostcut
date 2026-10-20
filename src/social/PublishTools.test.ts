@@ -3,7 +3,7 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { createProject, addMedia, defaultProps, type Project } from '../model';
 import { PublishTools } from '../PublishTools';
-import { SocialPostKit } from '../SocialPostKit';
+import { SocialPostKit, type SocialPostKitProps } from '../SocialPostKit';
 
 function createProjectFixture(): Project {
   const p = addMedia(createProject('Cyberpunk 2077 Walkthrough', 'YouTube'), {
@@ -97,14 +97,14 @@ describe('PublishTools & SocialPostKit (B004-B)', () => {
     const emptyProj = createProject('Empty Edit', 'YouTube');
     emptyProj.clips = [];
 
-    const html = renderToString(React.createElement(SocialPostKit, { project: emptyProj }));
+    const html = renderToString(React.createElement(SocialPostKit as any, { project: emptyProj }));
     expect(html).toContain('Önce kaydınızı ekleyin');
     expect(html).not.toContain('Taslağı Kaydet');
   });
 
   it('renders tabs and manual draft notice in SocialPostKit when clips are present', () => {
     const p = createProjectFixture();
-    const html = renderToString(React.createElement(SocialPostKit, { project: p }));
+    const html = renderToString(React.createElement(SocialPostKit as any, { project: p }));
     expect(html).toContain('Yayın Taslağı (Publishing Draft)');
     expect(html).toContain('Shorts');
     expect(html).toContain('Reels');

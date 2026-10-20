@@ -16,10 +16,8 @@ export interface SocialPostKitProps {
   onCommit?: (nextProject: Project, message?: string) => void;
 }
 
-export function SocialPostKit({
-  project: propProject,
-  onCommit: propCommit,
-}: SocialPostKitProps = {}) {
+export function SocialPostKit(props: SocialPostKitProps = {}): React.ReactElement {
+  const { project: propProject, onCommit: propCommit } = props;
   const storeProject = useEditor((s) => s.project);
   const p = propProject ?? (typeof window === 'undefined' ? useEditor.getState().project : storeProject);
   const [platform, setPlatform] = useState<PublishPlatform>('youtube');
