@@ -1,31 +1,175 @@
-import { spawn } from 'node:child_process';
+import { spawn, type ChildProcess } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, createReadStream, promises as fs } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import type { Plugin, ViteDevServer, PreviewServer } from 'vite';
+import { isTurboEligible } from '../turbo-eligibility';
 
-export function turboExportPlugin(): Plugin {
-  const handler = async (req: any, res: any, next: any) => {
+import { videoBitrate } from '../export-settings';
+import { resolve } from 'node:path';
+
+export type TurboHealthInfo = {
+  turbo: boolean;
+  encoderAvailable: string;
+  hardwareCodecCompiled: boolean;
+  hardwareRuntimeVerified: boolean;
+  acceleration: 'codec-compiled-unverified' | 'software-only' | 'none';
+  note: string;
+};
+
+let probedFfmpeg: TurboHealthInfo | null = null;
+export async function probeFfmpeg(): Promise<TurboHealthInfo> {
+  if (probedFfmpeg) return probedFfmpeg;
+  return new Promise((resolveProbe) => {
+    try {
+      const child = spawn('ffmpeg', ['-encoders']);
+      let output = '';
+      child.stdout?.on('data', (d) => (output += d.toString()));
+      child.stderr?.on('data', (d) => (output += d.toString()));
+      child.on('error', () => {
+        probedFfmpeg = {
+          turbo: false,
+          encoderAvailable: 'none',
+          hardwareCodecCompiled: false,
+          hardwareRuntimeVerified: false,
+          acceleration: 'none',
+          note: 'FFmpeg binary not available on system PATH',
+        };
+        resolveProbe(probedFfmpeg);
+      });
+      child.on('close', (code) => {
+        if (code !== 0) {
+          probedFfmpeg = {
+            turbo: false,
+            encoderAvailable: 'none',
+            hardwareCodecCompiled: false,
+            hardwareRuntimeVerified: false,
+            acceleration: 'none',
+            note: 'FFmpeg probe returned non-zero exit code',
+          };
+        } else {
+          const hasMf = output.includes('h264_mf');
+          const hasNvenc = output.includes('h264_nvenc');
+          const hasQsv = output.includes('h264_qsv');
+          const hasHardware = hasMf || hasNvenc || hasQsv;
+          const encoder = hasNvenc ? 'h264_nvenc' : hasQsv ? 'h264_qsv' : hasMf ? 'h264_mf' : 'libx264';
+          probedFfmpeg = {
+            turbo: true,
+            encoderAvailable: encoder,
+            hardwareCodecCompiled: hasHardware,
+            hardwareRuntimeVerified: false,
+            acceleration: hasHardware ? 'codec-compiled-unverified' : 'software-only',
+            note: hasHardware
+              ? `Hardware codec ${encoder} is compiled in FFmpeg; actual hardware acceleration depends on active GPU runtime`
+              : 'Software libx264 available; hardware acceleration codec not compiled',
+          };
+        }
+        resolveProbe(probedFfmpeg);
+      });
+    } catch {
+      probedFfmpeg = {
+        turbo: false,
+        encoderAvailable: 'none',
+        hardwareCodecCompiled: false,
+        hardwareRuntimeVerified: false,
+        acceleration: 'none',
+        note: 'Failed to spawn FFmpeg process',
+      };
+      resolveProbe(probedFfmpeg);
+    }
+  });
+}
+
+export interface TurboHandlerOptions {
+  probeFn?: () => Promise<TurboHealthInfo>;
+  spawnFn?: typeof spawn;
+  tempBaseDir?: string;
+}
+
+export function createTurboExportHandler(options: TurboHandlerOptions = {}) {
+  const probe = options.probeFn || probeFfmpeg;
+  const spawnProcess = options.spawnFn || spawn;
+  const baseTmp = options.tempBaseDir || tmpdir();
+
+  return async (req: any, res: any, next?: any) => {
     const rawUrl = req.url || '';
 
     // Endpoint 1: Health check
     if (rawUrl.startsWith('/api/turbo-health')) {
-      res.statusCode = 200;
+      const health = await probe();
+      res.statusCode = health.turbo ? 200 : 503;
       res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ status: 'ok', turbo: true, hardware: true }));
+      res.end(
+        JSON.stringify({
+          status: health.turbo ? 'available' : 'unavailable',
+          turbo: health.turbo,
+          encoder: health.encoderAvailable,
+          encoderAvailable: health.encoderAvailable,
+          hardwareCodecCompiled: health.hardwareCodecCompiled,
+          hardwareRuntimeVerified: health.hardwareRuntimeVerified,
+          acceleration: health.acceleration,
+          note: health.note,
+        }),
+      );
       return;
     }
 
     // Endpoint 2: Turbo Native Hardware Export
     if (rawUrl.startsWith('/api/turbo-export') && req.method === 'POST') {
-      const tempDir = join(tmpdir(), 'frostcut_turbo_' + randomUUID());
+      const tempDir = join(baseTmp, 'frostcut_turbo_' + randomUUID());
+      let activeChild: ChildProcess | null = null;
+      let clientAborted = false;
+      let cleanedUp = false;
+      let resolveExecution: (() => void) | null = null;
+      const executionPromise = new Promise<void>((r) => { resolveExecution = r; });
+
       const cleanup = async () => {
+        if (cleanedUp) return;
+        cleanedUp = true;
         try {
           if (existsSync(tempDir)) {
             await fs.rm(tempDir, { recursive: true, force: true });
           }
         } catch {}
+      };
+
+      const abortHandler = () => {
+        if (!clientAborted) {
+          clientAborted = true;
+          if (activeChild) {
+            try {
+              activeChild.kill();
+            } catch {}
+            activeChild = null;
+          }
+          void cleanup();
+          resolveExecution?.();
+        }
+      };
+
+      // Client abort tracking: distinguish between normal completion and premature disconnect
+      req.on('aborted', abortHandler);
+      req.on('close', () => {
+        // If connection closed prematurely before the request stream ended and before response ended
+        if (!req.readableEnded && !res.writableEnded) {
+          abortHandler();
+        }
+      });
+      res.on('close', () => {
+        if (!res.writableEnded) {
+          abortHandler();
+        }
+      });
+
+      const respondError = async (status: number, message: string) => {
+        if (!res.writableEnded && !res.headersSent) {
+          res.statusCode = status;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: message }));
+        }
+        await cleanup();
+        resolveExecution?.();
       };
 
       try {
@@ -40,28 +184,58 @@ export function turboExportPlugin(): Plugin {
         } as any);
 
         const formData = await webReq.formData();
-        const projectRaw = formData.get('project');
-        if (!projectRaw || typeof projectRaw !== 'string') {
-          res.statusCode = 400;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ error: 'Missing project JSON payload' }));
+        if (clientAborted) {
           await cleanup();
           return;
         }
 
-        const project = JSON.parse(projectRaw);
+        const projectRaw = formData.get('project');
+        if (!projectRaw || typeof projectRaw !== 'string') {
+          await respondError(400, 'Missing project JSON payload');
+          return;
+        }
+
+        let project: any;
+        try {
+          project = JSON.parse(projectRaw);
+        } catch {
+          await respondError(400, 'Invalid project JSON payload');
+          return;
+        }
+
+        // Server-side strict scope validation (B002-D)
+        const eligibility = isTurboEligible(project);
+        if (!eligibility.eligible) {
+          await respondError(400, `Project not eligible for turbo export: ${eligibility.reason}`);
+          return;
+        }
+
         const assContent = formData.get('ass');
 
-        // Save media files to temp directory
+        // Save media files to temp directory with strict path-traversal protection
         const mediaPathMap = new Map<string, string>();
         for (const [key, val] of formData.entries()) {
           if (key.startsWith('media_') && val instanceof Blob) {
-            const mediaId = key.replace('media_', '');
-            const ext = (val as any).name?.split('.').pop() || 'mp4';
-            const diskPath = join(tempDir, `media_${mediaId}.${ext}`);
+            const rawId = key.replace('media_', '');
+            if (rawId.includes('/') || rawId.includes('\\') || rawId.includes('..') || !/^[a-zA-Z0-9_-]+$/.test(rawId)) {
+              await respondError(400, 'Security error: Invalid media identifier or path traversal detected');
+              return;
+            }
+
+            const rawExt = ((val as any).name?.split('.').pop() || 'mp4').toLowerCase();
+            const safeExt = /^[a-z0-9]{2,5}$/.test(rawExt) ? rawExt : 'mp4';
+            const diskPath = join(tempDir, `media_${rawId}.${safeExt}`);
+            const resolvedPath = resolve(diskPath);
+            const resolvedTempDir = resolve(tempDir);
+
+            if (!resolvedPath.startsWith(resolvedTempDir)) {
+              await respondError(400, 'Security error: Invalid media identifier or path traversal detected');
+              return;
+            }
+
             const buffer = Buffer.from(await val.arrayBuffer());
             await fs.writeFile(diskPath, buffer);
-            mediaPathMap.set(mediaId, diskPath);
+            mediaPathMap.set(rawId, diskPath);
           }
         }
 
@@ -74,17 +248,30 @@ export function turboExportPlugin(): Plugin {
         let assPath: string | null = null;
         if (assContent && typeof assContent === 'string' && assContent.trim().length > 0) {
           assPath = join(tempDir, 'captions.ass');
+          if (!resolve(assPath).startsWith(resolve(tempDir))) {
+            await respondError(400, 'Security error: Invalid caption path traversal');
+            return;
+          }
           await fs.writeFile(assPath, assContent, 'utf8');
         }
 
         const clips = project.clips || [];
         if (!clips.length) {
-          res.statusCode = 400;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ error: 'Project has no clips to export' }));
-          await cleanup();
+          await respondError(400, 'Project has no clips to export');
           return;
         }
+
+        // Determine configured hardware encoder
+        const health = await probe();
+        const selectedEncoder = health.encoderAvailable !== 'none' ? health.encoderAvailable : 'libx264';
+
+        // Calculate dynamic bitrates honoring project export settings
+        const vBitrate = project.exportSettings?.videoBitrate
+          ? `${Math.round(project.exportSettings.videoBitrate / 1000)}k`
+          : `${Math.round(videoBitrate(project) / 1000)}k`;
+        const aBitrate = project.exportSettings?.audioBitrate
+          ? `${project.exportSettings.audioBitrate}k`
+          : '192k';
 
         // Build FFmpeg command arguments
         const args: string[] = ['-y'];
@@ -94,10 +281,7 @@ export function turboExportPlugin(): Plugin {
           const clip = clips[0];
           const inputPath = mediaPathMap.get(clip.mediaId);
           if (!inputPath || !existsSync(inputPath)) {
-            res.statusCode = 400;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ error: `Source media for clip ${clip.mediaId} missing` }));
-            await cleanup();
+            await respondError(400, `Source media for clip ${clip.mediaId} missing`);
             return;
           }
 
@@ -109,17 +293,21 @@ export function turboExportPlugin(): Plugin {
 
           let vFilter = `scale=${w}:${h}:force_original_aspect_ratio=decrease,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1`;
           if (assPath) {
-            // Forward slashes and escape colons for FFmpeg filter
             const safeAssPath = assPath.replace(/\\/g, '/').replace(/:/g, '\\:');
             vFilter += `,subtitles='${safeAssPath}'`;
           }
 
           args.push(
             '-vf', vFilter,
-            '-c:v', 'h264_mf',
-            '-b:v', '6M',
+            '-c:v', selectedEncoder,
+          );
+          if (selectedEncoder === 'libx264') {
+            args.push('-preset', 'ultrafast', '-pix_fmt', 'yuv420p');
+          }
+          args.push(
+            '-b:v', vBitrate,
             '-c:a', 'aac',
-            '-b:a', '192k',
+            '-b:a', aBitrate,
             '-r', String(fps),
             '-movflags', '+faststart',
             outputPath,
@@ -162,37 +350,97 @@ export function turboExportPlugin(): Plugin {
             '-filter_complex', filterParts.join(';'),
             '-map', finalV,
             '-map', '[a_out]',
-            '-c:v', 'h264_mf',
-            '-b:v', '6M',
+            '-c:v', selectedEncoder,
+          );
+          if (selectedEncoder === 'libx264') {
+            args.push('-preset', 'ultrafast', '-pix_fmt', 'yuv420p');
+          }
+          args.push(
+            '-b:v', vBitrate,
             '-c:a', 'aac',
-            '-b:a', '192k',
+            '-b:a', aBitrate,
             '-r', String(fps),
             '-movflags', '+faststart',
             outputPath,
           );
         }
 
-        // Spawn native hardware-accelerated FFmpeg
-        const child = spawn('ffmpeg', args);
+        if (clientAborted) {
+          await cleanup();
+          return;
+        }
+
+
+
+        // Spawn FFmpeg
+        const child = spawnProcess('ffmpeg', args);
+        activeChild = child;
         let stderr = '';
-        child.stderr.on('data', (d) => (stderr += d.toString()));
 
-        child.on('close', async (code) => {
+        child.stdout?.on('data', () => {});
+        child.stderr?.on('data', (d: any) => (stderr += d.toString()));
+
+        child.on('error', async (err: Error) => {
+          activeChild = null;
+          if (clientAborted || res.writableEnded) {
+            await cleanup();
+            resolveExecution?.();
+            return;
+          }
+          await respondError(500, `FFmpeg process spawn error: ${err.message}`);
+        });
+
+        child.on('close', async (code: number) => {
+          activeChild = null;
+          if (clientAborted || res.writableEnded) {
+            await cleanup();
+            resolveExecution?.();
+            return;
+          }
           if (code !== 0) {
-            // Fallback attempt with CPU libx264 ultrafast if h264_mf failed
-            const fallbackArgs = args.map((arg) => (arg === 'h264_mf' ? 'libx264' : arg));
-            fallbackArgs.splice(fallbackArgs.indexOf('libx264') + 1, 0, '-preset', 'ultrafast', '-pix_fmt', 'yuv420p');
+            if (selectedEncoder === 'libx264') {
+              // Already ran software libx264; no fallback available
+              await respondError(500, stderr.trim() || 'Turbo export failed with software encoder.');
+              return;
+            }
 
-            const cpuChild = spawn('ffmpeg', fallbackArgs);
+            // Fallback attempt: dynamically replace selectedEncoder with libx264
+            const fallbackArgs = args.map((arg) => (arg === selectedEncoder ? 'libx264' : arg));
+            const encoderIdx = fallbackArgs.indexOf('libx264');
+            if (encoderIdx !== -1 && !fallbackArgs.includes('-preset')) {
+              fallbackArgs.splice(encoderIdx + 1, 0, '-preset', 'ultrafast', '-pix_fmt', 'yuv420p');
+            }
+
+            if (clientAborted || res.writableEnded) {
+              await cleanup();
+              resolveExecution?.();
+              return;
+            }
+
+            const cpuChild = spawnProcess('ffmpeg', fallbackArgs);
+            activeChild = cpuChild;
             let cpuStderr = '';
-            cpuChild.stderr.on('data', (d) => (cpuStderr += d.toString()));
+            cpuChild.stderr?.on('data', (d: any) => (cpuStderr += d.toString()));
 
-            cpuChild.on('close', async (cpuCode) => {
-              if (cpuCode !== 0 || !existsSync(outputPath)) {
-                res.statusCode = 500;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ error: cpuStderr.trim() || stderr.trim() || 'Turbo export failed.' }));
+            cpuChild.on('error', async (err: Error) => {
+              activeChild = null;
+              if (clientAborted || res.writableEnded) {
                 await cleanup();
+                resolveExecution?.();
+                return;
+              }
+              await respondError(500, `Fallback process spawn error: ${err.message}`);
+            });
+
+            cpuChild.on('close', async (cpuCode: number) => {
+              activeChild = null;
+              if (clientAborted || res.writableEnded) {
+                await cleanup();
+                resolveExecution?.();
+                return;
+              }
+              if (cpuCode !== 0 || !existsSync(outputPath)) {
+                await respondError(500, cpuStderr.trim() || stderr.trim() || 'Turbo export failed.');
                 return;
               }
               await sendOutput();
@@ -205,14 +453,17 @@ export function turboExportPlugin(): Plugin {
 
         const sendOutput = async () => {
           if (!existsSync(outputPath)) {
-            res.statusCode = 500;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ error: 'Output video was not created.' }));
-            await cleanup();
+            await respondError(500, 'Output video was not created.');
             return;
           }
 
           const stat = await fs.stat(outputPath);
+          if (res.writableEnded || res.headersSent) {
+            await cleanup();
+            resolveExecution?.();
+            return;
+          }
+
           res.statusCode = 200;
           res.setHeader('Content-Type', 'video/mp4');
           res.setHeader('Content-Length', stat.size);
@@ -221,20 +472,27 @@ export function turboExportPlugin(): Plugin {
           const stream = createReadStream(outputPath);
           stream.pipe(res);
 
-          res.on('finish', cleanup);
-          res.on('close', cleanup);
+          const finishHandler = () => {
+            void cleanup();
+            resolveExecution?.();
+          };
+          res.on('finish', finishHandler);
+          res.on('close', finishHandler);
         };
+
+        await executionPromise;
       } catch (err: any) {
-        res.statusCode = 500;
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ error: err?.message || 'Server error during turbo export' }));
-        await cleanup();
+        await respondError(500, err?.message || 'Server error during turbo export');
       }
       return;
     }
 
-    next();
+    if (next) next();
   };
+}
+
+export function turboExportPlugin(): Plugin {
+  const handler = createTurboExportHandler();
 
   return {
     name: 'vite-plugin-turbo-export',

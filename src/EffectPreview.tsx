@@ -35,33 +35,39 @@ export function EffectPreview({
     setError('');
     let renderer: EffectsRenderer | undefined,
       compositor: AspectFrameRenderer | undefined,
-      callback = 0,
       animation = 0,
       failed = false;
-    const draw = () => {
-      if (failed || video.readyState < 2 || video.seeking) return;
+    const draw = (): boolean => {
+      if (failed || video.readyState < 2 || video.seeking || !video.videoWidth || !video.videoHeight) return false;
       try {
-        const source = { width: video.videoWidth, height: video.videoHeight };
+        const sourceDim = { width: video.videoWidth, height: video.videoHeight };
         let image: CanvasImageSource = video;
         if (hasVisualEffects(settings.current)) {
           renderer ??= new EffectsRenderer(composite ? undefined : canvas);
-          image = renderer.draw(video, source.width, source.height, settings.current!);
+          image = renderer.draw(video, sourceDim.width, sourceDim.height, settings.current!);
         }
         if (frame) {
           compositor ??= new AspectFrameRenderer(canvas);
-          const scale = Math.min(1, Math.max(1, canvas.clientWidth * devicePixelRatio) / frame.width, Math.max(1, canvas.clientHeight * devicePixelRatio) / frame.height);
-          compositor.draw(image, source, { width: frame.width * scale, height: frame.height * scale }, 'blur-background');
+          const clientW = canvas.clientWidth || frame.width;
+          const clientH = canvas.clientHeight || frame.height;
+          const scale = Math.min(1, Math.max(1, clientW * devicePixelRatio) / frame.width, Math.max(1, clientH * devicePixelRatio) / frame.height);
+          compositor.draw(image, sourceDim, { width: frame.width * scale, height: frame.height * scale }, 'blur-background');
         }
+        return true;
       } catch (e) {
         failed = true;
         setError(e instanceof Error ? e.message : String(e));
+        return false;
       }
     };
     const nextFrame = () => {
-      draw();
-      if (!failed && playing) {
-        if ('requestVideoFrameCallback' in video) callback = video.requestVideoFrameCallback(nextFrame);
-        else animation = requestAnimationFrame(nextFrame);
+      const drawn = draw();
+      if (!failed) {
+        if (playing) {
+          animation = requestAnimationFrame(nextFrame);
+        } else if (!drawn) {
+          animation = requestAnimationFrame(nextFrame);
+        }
       }
     };
     drawFrame.current = () => {
@@ -72,18 +78,25 @@ export function EffectPreview({
         renderer = undefined;
         failed = false;
         setError('');
-        nextFrame();
-      } else draw();
+      }
+      nextFrame();
     };
-    video.addEventListener('loadeddata', draw);
-    video.addEventListener('seeked', draw);
-    const observer = frame ? new ResizeObserver(draw) : undefined;
+    video.addEventListener('loadedmetadata', nextFrame);
+    video.addEventListener('loadeddata', nextFrame);
+    video.addEventListener('canplay', nextFrame);
+    video.addEventListener('canplaythrough', nextFrame);
+    video.addEventListener('seeked', nextFrame);
+    video.addEventListener('timeupdate', nextFrame);
+    const observer = frame ? new ResizeObserver(nextFrame) : undefined;
     observer?.observe(canvas);
     nextFrame();
     return () => {
-      video.removeEventListener('loadeddata', draw);
-      video.removeEventListener('seeked', draw);
-      if (callback) video.cancelVideoFrameCallback(callback);
+      video.removeEventListener('loadedmetadata', nextFrame);
+      video.removeEventListener('loadeddata', nextFrame);
+      video.removeEventListener('canplay', nextFrame);
+      video.removeEventListener('canplaythrough', nextFrame);
+      video.removeEventListener('seeked', nextFrame);
+      video.removeEventListener('timeupdate', nextFrame);
       if (animation) cancelAnimationFrame(animation);
       drawFrame.current = () => {};
       observer?.disconnect();
@@ -101,7 +114,15 @@ export function EffectPreview({
         ref={canvasRef}
         className="effect-preview"
         aria-label={composite ? 'Video with synchronized blur background' : 'Video with visual effects'}
-        style={{ ...style, ...(composite ? { objectFit: 'fill' } : {}), visibility: active ? 'visible' : 'hidden' }}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          ...style,
+          ...(composite ? { objectFit: 'fill' } : {}),
+          visibility: active ? 'visible' : 'hidden',
+        }}
       />
       {error && active && (
         <div className="effect-preview-error" role="alert">

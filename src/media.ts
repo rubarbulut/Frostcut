@@ -1,4 +1,5 @@
-import { FFmpeg, FFFSType } from '@ffmpeg/ffmpeg';
+import { FFmpeg } from '@ffmpeg/ffmpeg';
+const FFFSType = { WORKERFS: 'WORKERFS', MEMFS: 'MEMFS' } as const;
 import { publicAsset } from './public-asset';
 import {
   type Project,
@@ -45,7 +46,7 @@ function withEngine<T>(
 }
 async function mountSource(ff: FFmpeg, file: File, directory: string) {
   await ff.createDir(directory);
-  await ff.mount(FFFSType.WORKERFS, { blobs: [{ name: 'media', data: file }] }, directory);
+  await ff.mount(FFFSType.WORKERFS as any, { blobs: [{ name: 'media', data: file }] }, directory);
   return `${directory}/media`;
 }
 async function unmountSource(ff: FFmpeg, directory: string) {
@@ -304,6 +305,7 @@ export async function exportMp4(
           c.tracking?.enabled ||
           hasVisualEffects(c.effects) ||
           c.properties.crop > 0 ||
+          !!c.transition ||
           Object.values(c.keyframes ?? {}).some((frames) => frames.length),
       );
       const visual =

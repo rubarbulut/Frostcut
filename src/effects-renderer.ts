@@ -1,4 +1,5 @@
 import { rgbColor, type VisualEffects } from './visual-effects';
+import { parseCubeLut, generatePresetCube } from './lut-parser';
 import {
   computeHomography,
   identityMat3,
@@ -48,6 +49,12 @@ uniform vec4 gradeSettings; // x: exposureMult, y: contrast, z: tempFactor, w: t
 uniform vec3 gradeLift;
 uniform vec3 gradeGamma;
 uniform vec3 gradeGain;
+
+// 3D LUT (.CUBE) Trilinear Atlas
+uniform int lutEnabled;
+uniform sampler2D lutTexture;
+uniform float lutSize;
+uniform float lutIntensity;
 
 vec2 chroma(vec3 c) {
   return vec2(dot(c, vec3(-0.169, -0.331, 0.5)), dot(c, vec3(0.5, -0.419, -0.081)));
@@ -168,6 +175,33 @@ void main() {
     }
   }
 
+  // 3D LUT (.CUBE) Trilinear Interpolation on 2D Unrolled Atlas
+  if (lutEnabled == 1) {
+    vec3 lutIn = clamp(color.rgb, 0.0, 1.0);
+    float blue = lutIn.b * (lutSize - 1.0);
+    float sliceLower = floor(blue);
+    float sliceUpper = min(sliceLower + 1.0, lutSize - 1.0);
+    float blueFract = blue - sliceLower;
+
+    float invAtlasWidth = 1.0 / (lutSize * lutSize);
+    float invAtlasHeight = 1.0 / lutSize;
+
+    vec2 uvLower = vec2(
+      (sliceLower * lutSize + 0.5 + lutIn.r * (lutSize - 1.0)) * invAtlasWidth,
+      (0.5 + lutIn.g * (lutSize - 1.0)) * invAtlasHeight
+    );
+    vec2 uvUpper = vec2(
+      (sliceUpper * lutSize + 0.5 + lutIn.r * (lutSize - 1.0)) * invAtlasWidth,
+      (0.5 + lutIn.g * (lutSize - 1.0)) * invAtlasHeight
+    );
+
+    vec3 sampleLower = texture2D(lutTexture, uvLower).rgb;
+    vec3 sampleUpper = texture2D(lutTexture, uvUpper).rgb;
+    vec3 graded = mix(sampleLower, sampleUpper, blueFract);
+
+    color.rgb = mix(color.rgb, graded, lutIntensity);
+  }
+
   if (lensEnabled == 1 && lensSettings.x > 0.001) {
     vec2 vd = (sampleUv - vec2(0.5)) * 2.0;
     float dist = length(vd);
@@ -182,28 +216,72 @@ void main() {
 export class EffectsRenderer {
   readonly canvas: HTMLCanvasElement;
   private gl: WebGLRenderingContext;
-  private program: WebGLProgram;
-  private texture: WebGLTexture;
-  private buffer: WebGLBuffer;
+  private program!: WebGLProgram;
+  private texture!: WebGLTexture;
+  private buffer!: WebGLBuffer;
+  private lutTexture?: WebGLTexture;
+  private currentLutKey?: string;
+  private currentLutSize = 17.0;
   private uniforms = new Map<string, WebGLUniformLocation | null>();
-  private maxTexture: number;
+  private maxTexture = 4096;
   private disposed = false;
   private ownsCanvas: boolean;
+  private contextLost = false;
+  private recoveryTimeout?: ReturnType<typeof setTimeout>;
+
+  private onContextLost = (e: Event) => {
+    // WebGL spec requirement: preventDefault() instructs browser to allow context restoration
+    e.preventDefault();
+    this.contextLost = true;
+  };
+
+  private onContextRestored = () => {
+    this.restoreContext();
+  };
 
   constructor(canvas?: HTMLCanvasElement) {
     this.ownsCanvas = !canvas;
-    this.canvas = canvas ?? document.createElement('canvas');
-    const gl = this.canvas.getContext('webgl', {
-      alpha: true,
-      premultipliedAlpha: true,
-      antialias: false,
-      preserveDrawingBuffer: true,
-    });
+    this.canvas =
+      canvas ??
+      (typeof document !== 'undefined'
+        ? document.createElement('canvas')
+        : (new EventTarget() as unknown as HTMLCanvasElement));
+    const gl =
+      typeof this.canvas.getContext === 'function'
+        ? this.canvas.getContext('webgl', {
+            alpha: true,
+            premultipliedAlpha: true,
+            antialias: false,
+            preserveDrawingBuffer: true,
+          })
+        : null;
     if (!gl)
       throw new Error(
         'Visual effects need WebGL. Enable graphics acceleration or disable these effects.',
       );
     this.gl = gl;
+
+    this.canvas.addEventListener('webglcontextlost', this.onContextLost as EventListener);
+    this.canvas.addEventListener('webglcontextrestored', this.onContextRestored as EventListener);
+
+    try {
+      this.rebuildContext();
+    } catch (error) {
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
+      throw error;
+    }
+  }
+
+  /**
+   * Rebuilds all WebGL programs, shaders, buffers, and textures upon context recovery.
+   * Restores GPU pipelines silently without dropping active video edit state.
+   */
+  rebuildContext() {
+    const gl = this.gl;
+    if (!gl || gl.isContextLost()) return;
+    this.uniforms.clear();
+    this.lutTexture = undefined;
+    this.currentLutKey = undefined;
     const shaders: WebGLShader[] = [];
     try {
       const compile = (kind: number, source: string) => {
@@ -243,13 +321,66 @@ export class EffectsRenderer {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      this.maxTexture = gl.getParameter(gl.MAX_TEXTURE_SIZE);
-    } catch (error) {
-      gl.getExtension('WEBGL_lose_context')?.loseContext();
-      throw error;
+      this.maxTexture = gl.getParameter(gl.MAX_TEXTURE_SIZE) || 4096;
+      this.contextLost = false;
     } finally {
       shaders.forEach((shader) => gl.deleteShader(shader));
     }
+  }
+
+  /**
+   * Handles context restoration with 50ms fast fallback retry if GPU driver is still re-initializing.
+   */
+  restoreContext() {
+    try {
+      this.rebuildContext();
+      this.contextLost = false;
+    } catch (err) {
+      console.warn('WebGL context recovery deferred, retrying within 50ms:', err);
+      if (this.recoveryTimeout) clearTimeout(this.recoveryTimeout);
+      this.recoveryTimeout = setTimeout(() => {
+        if (!this.disposed && (this.contextLost || this.gl.isContextLost())) {
+          try {
+            this.rebuildContext();
+            this.contextLost = false;
+          } catch {}
+        }
+      }, 50);
+    }
+  }
+
+  /**
+   * Simulates WebGL context loss for reliability testing via WEBGL_lose_context or synthetic event.
+   */
+  simulateContextLoss(): boolean {
+    const ext = this.gl.getExtension('WEBGL_lose_context');
+    if (ext) {
+      ext.loseContext();
+      return true;
+    }
+    this.contextLost = true;
+    const event = new Event('webglcontextlost', { cancelable: true });
+    this.canvas.dispatchEvent(event);
+    return true;
+  }
+
+  /**
+   * Simulates WebGL context restoration after loss for reliability testing.
+   */
+  simulateContextRestore(): boolean {
+    const ext = this.gl.getExtension('WEBGL_lose_context');
+    if (ext) {
+      ext.restoreContext();
+      return true;
+    }
+    this.restoreContext();
+    const event = new Event('webglcontextrestored');
+    this.canvas.dispatchEvent(event);
+    return true;
+  }
+
+  isContextLost(): boolean {
+    return this.contextLost || (this.gl ? this.gl.isContextLost() : false);
   }
 
   private uniform(name: string) {
@@ -259,11 +390,21 @@ export class EffectsRenderer {
   }
 
   draw(source: TexImageSource, width: number, height: number, effects: VisualEffects) {
+    if (this.disposed) return this.canvas;
     const gl = this.gl;
-    if (this.disposed || gl.isContextLost())
-      throw new Error(
-        'Visual-effects graphics context was lost. Disable and re-enable the effect, then retry.',
-      );
+
+    // Gracefully handle GPU crash / tab switch without throwing white-screen crash errors:
+    if (this.contextLost || gl.isContextLost()) {
+      return this.canvas;
+    }
+
+    if (!this.program) {
+      try {
+        this.rebuildContext();
+      } catch {
+        return this.canvas;
+      }
+    }
     if (width > this.maxTexture || height > this.maxTexture)
       throw new Error(`This device supports effect frames up to ${this.maxTexture}px per side.`);
     if (width < 1 || height < 1) throw new Error('A source frame is not ready for effects.');
@@ -373,6 +514,54 @@ export class EffectsRenderer {
     gl.uniform3fv(this.uniform('gradeGamma'), grade?.gamma ?? [1, 1, 1]);
     gl.uniform3fv(this.uniform('gradeGain'), grade?.gain ?? [1, 1, 1]);
 
+    // 3D LUT (.CUBE) Trilinear Color Grading
+    const lut = effects.lut;
+    if (lut?.enabled) {
+      const cubeData = lut.cubeData || generatePresetCube('teal-orange');
+      gl.activeTexture(gl.TEXTURE1);
+      if (!this.lutTexture) {
+        this.lutTexture = gl.createTexture()!;
+        gl.bindTexture(gl.TEXTURE_2D, this.lutTexture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      } else {
+        gl.bindTexture(gl.TEXTURE_2D, this.lutTexture);
+      }
+
+      if (this.currentLutKey !== cubeData) {
+        try {
+          const parsed = parseCubeLut(cubeData);
+          gl.texImage2D(
+            gl.TEXTURE_2D,
+            0,
+            gl.RGBA,
+            parsed.width,
+            parsed.height,
+            0,
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+            parsed.textureData,
+          );
+          this.currentLutKey = cubeData;
+          this.currentLutSize = parsed.size;
+        } catch (err) {
+          console.warn('Failed to parse or upload 3D LUT:', err);
+        }
+      }
+
+      gl.uniform1i(this.uniform('lutEnabled'), 1);
+      gl.uniform1i(this.uniform('lutTexture'), 1);
+      gl.uniform1f(this.uniform('lutSize'), this.currentLutSize || 17.0);
+      gl.uniform1f(
+        this.uniform('lutIntensity'),
+        Math.max(0, Math.min(1, (lut.intensity ?? 100) / 100)),
+      );
+    } else {
+      gl.uniform1i(this.uniform('lutEnabled'), 0);
+    }
+
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     return this.canvas;
   }
@@ -380,9 +569,18 @@ export class EffectsRenderer {
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
-    this.gl.deleteTexture(this.texture);
-    this.gl.deleteBuffer(this.buffer);
-    this.gl.deleteProgram(this.program);
+    if (this.recoveryTimeout) clearTimeout(this.recoveryTimeout);
+    this.canvas.removeEventListener('webglcontextlost', this.onContextLost as EventListener);
+    this.canvas.removeEventListener('webglcontextrestored', this.onContextRestored as EventListener);
+    if (!this.gl.isContextLost()) {
+      try {
+        if (this.lutTexture) this.gl.deleteTexture(this.lutTexture);
+        if (this.texture) this.gl.deleteTexture(this.texture);
+        if (this.buffer) this.gl.deleteBuffer(this.buffer);
+        if (this.program) this.gl.deleteProgram(this.program);
+      } catch {}
+    }
+    this.lutTexture = undefined;
     if (this.ownsCanvas) this.gl.getExtension('WEBGL_lose_context')?.loseContext();
   }
 }

@@ -18,11 +18,14 @@ import {
   defaultGrade,
   defaultLens,
   defaultMask,
+  defaultLut,
   type VisualEffects,
   type ColorGradeEffect,
   type LensEffect,
   type CornerPinEffect,
+  type LutEffect,
 } from '../visual-effects';
+import { CINEMATIC_LUT_PRESETS, generatePresetCube } from '../lut-parser';
 import { AEGroup } from './AEGroup';
 import { AEPropertyRow } from './AEPropertyRow';
 import { AEScrubber } from './AEScrubber';
@@ -152,6 +155,7 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
   const locked = useEditor((s) => isLocked(s.project, original));
   const draft = useEditor((s) => s.previewClip);
   const commit = useEditor((s) => s.commit);
+  const setPreviewClip = useEditor((s) => s.setPreviewClip);
   const clip = draft?.id === original.id ? draft : original;
   const effects = clip.effects ?? {};
 
@@ -159,17 +163,53 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
   const grade = effects.grade ?? defaultGrade();
   const lens = effects.lens ?? defaultLens();
   const cornerPin = effects.cornerPin ?? defaultCornerPin();
+  const lut = effects.lut ?? defaultLut();
+
+  function getLatestTargetClip(): Clip | null {
+    const current = useEditor.getState().project;
+    const target = current.clips.find((c) => c.id === original.id);
+    if (!target || isLocked(current, target)) return null;
+    return target;
+  }
 
   function updateEffects(next: VisualEffects, label: string) {
     const current = useEditor.getState().project;
-    if (isLocked(current, original)) return;
+    const target = getLatestTargetClip();
+    if (!target) return;
     commit(
       {
         ...current,
-        clips: current.clips.map((c) => (c.id === clip.id ? { ...c, effects: next } : c)),
+        clips: current.clips.map((c) => (c.id === original.id ? { ...target, effects: next } : c)),
       },
       label,
     );
+  }
+
+  function handleDragEffects(next: VisualEffects) {
+    const target = getLatestTargetClip();
+    if (!target) {
+      setPreviewClip(undefined);
+      return;
+    }
+    setPreviewClip({ ...target, effects: next });
+  }
+
+  function handleDragEffectsEnd(next: VisualEffects, label: string) {
+    setPreviewClip(undefined);
+    updateEffects(next, label);
+  }
+
+  function handleDragEffectsCancel() {
+    setPreviewClip(undefined);
+  }
+
+  function fxScrubber(getEffects: (val: number) => VisualEffects, label: string) {
+    return {
+      onDrag: (v: number) => handleDragEffects(getEffects(v)),
+      onDragEnd: (v: number) => handleDragEffectsEnd(getEffects(v), label),
+      onDragCancel: handleDragEffectsCancel,
+      onChange: (v: number) => handleDragEffectsEnd(getEffects(v), label),
+    };
   }
 
   const applyLookPreset = (preset: (typeof LOOK_PRESETS)[number]) => {
@@ -234,12 +274,10 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
               unit=" EV"
               defaultValue={0}
               disabled={locked || !grade.enabled}
-              onChange={(v) =>
-                updateEffects(
-                  { ...effects, grade: { ...grade, exposure: v } },
-                  'Change Exposure',
-                )
-              }
+              {...fxScrubber(
+                (v) => ({ ...effects, grade: { ...grade, exposure: v } }),
+                'Change Exposure',
+              )}
             />
           </AEPropertyRow>
 
@@ -253,12 +291,10 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
               unit="%"
               defaultValue={100}
               disabled={locked || !grade.enabled}
-              onChange={(v) =>
-                updateEffects(
-                  { ...effects, grade: { ...grade, contrast: v } },
-                  'Change Contrast',
-                )
-              }
+              {...fxScrubber(
+                (v) => ({ ...effects, grade: { ...grade, contrast: v } }),
+                'Change Contrast',
+              )}
             />
           </AEPropertyRow>
 
@@ -272,12 +308,10 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
               unit=" K"
               defaultValue={0}
               disabled={locked || !grade.enabled}
-              onChange={(v) =>
-                updateEffects(
-                  { ...effects, grade: { ...grade, temperature: v } },
-                  'Change Temperature',
-                )
-              }
+              {...fxScrubber(
+                (v) => ({ ...effects, grade: { ...grade, temperature: v } }),
+                'Change Temperature',
+              )}
             />
           </AEPropertyRow>
 
@@ -290,12 +324,10 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
               decimals={0}
               defaultValue={0}
               disabled={locked || !grade.enabled}
-              onChange={(v) =>
-                updateEffects(
-                  { ...effects, grade: { ...grade, tint: v } },
-                  'Change Tint',
-                )
-              }
+              {...fxScrubber(
+                (v) => ({ ...effects, grade: { ...grade, tint: v } }),
+                'Change Tint',
+              )}
             />
           </AEPropertyRow>
 
@@ -311,18 +343,16 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
               decimals={2}
               defaultValue={0}
               disabled={locked || !grade.enabled}
-              onChange={(v) =>
-                updateEffects(
-                  {
-                    ...effects,
-                    grade: {
-                      ...grade,
-                      lift: [v, grade.lift[1], grade.lift[2]],
-                    },
+              {...fxScrubber(
+                (v) => ({
+                  ...effects,
+                  grade: {
+                    ...grade,
+                    lift: [v, grade.lift[1], grade.lift[2]],
                   },
-                  'Change Lift R',
-                )
-              }
+                }),
+                'Change Lift R',
+              )}
             />
           </AEPropertyRow>
 
@@ -335,18 +365,16 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
               decimals={2}
               defaultValue={0}
               disabled={locked || !grade.enabled}
-              onChange={(v) =>
-                updateEffects(
-                  {
-                    ...effects,
-                    grade: {
-                      ...grade,
-                      lift: [grade.lift[0], grade.lift[1], v],
-                    },
+              {...fxScrubber(
+                (v) => ({
+                  ...effects,
+                  grade: {
+                    ...grade,
+                    lift: [grade.lift[0], grade.lift[1], v],
                   },
-                  'Change Lift B',
-                )
-              }
+                }),
+                'Change Lift B',
+              )}
             />
           </AEPropertyRow>
 
@@ -359,18 +387,16 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
               decimals={2}
               defaultValue={1}
               disabled={locked || !grade.enabled}
-              onChange={(v) =>
-                updateEffects(
-                  {
-                    ...effects,
-                    grade: {
-                      ...grade,
-                      gain: [v, grade.gain[1], grade.gain[2]],
-                    },
+              {...fxScrubber(
+                (v) => ({
+                  ...effects,
+                  grade: {
+                    ...grade,
+                    gain: [v, grade.gain[1], grade.gain[2]],
                   },
-                  'Change Gain R',
-                )
-              }
+                }),
+                'Change Gain R',
+              )}
             />
           </AEPropertyRow>
 
@@ -383,19 +409,138 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
               decimals={2}
               defaultValue={1}
               disabled={locked || !grade.enabled}
-              onChange={(v) =>
+              {...fxScrubber(
+                (v) => ({
+                  ...effects,
+                  grade: {
+                    ...grade,
+                    gain: [grade.gain[0], grade.gain[1], v],
+                  },
+                }),
+                'Change Gain B',
+              )}
+            />
+          </AEPropertyRow>
+        </div>
+      </AEGroup>
+
+      {/* 2. Cinematic 3D LUT (.CUBE) */}
+      <AEGroup
+        title="3D LUT Color Profile (.CUBE)"
+        icon={<Film size={13} />}
+        defaultOpen={!!lut.enabled}
+        hasFx={true}
+        fxEnabled={!!lut.enabled}
+        onToggleFx={(enabled) =>
+          updateEffects({ ...effects, lut: { ...lut, enabled } }, 'Toggle 3D LUT')
+        }
+        onReset={() =>
+          updateEffects({ ...effects, lut: undefined }, 'Reset 3D LUT')
+        }
+        badge={lut.enabled ? (lut.name || 'ACTIVE') : undefined}
+      >
+        <div className="ae-effects-body">
+          <AEPropertyRow label="Cinematic Look">
+            <select
+              className="ae-select"
+              value={lut.name}
+              disabled={locked || !lut.enabled}
+              onChange={(e) => {
+                const found = CINEMATIC_LUT_PRESETS.find((p) => p.name === e.target.value);
+                const cube = found ? generatePresetCube(found.id) : undefined;
                 updateEffects(
                   {
                     ...effects,
-                    grade: {
-                      ...grade,
-                      gain: [grade.gain[0], grade.gain[1], v],
+                    lut: {
+                      ...lut,
+                      enabled: true,
+                      name: e.target.value,
+                      cubeData: cube,
                     },
                   },
-                  'Change Gain B',
-                )
-              }
-            />
+                  'Select Cinematic LUT',
+                );
+              }}
+            >
+              {CINEMATIC_LUT_PRESETS.map((p) => (
+                <option key={p.id} value={p.name}>
+                  {p.name}
+                </option>
+              ))}
+              {lut.name && !CINEMATIC_LUT_PRESETS.some((p) => p.name === lut.name) && (
+                <option value={lut.name}>{lut.name} (Custom)</option>
+              )}
+            </select>
+          </AEPropertyRow>
+
+          <AEPropertyRow label="LUT Intensity">
+            <div className="ae-scrubber-with-slider">
+              <AEScrubber
+                value={lut.intensity}
+                min={0}
+                max={100}
+                step={1}
+                unit="%"
+                decimals={0}
+                defaultValue={100}
+                disabled={locked || !lut.enabled}
+                {...fxScrubber(
+                  (v) => ({ ...effects, lut: { ...lut, intensity: v } }),
+                  'Change LUT Intensity',
+                )}
+              />
+              <input
+                type="range"
+                className="ae-mini-slider"
+                min="0"
+                max="100"
+                step="1"
+                value={lut.intensity}
+                disabled={locked || !lut.enabled}
+                onChange={(e) =>
+                  updateEffects(
+                    { ...effects, lut: { ...lut, intensity: +e.target.value } },
+                    'Change LUT Intensity',
+                  )
+                }
+              />
+            </div>
+          </AEPropertyRow>
+
+          <AEPropertyRow label="Import .CUBE">
+            <label className="ae-file-button" style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
+              <span className="secondary" style={{ padding: '3px 8px', fontSize: '11px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)' }}>
+                Choose .cube file…
+              </span>
+              <input
+                type="file"
+                accept=".cube"
+                style={{ display: 'none' }}
+                disabled={locked || !lut.enabled}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = (ev) => {
+                    const text = ev.target?.result as string;
+                    if (!text) return;
+                    updateEffects(
+                      {
+                        ...effects,
+                        lut: {
+                          enabled: true,
+                          name: file.name.replace(/\.cube$/i, ''),
+                          cubeData: text,
+                          intensity: lut.intensity ?? 100,
+                        },
+                      },
+                      'Import 3D LUT',
+                    );
+                  };
+                  reader.readAsText(file);
+                }}
+              />
+            </label>
           </AEPropertyRow>
         </div>
       </AEGroup>
@@ -427,12 +572,10 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
                 decimals={0}
                 defaultValue={0}
                 disabled={locked || !lens.enabled}
-                onChange={(v) =>
-                  updateEffects(
-                    { ...effects, lens: { ...lens, vignette: v } },
-                    'Change Vignette',
-                  )
-                }
+                {...fxScrubber(
+                  (v) => ({ ...effects, lens: { ...lens, vignette: v } }),
+                  'Change Vignette',
+                )}
               />
               <input
                 type="range"
@@ -463,12 +606,10 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
                 decimals={0}
                 defaultValue={0}
                 disabled={locked || !lens.enabled}
-                onChange={(v) =>
-                  updateEffects(
-                    { ...effects, lens: { ...lens, chromaticAberration: v } },
-                    'Change Aberration',
-                  )
-                }
+                {...fxScrubber(
+                  (v) => ({ ...effects, lens: { ...lens, chromaticAberration: v } }),
+                  'Change Aberration',
+                )}
               />
               <input
                 type="range"
@@ -499,12 +640,10 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
                 decimals={0}
                 defaultValue={0}
                 disabled={locked || !lens.enabled}
-                onChange={(v) =>
-                  updateEffects(
-                    { ...effects, lens: { ...lens, distortion: v } },
-                    'Change Distortion',
-                  )
-                }
+                {...fxScrubber(
+                  (v) => ({ ...effects, lens: { ...lens, distortion: v } }),
+                  'Change Distortion',
+                )}
               />
               <input
                 type="range"
@@ -556,18 +695,16 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
                 unit="%"
                 decimals={0}
                 disabled={locked || !cornerPin.enabled}
-                onChange={(v) =>
-                  updateEffects(
-                    {
-                      ...effects,
-                      cornerPin: {
-                        ...cornerPin,
-                        topLeft: { ...cornerPin.topLeft, x: v },
-                      },
+                {...fxScrubber(
+                  (v) => ({
+                    ...effects,
+                    cornerPin: {
+                      ...cornerPin,
+                      topLeft: { ...cornerPin.topLeft, x: v },
                     },
-                    'Change Corner Pin TL.X',
-                  )
-                }
+                  }),
+                  'Change Corner Pin TL.X',
+                )}
               />
               <AEScrubber
                 prefix="Y: "
@@ -578,18 +715,16 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
                 unit="%"
                 decimals={0}
                 disabled={locked || !cornerPin.enabled}
-                onChange={(v) =>
-                  updateEffects(
-                    {
-                      ...effects,
-                      cornerPin: {
-                        ...cornerPin,
-                        topLeft: { ...cornerPin.topLeft, y: v },
-                      },
+                {...fxScrubber(
+                  (v) => ({
+                    ...effects,
+                    cornerPin: {
+                      ...cornerPin,
+                      topLeft: { ...cornerPin.topLeft, y: v },
                     },
-                    'Change Corner Pin TL.Y',
-                  )
-                }
+                  }),
+                  'Change Corner Pin TL.Y',
+                )}
               />
             </div>
           </AEPropertyRow>
@@ -605,18 +740,16 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
                 unit="%"
                 decimals={0}
                 disabled={locked || !cornerPin.enabled}
-                onChange={(v) =>
-                  updateEffects(
-                    {
-                      ...effects,
-                      cornerPin: {
-                        ...cornerPin,
-                        topRight: { ...cornerPin.topRight, x: v },
-                      },
+                {...fxScrubber(
+                  (v) => ({
+                    ...effects,
+                    cornerPin: {
+                      ...cornerPin,
+                      topRight: { ...cornerPin.topRight, x: v },
                     },
-                    'Change Corner Pin TR.X',
-                  )
-                }
+                  }),
+                  'Change Corner Pin TR.X',
+                )}
               />
               <AEScrubber
                 prefix="Y: "
@@ -627,18 +760,16 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
                 unit="%"
                 decimals={0}
                 disabled={locked || !cornerPin.enabled}
-                onChange={(v) =>
-                  updateEffects(
-                    {
-                      ...effects,
-                      cornerPin: {
-                        ...cornerPin,
-                        topRight: { ...cornerPin.topRight, y: v },
-                      },
+                {...fxScrubber(
+                  (v) => ({
+                    ...effects,
+                    cornerPin: {
+                      ...cornerPin,
+                      topRight: { ...cornerPin.topRight, y: v },
                     },
-                    'Change Corner Pin TR.Y',
-                  )
-                }
+                  }),
+                  'Change Corner Pin TR.Y',
+                )}
               />
             </div>
           </AEPropertyRow>
@@ -654,18 +785,16 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
                 unit="%"
                 decimals={0}
                 disabled={locked || !cornerPin.enabled}
-                onChange={(v) =>
-                  updateEffects(
-                    {
-                      ...effects,
-                      cornerPin: {
-                        ...cornerPin,
-                        bottomRight: { ...cornerPin.bottomRight, x: v },
-                      },
+                {...fxScrubber(
+                  (v) => ({
+                    ...effects,
+                    cornerPin: {
+                      ...cornerPin,
+                      bottomRight: { ...cornerPin.bottomRight, x: v },
                     },
-                    'Change Corner Pin BR.X',
-                  )
-                }
+                  }),
+                  'Change Corner Pin BR.X',
+                )}
               />
               <AEScrubber
                 prefix="Y: "
@@ -676,18 +805,16 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
                 unit="%"
                 decimals={0}
                 disabled={locked || !cornerPin.enabled}
-                onChange={(v) =>
-                  updateEffects(
-                    {
-                      ...effects,
-                      cornerPin: {
-                        ...cornerPin,
-                        bottomRight: { ...cornerPin.bottomRight, y: v },
-                      },
+                {...fxScrubber(
+                  (v) => ({
+                    ...effects,
+                    cornerPin: {
+                      ...cornerPin,
+                      bottomRight: { ...cornerPin.bottomRight, y: v },
                     },
-                    'Change Corner Pin BR.Y',
-                  )
-                }
+                  }),
+                  'Change Corner Pin BR.Y',
+                )}
               />
             </div>
           </AEPropertyRow>
@@ -703,18 +830,16 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
                 unit="%"
                 decimals={0}
                 disabled={locked || !cornerPin.enabled}
-                onChange={(v) =>
-                  updateEffects(
-                    {
-                      ...effects,
-                      cornerPin: {
-                        ...cornerPin,
-                        bottomLeft: { ...cornerPin.bottomLeft, x: v },
-                      },
+                {...fxScrubber(
+                  (v) => ({
+                    ...effects,
+                    cornerPin: {
+                      ...cornerPin,
+                      bottomLeft: { ...cornerPin.bottomLeft, x: v },
                     },
-                    'Change Corner Pin BL.X',
-                  )
-                }
+                  }),
+                  'Change Corner Pin BL.X',
+                )}
               />
               <AEScrubber
                 prefix="Y: "
@@ -725,18 +850,16 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
                 unit="%"
                 decimals={0}
                 disabled={locked || !cornerPin.enabled}
-                onChange={(v) =>
-                  updateEffects(
-                    {
-                      ...effects,
-                      cornerPin: {
-                        ...cornerPin,
-                        bottomLeft: { ...cornerPin.bottomLeft, y: v },
-                      },
+                {...fxScrubber(
+                  (v) => ({
+                    ...effects,
+                    cornerPin: {
+                      ...cornerPin,
+                      bottomLeft: { ...cornerPin.bottomLeft, y: v },
                     },
-                    'Change Corner Pin BL.Y',
-                  )
-                }
+                  }),
+                  'Change Corner Pin BL.Y',
+                )}
               />
             </div>
           </AEPropertyRow>
@@ -819,12 +942,10 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
                 decimals={0}
                 defaultValue={40}
                 disabled={locked || !chroma.enabled}
-                onChange={(v) =>
-                  updateEffects(
-                    { ...effects, chroma: { ...chroma, similarity: v } },
-                    'Change key tolerance',
-                  )
-                }
+                {...fxScrubber(
+                  (v) => ({ ...effects, chroma: { ...chroma, similarity: v } }),
+                  'Change key tolerance',
+                )}
               />
               <input
                 type="range"
@@ -855,12 +976,10 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
                 decimals={0}
                 defaultValue={10}
                 disabled={locked || !chroma.enabled}
-                onChange={(v) =>
-                  updateEffects(
-                    { ...effects, chroma: { ...chroma, softness: v } },
-                    'Change edge softness',
-                  )
-                }
+                {...fxScrubber(
+                  (v) => ({ ...effects, chroma: { ...chroma, softness: v } }),
+                  'Change edge softness',
+                )}
               />
               <input
                 type="range"
@@ -891,12 +1010,10 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
                 decimals={0}
                 defaultValue={20}
                 disabled={locked || !chroma.enabled}
-                onChange={(v) =>
-                  updateEffects(
-                    { ...effects, chroma: { ...chroma, spill: v } },
-                    'Change spill removal',
-                  )
-                }
+                {...fxScrubber(
+                  (v) => ({ ...effects, chroma: { ...chroma, spill: v } }),
+                  'Change spill removal',
+                )}
               />
               <input
                 type="range"
@@ -977,9 +1094,28 @@ export function AEEffectsControls({ clip: original }: { clip: Clip }) {
               decimals={2}
               defaultValue={0.5}
               disabled={locked || !clip.transition}
-              onChange={(v) => {
+              onDrag={(v) => {
+                if (!clip.transition || locked) return;
+                setPreviewClip({
+                  ...original,
+                  transition: { ...clip.transition, duration: v },
+                });
+              }}
+              onDragEnd={(v) => {
+                setPreviewClip(undefined);
+                if (!clip.transition || locked) return;
                 const next = structuredClone(useEditor.getState().project);
-                const target = next.clips.find((c) => c.id === clip.id);
+                const target = next.clips.find((c) => c.id === original.id);
+                if (!target || !target.transition) return;
+                target.transition.duration = v;
+                commit(next, 'Change transition duration');
+              }}
+              onDragCancel={handleDragEffectsCancel}
+              onChange={(v) => {
+                setPreviewClip(undefined);
+                if (!clip.transition || locked) return;
+                const next = structuredClone(useEditor.getState().project);
+                const target = next.clips.find((c) => c.id === original.id);
                 if (!target || !target.transition) return;
                 target.transition.duration = v;
                 commit(next, 'Change transition duration');

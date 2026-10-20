@@ -5,11 +5,13 @@ export function Modal({
   children,
   onClose,
   wide = false,
+  className = '',
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
   wide?: boolean;
+  className?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -19,7 +21,7 @@ export function Modal({
   }, []);
   return (
     <dialog
-      className={`modal ${wide ? 'wide' : ''}`}
+      className={`modal ${wide ? 'wide' : ''} ${className}`.trim()}
       ref={ref}
       onCancel={(e) => {
         e.preventDefault();

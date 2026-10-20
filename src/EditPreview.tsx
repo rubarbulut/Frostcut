@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, Fragment } from 'react';
+import { useEffect, useMemo, useRef, useState, Fragment, type CSSProperties } from 'react';
 import { Play, Pause } from 'lucide-react';
 import { mediaUrls, useEditor } from './store';
 import { PlaybackSpeed } from './PlaybackSpeed';
@@ -17,12 +17,14 @@ import {
   isAudioClip,
 } from './model';
 import { transformAt } from './motion';
-import { createClipAudioPlan } from './audio-crossfades';
+import { createClipAudioPlan, type ClipAudioPlan } from './audio-crossfades';
 import { usePreviewAudio } from './preview-audio';
 import { captionAppearance } from './caption-style';
 import { captionTypography, captionBoxStyle, captionDecoration } from './caption-typography';
 import { captionEmoji, captionLayout } from './caption-layout';
 import { captionTimelineIndex, clipTimelineIndex } from './timeline-index';
+import { gopReverseEngine } from './shuttle-controller';
+import { buildProjectPreviewPlan, getActiveWindowClips } from './Preview';
 export function OperationsPreview({
   project,
   operations,
@@ -41,15 +43,17 @@ function ProposedLayer({
   clip,
   time,
   playing,
+  plan,
 }: {
   p: Project;
   clip: Clip;
   time: number;
   playing: boolean;
+  plan?: ClipAudioPlan;
 }) {
   const ref = useRef<HTMLVideoElement>(null),
     props = transformAt(clip, time, p.settings.width, p.settings.height, p.settings.fillMode);
-  const audio = useMemo(() => createClipAudioPlan(p, clip), [p, clip]),
+  const audio = useMemo(() => plan ?? createClipAudioPlan(p, clip), [p, clip, plan]),
     window = audio.window,
     track = p.tracks.find((t) => t.id === clip.trackId)!;
   const audible = time >= window.timelineStart && time < window.timelineStart + window.duration;
@@ -58,23 +62,63 @@ function ProposedLayer({
   const asset = p.media.find((m) => m.id === clip.mediaId)!;
   const withBlur = !isAudioClip(p, clip) && needsBlurFill(asset, p.settings, p.settings.fillMode);
   const active = time >= clip.start && time < clipEnd(clip) && !track.hidden && !isAudioClip(p, clip);
-  const effectStyle = {
+  const isVideoDirectlyVisible = active && !withEffects && !withBlur;
+  const effectStyle: CSSProperties = {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
     objectFit: frameObjectFit(p.settings.fillMode),
-    opacity: props.opacity,
+    opacity: isVideoDirectlyVisible ? props.opacity : 0,
     transform: `translate(${(props.x / p.settings.width) * 100}%, ${(props.y / p.settings.height) * 100}%) rotate(${props.rotation}deg) scale(${props.scale})`,
     clipPath: `inset(${props.crop}%)`,
+    pointerEvents: isVideoDirectlyVisible ? 'auto' : 'none',
   };
-  usePreviewAudio(ref, audio.gainAt(time), playing && audible, clip.voiceEnhance);
+  usePreviewAudio(ref, audio.gainAt(time), playing && audible && previewRate > 0, clip.voiceEnhance, clip.audioRole);
+  useEffect(() => {
+    const video = ref.current;
+    return () => {
+      if (video) {
+        video.pause();
+        // Release detached media without clearing a mounted Strict Mode video.
+        if (!video.isConnected) {
+          video.removeAttribute('src');
+          video.load();
+        }
+      }
+    };
+  }, []);
   useEffect(() => {
     const video = ref.current;
     if (!video) return;
     const source = Math.max(0, clip.sourceStart + (time - clip.start) * clip.properties.speed);
-    if (!playing || Math.abs(video.currentTime - source) > 0.15) video.currentTime = source;
-    video.playbackRate = clip.properties.speed * previewRate;
-    video.preservesPitch = true;
-    if (playing && audible) void video.play().catch(() => {});
-    else video.pause();
-  }, [p, clip, time, playing, audible, previewRate]);
+
+    if (previewRate < 0) {
+      video.playbackRate = 1;
+      video.preservesPitch = true;
+      video.pause();
+      if (active && (Math.abs(video.currentTime - source) > 0.02 || !playing)) {
+        if (gopReverseEngine.shouldSeekVideoElement(source, video, p.settings.fps, previewRate, clip.id)) {
+          video.currentTime = Math.max(0.001, source);
+        }
+      }
+    } else {
+      video.playbackRate = Math.min(16, Math.max(0.25, clip.properties.speed * previewRate));
+      video.preservesPitch = true;
+      if (active) {
+        if (Math.abs(video.currentTime - source) > 0.05 || !playing) {
+          video.currentTime = Math.max(0.001, source);
+        }
+        if (playing) {
+          void video.play().catch(() => {});
+        } else {
+          video.pause();
+        }
+      } else {
+        video.pause();
+      }
+    }
+  }, [p, clip, time, playing, active, previewRate]);
   return (
     <>
       <video
@@ -85,7 +129,7 @@ function ProposedLayer({
         muted={!audible || !audio.audible}
         style={{
           ...effectStyle,
-          visibility: active && !withEffects && !withBlur ? 'visible' : 'hidden',
+          visibility: active ? 'visible' : 'hidden',
         }}
       />
       {(withEffects || withBlur) && (
@@ -96,7 +140,11 @@ function ProposedLayer({
           active={active}
           playing={playing}
           source={mediaUrls.get(clip.mediaId)}
-          style={effectStyle}
+          style={{
+            ...effectStyle,
+            opacity: props.opacity,
+            pointerEvents: 'auto',
+          }}
         />
       )}
     </>
@@ -123,16 +171,26 @@ export function EditPreview({
       last = performance.now(),
       current = time;
     const tick = (now: number) => {
-      current = Math.min(total, current + ((now - last) / 1000) * useEditor.getState().previewRate);
+      const elapsed = (now - last) / 1000;
       last = now;
-      setTime(current);
-      if (current >= total) setPlaying(false);
-      else frame = requestAnimationFrame(tick);
+      const rate = useEditor.getState().previewRate;
+      if (rate < 0) {
+        current = gopReverseEngine.computeNextReversePlayhead(current, elapsed, rate, p.settings.fps);
+        setTime(current);
+        if (current <= 0) setPlaying(false);
+        else frame = requestAnimationFrame(tick);
+      } else {
+        current = Math.min(total, current + elapsed * rate);
+        setTime(current);
+        if (current >= total) setPlaying(false);
+        else frame = requestAnimationFrame(tick);
+      }
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [playing, total]);
-  const clips = useMemo(() => clipTimelineIndex(p, true), [p.clips, p.tracks]),
+  }, [playing, total, p.settings.fps]);
+  const previewPlan = useMemo(() => buildProjectPreviewPlan(p), [p]),
+    windowClips = useMemo(() => getActiveWindowClips(previewPlan, time), [previewPlan, time]),
     captions = useMemo(() => captionTimelineIndex(p), [p]),
     caption = captions.first(time),
     appearance = captionAppearance(p.captions),
@@ -147,10 +205,16 @@ export function EditPreview({
           style={{ aspectRatio: `${p.settings.width}/${p.settings.height}` }}
         >
           <AdjustmentComposite layers={p.adjustments} time={time}>
-          {clips.at(time)
-            .map((c) => (
-              <ProposedLayer key={c.id} p={p} clip={c} time={time} playing={playing} />
-            ))}
+          {windowClips.map((c) => (
+            <ProposedLayer
+              key={c.id}
+              p={p}
+              clip={c}
+              time={time}
+              playing={playing}
+              plan={previewPlan.clipPlanMap.get(c.id)?.audioPlan}
+            />
+          ))}
           </AdjustmentComposite>
           {caption && (
             <div

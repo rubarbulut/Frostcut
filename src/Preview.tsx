@@ -4,6 +4,7 @@ import { useEditor, mediaUrls } from './store';
 import {
   type Clip,
   type Project,
+  type Track,
   duration,
   clipEnd,
   timecode,
@@ -14,7 +15,7 @@ import { captionEmoji, captionLayout } from './caption-layout';
 import { captionAppearance } from './caption-style';
 import { captionTypography, captionBoxStyle, captionDecoration } from './caption-typography';
 import { transformAt } from './motion';
-import { createClipAudioPlan } from './audio-crossfades';
+import { createClipAudioPlan, type ClipAudioPlan } from './audio-crossfades';
 import { usePreviewAudio } from './preview-audio';
 import { TransformHandles } from './TransformHandles';
 import { PlaybackSpeed } from './PlaybackSpeed';
@@ -26,16 +27,24 @@ import { AudioPeakMeter } from './AudioPeakMeter';
 import { captionTimelineIndex } from './timeline-index';
 import { ensureProxy, previewSource, proxyStatus, type PreviewQuality } from './proxies';
 import { gopReverseEngine } from './shuttle-controller';
+import { findProjectTransitions, TransitionBlender, type ActiveTransition } from './visual-renderer';
+import { computeTransitionProgress } from './transitions-engine';
 function VideoLayer({
   clip,
   quality,
   degraded,
   onDegrade,
+  onRegisterVideo,
+  activeTransition,
+  plan,
 }: {
   clip: Clip;
   quality: PreviewQuality;
   degraded: boolean;
   onDegrade: (id: string) => void;
+  onRegisterVideo?: (id: string, el: HTMLVideoElement | null) => void;
+  activeTransition?: ActiveTransition;
+  plan?: ClipAudioPlan;
 }) {
   const draft = useEditor((s) => s.previewClip);
   if (draft?.id === clip.id) clip = draft;
@@ -47,25 +56,48 @@ function VideoLayer({
     track = p.tracks.find((t) => t.id === clip.trackId)!;
   useEditor((s) => s.mediaRevision);
   const frames = useRef({ time: 0, total: 0, dropped: 0 });
-  const active = time >= clip.start && time < clipEnd(clip),
+
+  useEffect(() => {
+    if (ref.current) onRegisterVideo?.(clip.id, ref.current);
+    return () => {
+      onRegisterVideo?.(clip.id, null);
+    };
+  }, [clip.id, onRegisterVideo]);
+
+  const inTransition =
+    activeTransition &&
+    (activeTransition.clipFrom.id === clip.id || activeTransition.clipTo.id === clip.id);
+  const active = (time >= clip.start && time < clipEnd(clip)) || !!inTransition,
     asset = p.media.find((m) => m.id === clip.mediaId)!,
     url = isAudioClip(p, clip)
       ? mediaUrls.get(clip.mediaId)
       : previewSource(asset, quality, degraded).url,
-    source = clip.sourceStart + (time - clip.start) * clip.properties.speed;
-  const audio = useMemo(() => createClipAudioPlan(p, clip), [p, clip]),
+    source = Math.max(0, clip.sourceStart + (time - clip.start) * clip.properties.speed);
+  const audio = useMemo(() => plan ?? createClipAudioPlan(p, clip), [p, clip, plan]),
     window = audio.window,
     audioActive = time >= window.timelineStart && time < window.timelineStart + window.duration;
   const props = transformAt(clip, time, p.settings.width, p.settings.height, p.settings.fillMode);
   const withEffects = !isAudioClip(p, clip) && hasVisualEffects(clip.effects);
   const withBlur = !isAudioClip(p, clip) && needsBlurFill(asset, p.settings, p.settings.fillMode);
-  const effectStyle = {
+  const hiddenByTransition =
+    !!activeTransition &&
+    (activeTransition.clipFrom.id === clip.id || activeTransition.clipTo.id === clip.id);
+  const isVideoDirectlyVisible =
+    active && !track.hidden && !isAudioClip(p, clip) && !withEffects && !withBlur && !hiddenByTransition;
+  const isVideoRenderingNeeded = active && !track.hidden && !isAudioClip(p, clip);
+
+  const effectStyle: React.CSSProperties = {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
     objectFit: frameObjectFit(p.settings.fillMode),
-    opacity: props.opacity,
+    opacity: isVideoDirectlyVisible ? props.opacity : 0,
     transform: `translate(${(props.x / p.settings.width) * 100}%,${(props.y / p.settings.height) * 100}%) rotate(${props.rotation}deg) scale(${props.scale})`,
     clipPath: `inset(${props.crop}%)`,
+    pointerEvents: isVideoDirectlyVisible ? 'auto' : 'none',
   };
-  usePreviewAudio(ref, audio.gainAt(time), playing && audioActive && previewRate > 0, clip.voiceEnhance);
+  usePreviewAudio(ref, audio.gainAt(time), playing && audioActive && previewRate > 0, clip.voiceEnhance, clip.audioRole);
   useEffect(() => {
     const v = ref.current;
     if (!v) return;
@@ -96,18 +128,25 @@ function VideoLayer({
       v.preservesPitch = true;
       v.pause();
       if (active && (Math.abs(v.currentTime - source) > 0.02 || !playing)) {
-        if (gopReverseEngine.shouldSeekVideoElement(source, v.currentTime, p.settings.fps, previewRate)) {
-          v.currentTime = Math.max(0, source);
+        if (gopReverseEngine.shouldSeekVideoElement(source, v, p.settings.fps, previewRate, clip.id)) {
+          v.currentTime = Math.max(0.001, source);
         }
       }
     } else {
       v.playbackRate = Math.min(16, Math.max(0.25, clip.properties.speed * previewRate));
       v.preservesPitch = true;
-      if (audioActive) {
-        if (Math.abs(v.currentTime - source) > 0.2 || !playing) v.currentTime = Math.max(0, source);
-        if (playing) v.play().catch(() => useEditor.getState().setPlaying(false));
-        else v.pause();
-      } else v.pause();
+      if (active) {
+        if (!v.seeking && (Math.abs(v.currentTime - source) > 0.05 || !playing)) {
+          v.currentTime = Math.max(0.001, source);
+        }
+        if (playing) {
+          v.play().catch(() => useEditor.getState().setPlaying(false));
+        } else {
+          v.pause();
+        }
+      } else {
+        v.pause();
+      }
     }
   }, [
     time,
@@ -127,8 +166,11 @@ function VideoLayer({
     return () => {
       if (v) {
         v.pause();
-        v.removeAttribute('src');
-        v.load();
+        // Strict Mode replays cleanup while the same video is still mounted.
+        if (!v.isConnected) {
+          v.removeAttribute('src');
+          v.load();
+        }
       }
     };
   }, []);
@@ -146,12 +188,11 @@ function VideoLayer({
         ref={ref}
         src={url}
         playsInline
-        preload="metadata"
+        preload="auto"
         muted={!audioActive || !audio.audible}
         style={{
           ...effectStyle,
-          visibility:
-            active && !track.hidden && !isAudioClip(p, clip) && !withEffects && !withBlur ? 'visible' : 'hidden',
+          visibility: isVideoRenderingNeeded ? 'visible' : 'hidden',
         }}
       />
       {(withEffects || withBlur) && (
@@ -159,67 +200,181 @@ function VideoLayer({
           videoRef={ref}
           effects={clip.effects}
           frame={withBlur ? p.settings : undefined}
-          active={active && !track.hidden}
+          active={active && !track.hidden && !hiddenByTransition}
           playing={playing}
           source={url}
-          style={effectStyle}
+          style={{
+            ...effectStyle,
+            opacity: props.opacity,
+            pointerEvents: 'auto',
+          }}
         />
       )}
     </>
   );
 }
 
+export type ClipPlan = {
+  readonly clip: Clip;
+  readonly isAudio: boolean;
+  readonly track: Track | undefined;
+  readonly isTrackHidden: boolean;
+  readonly audioPlan: ClipAudioPlan;
+  readonly visualStart: number;
+  readonly visualEnd: number;
+  readonly audioStart: number;
+  readonly audioEnd: number;
+  readonly audible: boolean;
+};
+
+export type ProjectPreviewPlan = {
+  readonly project: Project;
+  readonly tracksMap: Map<string, Track>;
+  readonly tracksOrder: Map<string, number>;
+  readonly transitions: ActiveTransition[];
+  readonly videoPlans: ClipPlan[];
+  readonly audioPlans: ClipPlan[];
+  readonly clipPlanMap: Map<string, ClipPlan>;
+};
+
 /**
- * ActiveWindowDecoder: Sanallaştırılmış Video Dekoder Havuzu (Virtual Decoder Pool)
- * Tarayıcının donanım video dekoder limitini (16 instance) patlatmamak için:
- * 1. 'playhead' zamanına temas eden (aktif klip)
- * 2. Bir sonraki kurgu noktasına 2 saniyeden az mesafede olan (ön yükleme / pre-roll klibi)
- * olmak üzere DOM'da MAKSİMUM 2 adet <video> elemanı tutulur.
- * Uzaktaki klipler DOM'dan unmount edilir, video elementlerinin 'src' referansı
- * temizlenerek donanım dekoderleri ve GPU video texture kaynakları anında boşaltılır.
+ * Projeye bağlı immutable önizleme planı.
+ * Edit-başına bir kez oluşturulur; her playhead tick'inde createClipAudioPlan
+ * ve komşu/speech araması yapılması önlenir.
  */
-export function getActiveWindowClips(project: Project, time: number, preRollWindow = 2.0): Clip[] {
-  const visibleTracks = new Set(
-    project.tracks.filter((t) => !t.hidden).map((t) => t.id),
-  );
+export function buildProjectPreviewPlan(project: Project): ProjectPreviewPlan {
+  const tracksMap = new Map(project.tracks.map((t) => [t.id, t]));
   const tracksOrder = new Map(project.tracks.map((t, i) => [t.id, i]));
+  const transitions = findProjectTransitions(project);
 
-  // Görünür kanallardaki video kliplerini timeline ve katman sırasına göre sırala
-  const videoClips = project.clips
-    .filter((c) => visibleTracks.has(c.trackId) && !isAudioClip(project, c))
-    .sort((a, b) => {
-      const trackDiff = (tracksOrder.get(b.trackId) ?? 0) - (tracksOrder.get(a.trackId) ?? 0);
-      if (trackDiff !== 0) return trackDiff;
-      return a.start - b.start;
-    });
+  const clipPlanMap = new Map<string, ClipPlan>();
+  const videoPlans: ClipPlan[] = [];
+  const audioPlans: ClipPlan[] = [];
 
-  const pool: Clip[] = [];
-
-  // 1. Playhead zamanına temas eden aktif video klibi (en fazla 2)
-  const active = videoClips.filter((c) => time >= c.start && time < clipEnd(c));
-  for (const c of active) {
-    if (pool.length < 2 && !pool.some((p) => p.id === c.id)) {
-      pool.push(c);
+  for (const clip of project.clips) {
+    const isAudio = isAudioClip(project, clip);
+    const track = tracksMap.get(clip.trackId);
+    const isTrackHidden = track?.hidden ?? false;
+    let audioPlan: ClipAudioPlan;
+    try {
+      audioPlan = createClipAudioPlan(project, clip);
+    } catch {
+      audioPlan = {
+        window: {
+          pre: 0,
+          post: 0,
+          fadeIn: 0,
+          fadeOut: 0,
+          start: clip.sourceStart,
+          end: clip.sourceEnd,
+          timelineStart: clip.start,
+          duration: clipEnd(clip) - clip.start,
+        },
+        audible: false,
+        gainAt: () => 0,
+      };
+    }
+    const win = audioPlan.window;
+    const plan: ClipPlan = {
+      clip,
+      isAudio,
+      track,
+      isTrackHidden,
+      audioPlan,
+      visualStart: clip.start,
+      visualEnd: clipEnd(clip),
+      audioStart: win.timelineStart,
+      audioEnd: win.timelineStart + win.duration,
+      audible: audioPlan.audible,
+    };
+    clipPlanMap.set(clip.id, plan);
+    if (isAudio) {
+      audioPlans.push(plan);
+    } else {
+      videoPlans.push(plan);
     }
   }
 
-  // 2. Bir sonraki kurgu noktasına 2 saniyeden az mesafede olan ön yükleme (pre-roll) klibi
-  if (pool.length < 2) {
-    const upcoming = videoClips
-      .filter((c) => c.start >= time && c.start - time <= preRollWindow && !pool.some((p) => p.id === c.id))
-      .sort((a, b) => a.start - b.start);
+  // Katman ve timeline sırasına göre sırala
+  videoPlans.sort((a, b) => {
+    const trackDiff = (tracksOrder.get(b.clip.trackId) ?? 0) - (tracksOrder.get(a.clip.trackId) ?? 0);
+    if (trackDiff !== 0) return trackDiff;
+    return a.clip.start - b.clip.start;
+  });
 
-    for (const c of upcoming) {
-      if (pool.length < 2) {
-        pool.push(c);
+  return {
+    project,
+    tracksMap,
+    tracksOrder,
+    transitions,
+    videoPlans,
+    audioPlans,
+    clipPlanMap,
+  };
+}
+
+/**
+ * ActiveWindowDecoder: Sanallaştırılmış Video Dekoder Havuzu (Virtual Decoder Pool)
+ * Tarayıcının donanım video dekoderlerini verimli yönetmek için:
+ * - Kompozisyona katkı veren tüm aktif görsel katmanlar ve duyulur ses pencereleri korunur.
+ * - Aktif geçiş (transition) kaynakları kesintisiz GPU harmanlaması için havuza alınır.
+ * - Bir sonraki kurgu noktasına yaklaşan klipler için sınırlı pre-roll ayrılır;
+ *   ihtiyaç dışı uzak ve geçmiş klipler DOM'dan unmount edilerek dekoder kaynakları temizlenir.
+ *
+ * NOT: Edit-başına üretilen immutable ProjectPreviewPlan kullanılarak her playhead tick'inde
+ * createClipAudioPlan ve komşu/speech araması yapılması önlenmiştir.
+ */
+export function getActiveWindowClips(
+  projectOrPlan: Project | ProjectPreviewPlan,
+  time: number,
+  preRollWindow = 2.0,
+  maxPreRoll = 2,
+): Clip[] {
+  const plan = 'videoPlans' in projectOrPlan ? projectOrPlan : buildProjectPreviewPlan(projectOrPlan);
+
+  const pool: Clip[] = [];
+
+  // 1. Canlı geçiş (Transition) penceresinde olan her iki klibi donanım dekoder havuzuna al
+  const activeTransition = plan.transitions.find((tr) => time >= tr.start && time < tr.end);
+  if (activeTransition) {
+    if (!pool.some((p) => p.id === activeTransition.clipFrom.id)) pool.push(activeTransition.clipFrom);
+    if (!pool.some((p) => p.id === activeTransition.clipTo.id)) pool.push(activeTransition.clipTo);
+  }
+
+  // 2. Playhead zamanına temas eden TÜM aktif video katmanları (görsel veya duyulur ses katkısı veren)
+  for (const vp of plan.videoPlans) {
+    const isVisuallyActive = !vp.isTrackHidden && time >= vp.visualStart && time < vp.visualEnd;
+    const isAudioActive = vp.audible && time >= vp.audioStart && time < vp.audioEnd;
+
+    if (isVisuallyActive || isAudioActive) {
+      if (!pool.some((p) => p.id === vp.clip.id)) {
+        pool.push(vp.clip);
       }
     }
   }
 
-  // Aktif ses klipleri (donanım video dekoderi tüketmez)
-  const activeAudio = project.clips.filter(
-    (c) => isAudioClip(project, c) && visibleTracks.has(c.trackId) && time >= c.start && time < clipEnd(c),
-  );
+  // 3. Bir sonraki kurgu noktasına < preRollWindow mesafede olan ön yükleme (pre-roll) klipleri
+  let preRollAdded = 0;
+  for (const vp of plan.videoPlans) {
+    if (preRollAdded >= maxPreRoll) break;
+    if (
+      !vp.isTrackHidden &&
+      vp.clip.start >= time &&
+      vp.clip.start - time <= preRollWindow &&
+      !pool.some((p) => p.id === vp.clip.id)
+    ) {
+      pool.push(vp.clip);
+      preRollAdded++;
+    }
+  }
+
+  // 4. Aktif ses klipleri (özel A1, A2 vb. ses kanalları - donanım video dekoderi tüketmez)
+  const activeAudio: Clip[] = [];
+  for (const ap of plan.audioPlans) {
+    if (ap.audible && time >= ap.audioStart && time < ap.audioEnd) {
+      activeAudio.push(ap.clip);
+    }
+  }
 
   return [...pool, ...activeAudio];
 }
@@ -230,16 +385,26 @@ export function ActiveWindowDecoder({
   quality,
   degraded,
   onDegrade,
+  onRegisterVideo,
+  activeTransition,
+  plan,
 }: {
   project: Project;
   time: number;
   quality: PreviewQuality;
   degraded: string[];
   onDegrade: (id: string) => void;
+  onRegisterVideo?: (id: string, el: HTMLVideoElement | null) => void;
+  activeTransition?: ActiveTransition;
+  plan?: ProjectPreviewPlan;
 }) {
+  const currentPlan = useMemo(
+    () => plan ?? buildProjectPreviewPlan(project),
+    [plan, project],
+  );
   const windowClips = useMemo(
-    () => getActiveWindowClips(project, time),
-    [project, time],
+    () => getActiveWindowClips(currentPlan, time),
+    [currentPlan, time],
   );
 
   return (
@@ -251,9 +416,114 @@ export function ActiveWindowDecoder({
           quality={quality}
           degraded={degraded.includes(c.mediaId)}
           onDegrade={onDegrade}
+          onRegisterVideo={onRegisterVideo}
+          activeTransition={activeTransition}
+          plan={currentPlan.clipPlanMap.get(c.id)?.audioPlan}
         />
       ))}
     </>
+  );
+}
+
+/**
+ * LiveTransitionCompositor: Canlı Önizleme Viewport Geçiş Kompozitörü
+ * İki aktif videoyu WebGL shader (Whip Pan, Cross Zoom, Glitch Split vb.)
+ * ile harmanlar. Gerçek medya/cihaz QA'sı sahada test edilmeyi beklemektedir.
+ */
+export function LiveTransitionCompositor({
+  activeTransition,
+  project,
+  time,
+  playing,
+  videoMap,
+}: {
+  activeTransition: ActiveTransition;
+  project: Project;
+  time: number;
+  playing: boolean;
+  videoMap: Map<string, HTMLVideoElement>;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const blenderRef = useRef<TransitionBlender | null>(null);
+
+  useEffect(() => {
+    return () => {
+      blenderRef.current?.dispose();
+      blenderRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const vFrom = videoMap.get(activeTransition.clipFrom.id);
+    const vTo = videoMap.get(activeTransition.clipTo.id);
+    if (!vFrom && !vTo) return;
+
+    let rafId = 0;
+    const render = () => {
+      if (!canvas) return;
+      const progress = computeTransitionProgress(
+        time,
+        activeTransition.start,
+        activeTransition.duration,
+      );
+
+      const w = project.settings.width;
+      const h = project.settings.height;
+
+      blenderRef.current ??= new TransitionBlender(canvas);
+
+      const sourceA = vFrom && vFrom.readyState >= 2 ? vFrom : null;
+      const sourceB = vTo && vTo.readyState >= 2 ? vTo : null;
+
+      let drawn = false;
+      if (sourceA && sourceB && sourceA !== sourceB) {
+        const currentTime = playing ? useEditor.getState().playhead : time;
+        const progress = computeTransitionProgress(
+          currentTime,
+          activeTransition.start,
+          activeTransition.duration,
+        );
+        blenderRef.current.draw(
+          sourceA,
+          sourceB,
+          w,
+          h,
+          progress,
+          activeTransition.transition,
+        );
+        drawn = true;
+      }
+
+      if (playing) {
+        rafId = requestAnimationFrame(render);
+      } else if (!drawn) {
+        rafId = requestAnimationFrame(render);
+      }
+    };
+
+    render();
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [activeTransition, project.settings, time, playing, videoMap]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="live-transition-canvas"
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        objectFit: 'contain',
+        pointerEvents: 'none',
+        zIndex: 5,
+      }}
+    />
   );
 }
 export default function Preview({
@@ -270,6 +540,11 @@ export default function Preview({
     (id: string) => setDegraded((ids) => (ids.includes(id) ? ids : [...ids, id])),
     [],
   );
+  const [videoMap] = useState(() => new Map<string, HTMLVideoElement>());
+  const onRegisterVideo = useCallback((id: string, el: HTMLVideoElement | null) => {
+    if (el) videoMap.set(id, el);
+    else videoMap.delete(id);
+  }, [videoMap]);
   const p = useEditor((s) => s.project),
     commit = useEditor((s) => s.commit),
     time = useEditor((s) => s.playhead),
@@ -281,6 +556,8 @@ export default function Preview({
     captions = useMemo(() => captionTimelineIndex(p), [p]),
     caption = captions.first(time),
     appearance = captionAppearance(p.captions);
+  const previewPlan = useMemo(() => buildProjectPreviewPlan(p), [p]);
+  const activeTransition = previewPlan.transitions.find((tr) => time >= tr.start && time < tr.end);
   const layout = captionLayout(p);
   const mediaRevision = useEditor((s) => s.mediaRevision);
   useEffect(() => {
@@ -431,8 +708,20 @@ export default function Preview({
                 quality={quality}
                 degraded={degraded}
                 onDegrade={onDegrade}
+                onRegisterVideo={onRegisterVideo}
+                activeTransition={activeTransition}
+                plan={previewPlan}
               />
             </AdjustmentComposite>
+            {activeTransition && (
+              <LiveTransitionCompositor
+                activeTransition={activeTransition}
+                project={p}
+                time={time}
+                playing={playing}
+                videoMap={videoMap}
+              />
+            )}
             <TransformHandles />
             {p.captions.safeArea && (
               <div className="safe-area">

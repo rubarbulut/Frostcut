@@ -17,42 +17,114 @@ import { AEScrubber } from './AEScrubber';
 import { AEKeyframeStopwatch } from './AEKeyframeStopwatch';
 import { SavedAnimations } from '../SavedAnimations';
 
+/**
+ * Resolves the fresh target clip from project state by ID, ensuring locked/deleted checks.
+ */
+export function resolveTargetClip(
+  project: { clips: Clip[]; tracks?: any[]; id?: string },
+  clipId: string,
+): Clip | null {
+  const target = project.clips.find((c) => c.id === clipId);
+  if (!target || isLocked(project as any, target)) return null;
+  return target;
+}
+
+/**
+ * Computes next clip transform state from the latest project clip snapshot,
+ * guaranteeing concurrent same-clip property modifications are preserved.
+ */
+export function computeNextTransformClip(
+  currentProject: { clips: Clip[]; settings: { width: number; height: number }; id?: string },
+  clipId: string,
+  key: AnimatedProperty | 'crop',
+  val: number,
+  playhead: number,
+): Clip | null {
+  const target = resolveTargetClip(currentProject, clipId);
+  if (!target) return null;
+  if (animatedProperties.includes(key as AnimatedProperty)) {
+    const animKey = key as AnimatedProperty;
+    const clamped = clampMotion(animKey, val);
+    return setAnimatedValue(
+      target,
+      animKey,
+      clamped,
+      playhead,
+      currentProject.settings.width,
+      currentProject.settings.height,
+    );
+  } else {
+    return { ...target, properties: { ...target.properties, [key]: val } };
+  }
+}
+
 export function AETransformControls({ clip: original }: { clip: Clip }) {
-  const { project: p, commit, playhead, previewClip, seek, setPlaying } = useEditor();
-  const clip = previewClip?.id === original.id ? previewClip : original;
+  const { project: p, commit, playhead, previewClip, seek, setPlaying, setPreviewClip } = useEditor();
+  const currentTarget = resolveTargetClip(p, original.id);
+  const clip = previewClip?.id === original.id ? previewClip : (currentTarget ?? original);
   const values = baseTransformAt(clip, playhead, p.settings.width, p.settings.height);
   const sourceTime = clip.sourceStart + (playhead - clip.start) * clip.properties.speed;
   const inside = playhead >= clip.start && playhead <= clipEnd(clip);
-  const locked = isLocked(p, clip);
+  const locked = !currentTarget || isLocked(p, currentTarget);
 
   const [activeProperty, setActiveProperty] = useState<AnimatedProperty>('scale');
   const [showKeyframeDrawer, setShowKeyframeDrawer] = useState(false);
 
+  function getLatestTargetClip(): Clip | null {
+    const current = useEditor.getState().project;
+    if (current.id !== p.id) return null;
+    return resolveTargetClip(current, original.id);
+  }
+
   function save(next: Clip, label: string) {
-    commit({ ...p, clips: p.clips.map((c) => (c.id === clip.id ? next : c)) }, label);
+    const current = useEditor.getState().project;
+    if (current.id !== p.id) {
+      setPreviewClip(undefined);
+      return;
+    }
+    const target = resolveTargetClip(current, original.id);
+    if (!target) {
+      setPreviewClip(undefined);
+      return;
+    }
+    commit({ ...current, clips: current.clips.map((c) => (c.id === original.id ? next : c)) }, label);
+  }
+
+  function getNextClip(key: AnimatedProperty | 'crop', val: number): Clip | null {
+    const current = useEditor.getState().project;
+    if (current.id !== p.id) return null;
+    return computeNextTransformClip(current, original.id, key, val, playhead);
+  }
+
+  function handleScrub(key: AnimatedProperty | 'crop', val: number) {
+    const next = getNextClip(key, val);
+    if (!next) {
+      setPreviewClip(undefined);
+      return;
+    }
+    setPreviewClip(next);
+  }
+
+  function handleScrubEnd(key: AnimatedProperty | 'crop', val: number) {
+    setPreviewClip(undefined);
+    const next = getNextClip(key, val);
+    if (!next) return;
+    save(next, `Adjust ${key}`);
+  }
+
+  function handleScrubCancel() {
+    setPreviewClip(undefined);
   }
 
   function changeProp(key: AnimatedProperty | 'crop', val: number) {
-    if (locked) return;
-    if (animatedProperties.includes(key as AnimatedProperty)) {
-      const animKey = key as AnimatedProperty;
-      const clamped = clampMotion(animKey, val);
-      save(
-        setAnimatedValue(original, animKey, clamped, playhead, p.settings.width, p.settings.height),
-        `Adjust ${key}`,
-      );
-    } else {
-      save(
-        { ...original, properties: { ...original.properties, [key]: val } },
-        `Adjust ${key}`,
-      );
-    }
+    handleScrubEnd(key, val);
   }
 
   function handleToggleKf(prop: AnimatedProperty) {
-    if (!inside || locked) return;
+    const target = getLatestTargetClip();
+    if (!target || !inside || locked) return;
     save(
-      toggleKeyframe(clip, prop, playhead, p.settings.width, p.settings.height),
+      toggleKeyframe(target, prop, playhead, p.settings.width, p.settings.height),
       `Toggle ${prop} keyframe`,
     );
     setActiveProperty(prop);
@@ -100,12 +172,13 @@ export function AETransformControls({ clip: original }: { clip: Clip }) {
   }
 
   const handleResetTransform = () => {
-    if (locked) return;
+    const target = getLatestTargetClip();
+    if (!target || locked) return;
     save(
       {
-        ...original,
+        ...target,
         properties: {
-          ...original.properties,
+          ...target.properties,
           x: 0,
           y: 0,
           scale: 1,
@@ -177,7 +250,10 @@ export function AETransformControls({ clip: original }: { clip: Clip }) {
               decimals={1}
               defaultValue={0}
               disabled={locked}
-              onChange={(v) => changeProp('x', v)}
+              onDrag={(v) => handleScrub('x', v)}
+              onDragEnd={(v) => handleScrubEnd('x', v)}
+              onDragCancel={handleScrubCancel}
+              onChange={(v) => handleScrubEnd('x', v)}
             />
             <AEScrubber
               prefix="Y:"
@@ -189,7 +265,10 @@ export function AETransformControls({ clip: original }: { clip: Clip }) {
               decimals={1}
               defaultValue={0}
               disabled={locked}
-              onChange={(v) => changeProp('y', v)}
+              onDrag={(v) => handleScrub('y', v)}
+              onDragEnd={(v) => handleScrubEnd('y', v)}
+              onDragCancel={handleScrubCancel}
+              onChange={(v) => handleScrubEnd('y', v)}
             />
           </div>
         </AEPropertyRow>
@@ -221,7 +300,10 @@ export function AETransformControls({ clip: original }: { clip: Clip }) {
               decimals={1}
               defaultValue={100}
               disabled={locked}
-              onChange={(v) => changeProp('scale', v / 100)}
+              onDrag={(v) => handleScrub('scale', v / 100)}
+              onDragEnd={(v) => handleScrubEnd('scale', v / 100)}
+              onDragCancel={handleScrubCancel}
+              onChange={(v) => handleScrubEnd('scale', v / 100)}
             />
             <input
               type="range"
@@ -278,7 +360,10 @@ export function AETransformControls({ clip: original }: { clip: Clip }) {
               decimals={1}
               defaultValue={0}
               disabled={locked}
-              onChange={(v) => changeProp('rotation', v)}
+              onDrag={(v) => handleScrub('rotation', v)}
+              onDragEnd={(v) => handleScrubEnd('rotation', v)}
+              onDragCancel={handleScrubCancel}
+              onChange={(v) => handleScrubEnd('rotation', v)}
             />
             <div className="ae-rot-pills">
               {[-90, 0, 90, 180].map((deg) => (
@@ -323,7 +408,10 @@ export function AETransformControls({ clip: original }: { clip: Clip }) {
               decimals={0}
               defaultValue={100}
               disabled={locked}
-              onChange={(v) => changeProp('opacity', v / 100)}
+              onDrag={(v) => handleScrub('opacity', v / 100)}
+              onDragEnd={(v) => handleScrubEnd('opacity', v / 100)}
+              onDragCancel={handleScrubCancel}
+              onChange={(v) => handleScrubEnd('opacity', v / 100)}
             />
             <input
               type="range"
@@ -350,7 +438,10 @@ export function AETransformControls({ clip: original }: { clip: Clip }) {
               decimals={1}
               defaultValue={0}
               disabled={locked}
-              onChange={(v) => changeProp('crop', v)}
+              onDrag={(v) => handleScrub('crop', v)}
+              onDragEnd={(v) => handleScrubEnd('crop', v)}
+              onDragCancel={handleScrubCancel}
+              onChange={(v) => handleScrubEnd('crop', v)}
             />
             <input
               type="range"
@@ -388,14 +479,16 @@ export function AETransformControls({ clip: original }: { clip: Clip }) {
               value={clip.properties.animation}
               disabled={locked}
               onChange={(e) => {
+                const target = getLatestTargetClip();
+                if (!target || locked) return;
                 const preset = e.target.value;
                 save(
                   {
-                    ...clip,
-                    properties: { ...clip.properties, animation: preset },
+                    ...target,
+                    properties: { ...target.properties, animation: preset },
                     keyframes: Object.fromEntries(
                       Object.entries(
-                        presetKeyframes(clip, preset, p.settings.width, p.settings.height),
+                        presetKeyframes(target, preset, p.settings.width, p.settings.height),
                       ).map(([key, frames]) => [
                         key,
                         frames.map((f) => ({

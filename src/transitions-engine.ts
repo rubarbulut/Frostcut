@@ -132,4 +132,14 @@ vec4 transitionGlitchSplit(vec2 uv, sampler2D from, sampler2D to, float p, float
 
   return vec4(r, base.g, b, base.a);
 }
+
+// 6. Directional Wipe
+vec4 transitionDirectionalWipe(vec2 uv, sampler2D from, sampler2D to, float p, vec2 dir, float softness) {
+  float len = length(dir);
+  vec2 d = len > 0.001 ? dir / len : vec2(1.0, 0.0);
+  float proj = dot(uv - vec2(0.5), d) + 0.5;
+  float soft = max(0.001, softness);
+  float m = smoothstep(p - soft, p + soft, proj);
+  return mix(texture2D(to, uv), texture2D(from, uv), m);
+}
 `;

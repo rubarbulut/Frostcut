@@ -105,6 +105,9 @@ export type Clip = {
   autoDuck?: boolean;
   voiceEnhance?: boolean;
   audioDetached?: boolean;
+  eqLow?: number;
+  eqMid?: number;
+  eqHigh?: number;
   keyframes?: KeyframeTracks;
   tracking?: ClipTracking;
   id: string;
@@ -863,6 +866,9 @@ export function validateProject(value: unknown): Project {
         (c.audioRole !== undefined && !['voice', 'music', 'sfx'].includes(c.audioRole)) ||
         (c.autoDuck !== undefined && typeof c.autoDuck !== 'boolean') ||
         (c.voiceEnhance !== undefined && typeof c.voiceEnhance !== 'boolean') ||
+        (c.eqLow !== undefined && !finite(c.eqLow, -24, 24)) ||
+        (c.eqMid !== undefined && !finite(c.eqMid, -24, 24)) ||
+        (c.eqHigh !== undefined && !finite(c.eqHigh, -24, 24)) ||
         !finite(c.start) ||
         !finite(c.sourceStart) ||
         !finite(c.sourceEnd, c.sourceStart + 0.001, m.duration + 0.1)

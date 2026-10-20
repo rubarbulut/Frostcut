@@ -39,6 +39,15 @@ import {
   timecode,
   isAudioClip,
 } from './model';
+import {
+  computeTimelineViewport,
+  shouldUpdateViewport,
+  filterVisibleClips,
+  filterVisibleBeats,
+  getVisibleRulerTicks,
+  SnapGuideOverlay,
+} from './virtualized-timeline';
+import { StudioTrackLabel } from './StudioTrackLabel';
 export function deleteSelected(ripple = false) {
   const adjustment = useEditor.getState().adjustmentSelection;
   if (adjustment && !ripple) { removeAdjustment(adjustment); return; }
@@ -110,7 +119,43 @@ export default function Timeline() {
       sourceEnd: number;
     } | null>(null),
     [tool, setTool] = useState('select'),
-    body = useRef<HTMLDivElement>(null);
+    body = useRef<HTMLDivElement>(null),
+    [viewport, setViewport] = useState(() => computeTimelineViewport(0, 1920, zoom)),
+    snapGuideRef = useRef<HTMLDivElement>(null),
+    snapOverlayRef = useRef<SnapGuideOverlay>(new SnapGuideOverlay());
+
+  useEffect(() => {
+    snapOverlayRef.current.setElement(snapGuideRef.current);
+  }, []);
+
+  useEffect(() => {
+    const el = body.current;
+    if (!el) return;
+    let rafId: number | null = null;
+    const handleScroll = () => {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        if (!body.current) return;
+        const scrollLeft = body.current.scrollLeft;
+        const clientWidth = body.current.clientWidth || 1200;
+        setViewport((prev) => {
+          if (shouldUpdateViewport(prev, scrollLeft, clientWidth, zoom)) {
+            return computeTimelineViewport(scrollLeft, clientWidth, zoom);
+          }
+          return prev;
+        });
+      });
+    };
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll);
+    handleScroll();
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      el.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [zoom]);
   const { panning, startPan } = useTimelineNavigation(body, zoom, setZoom, tool === 'hand');
   const total = duration(p),
     width = Math.max(900, (Math.max(total, ...p.adjustments?.map((a) => a.end) ?? []) + 8) * zoom),
@@ -149,7 +194,14 @@ export default function Timeline() {
     e.stopPropagation();
     if (isLocked(p, c)) return;
     if (tool === 'razor') {
-      commit(splitClip(p, c.id, c.start + e.nativeEvent.offsetX / zoom), 'Split clip');
+      let splitAt = c.start + e.nativeEvent.offsetX / zoom;
+      if (snap) {
+        const beatPoints = snapBeats ? timelineBeats(p) : [];
+        const beatTolerance = Math.max(0.008, 8 / zoom); // 8ms precision
+        const nearest = beatPoints.find((bp) => Math.abs(bp - splitAt) <= beatTolerance);
+        if (nearest !== undefined) splitAt = nearest;
+      }
+      commit(splitClip(p, c.id, splitAt), 'Split clip');
       return;
     }
     const multi = e.shiftKey
@@ -176,41 +228,86 @@ export default function Timeline() {
         sourceStart = c.sourceStart,
         sourceEnd = c.sourceEnd;
       let trimDelta = delta;
+      let snapGuideTime: number | null = null;
       if (kind !== 'move' && snap) {
         const edge = (kind === 'in' ? c.start : clipEnd(c)) + delta;
         const beatPoints = snapBeats ? timelineBeats(snapshot, ids) : [];
-        const candidates = [
-          playhead,
-          ...beatPoints,
-          ...snapshot.clips
-            .filter((x) => !ids.includes(x.id))
-            .flatMap((x) => [x.start, clipEnd(x)]),
-        ];
-        const nearest = candidates
-          .filter((point) => Math.abs(point - edge) < 8 / zoom)
-          .sort((a, b) => Math.abs(a - edge) - Math.abs(b - edge))[0];
-        if (nearest !== undefined) trimDelta += nearest - edge;
+        // 8ms magnetic locking priority for detected music beats
+        let nearestBeat: number | undefined;
+        if (snapBeats && beatPoints.length > 0) {
+          const beatTolerance = Math.max(0.008, 8 / zoom);
+          nearestBeat = beatPoints
+            .filter((point) => Math.abs(point - edge) <= beatTolerance)
+            .sort((a, b) => Math.abs(a - edge) - Math.abs(b - edge))[0];
+        }
+        if (nearestBeat !== undefined) {
+          trimDelta += nearestBeat - edge;
+          snapGuideTime = nearestBeat;
+        } else {
+          const candidates = [
+            playhead,
+            ...beatPoints,
+            ...snapshot.clips
+              .filter((x) => !ids.includes(x.id))
+              .flatMap((x) => [x.start, clipEnd(x)]),
+          ];
+          const nearest = candidates
+            .filter((point) => Math.abs(point - edge) < 8 / zoom)
+            .sort((a, b) => Math.abs(a - edge) - Math.abs(b - edge))[0];
+          if (nearest !== undefined) {
+            trimDelta += nearest - edge;
+            snapGuideTime = nearest;
+          }
+        }
       }
       if (kind === 'move' && snap) {
         const beatPoints = snapBeats ? timelineBeats(snapshot, ids) : [];
-        const points = [
-          0,
-          playhead,
-          ...beatPoints,
-          ...snapshot.clips
-            .filter((x) => !ids.includes(x.id))
-            .flatMap((x) => [x.start, clipEnd(x)]),
-        ];
-        for (const point of points) {
-          if (Math.abs(start - point) < 8 / zoom) {
-            start = point;
-            break;
-          }
-          if (Math.abs(start + clipDuration(c) - point) < 8 / zoom) {
-            start = Math.max(0, point - clipDuration(c));
-            break;
+        let beatSnapped = false;
+        // 8ms magnetic locking priority for detected music beats
+        if (snapBeats && beatPoints.length > 0) {
+          const beatTolerance = Math.max(0.008, 8 / zoom);
+          for (const bp of beatPoints) {
+            if (Math.abs(start - bp) <= beatTolerance) {
+              start = bp;
+              snapGuideTime = bp;
+              beatSnapped = true;
+              break;
+            }
+            if (Math.abs(start + clipDuration(c) - bp) <= beatTolerance) {
+              start = Math.max(0, bp - clipDuration(c));
+              snapGuideTime = bp;
+              beatSnapped = true;
+              break;
+            }
           }
         }
+        if (!beatSnapped) {
+          const points = [
+            0,
+            playhead,
+            ...beatPoints,
+            ...snapshot.clips
+              .filter((x) => !ids.includes(x.id))
+              .flatMap((x) => [x.start, clipEnd(x)]),
+          ];
+          for (const point of points) {
+            if (Math.abs(start - point) < 8 / zoom) {
+              start = point;
+              snapGuideTime = point;
+              break;
+            }
+            if (Math.abs(start + clipDuration(c) - point) < 8 / zoom) {
+              start = Math.max(0, point - clipDuration(c));
+              snapGuideTime = point;
+              break;
+            }
+          }
+        }
+      }
+      if (snapGuideTime !== null) {
+        snapOverlayRef.current.show(snapGuideTime, zoom);
+      } else {
+        snapOverlayRef.current.hide();
       }
       if (kind === 'in') {
         sourceStart = Math.max(
@@ -234,6 +331,7 @@ export default function Timeline() {
     const up = (event: PointerEvent) => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
+      snapOverlayRef.current.hide();
       setDrag(null);
       if (!latest || Math.abs(event.clientX - initialX) + Math.abs(event.clientY - initialY) < 3)
         return;
@@ -466,8 +564,9 @@ export default function Timeline() {
           </div>
           <AdjustmentLabels />
           {p.tracks.map((t) => (
-            <div className="track-label" key={t.id} style={{ height: t.height }}>
+            <div className="track-label" data-track-kind={t.kind} key={t.id} style={{ height: t.height }}>
               <b>{t.name}</b>
+              <StudioTrackLabel project={p} trackId={t.id} />
               <button
                 className="icon tiny"
                 aria-label={`${t.locked ? 'Unlock' : 'Lock'} ${t.name}`}
@@ -507,7 +606,8 @@ export default function Timeline() {
           ))}
         </div>
         <div className="timeline-lanes" style={{ width, minWidth: width }}>
-          {beats.map((beat, i) => (
+          <div ref={snapGuideRef} className="magnetic-snap-guide" aria-hidden="true" />
+          {filterVisibleBeats(beats, viewport.startTime, viewport.endTime).map((beat, i) => (
             <div
               className="beat-marker"
               key={`${beat}-${i}`}
@@ -516,7 +616,12 @@ export default function Timeline() {
             />
           ))}
           <div className="ruler" onPointerDown={scrub}>
-            {Array.from({ length: Math.ceil(width / zoom / step) }, (_, i) => (
+            {getVisibleRulerTicks(
+              viewport.startTime,
+              viewport.endTime,
+              step,
+              Math.ceil(width / zoom / step),
+            ).map((i) => (
               <span key={i} style={{ left: i * step * zoom }}>
                 {timecode(i * step)}
               </span>
@@ -524,23 +629,29 @@ export default function Timeline() {
           </div>
           <CaptionLane zoom={zoom} snap={snap} />
           <AdjustmentLanes zoom={zoom} snap={snap} razor={tool === 'razor'} />
-          {p.tracks.map((t) => (
-            <div
-              key={t.id}
-              data-track={t.id}
-              className={`track-lane ${t.locked ? 'locked' : ''}`}
-              style={{ height: t.height }}
-              onPointerDown={(e) => {
-                scrub(e);
-                select([]);
-              }}
-            >
-              {p.clips
-                .filter(
-                  (c) =>
-                    c.trackId === t.id || (t.id === 'A1' && !isAudioClip(p, c) && !c.audioDetached),
-                )
-                .map((original) => {
+          {p.tracks.map((t) => {
+            const trackClips = p.clips.filter(
+              (c) =>
+                c.trackId === t.id || (t.id === 'A1' && !isAudioClip(p, c) && !c.audioDetached),
+            );
+            const visibleClips = filterVisibleClips(
+              trackClips,
+              viewport.startTime,
+              viewport.endTime,
+              drag?.id ? [...selected, drag.id] : selected,
+            );
+            return (
+              <div
+                key={t.id}
+                data-track={t.id}
+                className={`track-lane ${t.locked ? 'locked' : ''}`}
+                style={{ height: t.height }}
+                onPointerDown={(e) => {
+                  scrub(e);
+                  select([]);
+                }}
+              >
+                {visibleClips.map((original) => {
                   const c = drag?.id === original.id ? { ...original, ...drag } : original,
                     m = p.media.find((m) => m.id === c.mediaId)!;
                   return (
@@ -643,7 +754,8 @@ export default function Timeline() {
                 <span className="lane-hint">Your story, one good moment at a time.</span>
               )}
             </div>
-          ))}
+          );
+        })}
           <TimelinePlayhead zoom={zoom} />
         </div>
       </div>

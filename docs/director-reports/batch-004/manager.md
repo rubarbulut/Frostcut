@@ -5,6 +5,7 @@
 **İsim / Rol:** MANAGER (Orchestration & Integration Lead)  
 **Durum:** `ready`  
 **Baseline SHA:** `880e081122173630e1cf5e13291ba139fc2ea9a7`  
+**Commit SHA:** `064e394f8f83b0bcc99404325b3a66ab71eab980`  
 **Dal:** `feat/social-media-hub`  
 **Çalışma Yolu:** `c:\Users\Arenb\Documents\Videoeditor`  
 

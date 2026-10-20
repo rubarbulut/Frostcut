@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, type PointerEvent as ReactPointerEvent } from 'react';
 import { RotateCcw } from 'lucide-react';
+import { ScrubberGestureSession, commitTypedScrubberInput } from './scrubber-gesture';
 
 export interface AEScrubberProps {
   label?: string;
@@ -14,7 +15,9 @@ export interface AEScrubberProps {
   disabled?: boolean;
   onChange: (value: number) => void;
   onDragStart?: () => void;
-  onDragEnd?: () => void;
+  onDrag?: (value: number) => void;
+  onDragEnd?: (finalValue: number) => void;
+  onDragCancel?: () => void;
 }
 
 export function AEScrubber({
@@ -30,12 +33,25 @@ export function AEScrubber({
   disabled = false,
   onChange,
   onDragStart,
+  onDrag,
   onDragEnd,
+  onDragCancel,
 }: AEScrubberProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(value));
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const sessionRef = useRef<ScrubberGestureSession | null>(null);
+  const isCommittingRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (sessionRef.current) {
+        sessionRef.current.destroy();
+        sessionRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!editing) {
@@ -56,49 +72,86 @@ export function AEScrubber({
     e.preventDefault();
     e.stopPropagation();
 
-    const startX = e.clientX;
-    const startVal = value;
     setIsDragging(true);
-    onDragStart?.();
 
-    let lastVal = startVal;
+    const session = new ScrubberGestureSession(
+      e.clientX,
+      {
+        value,
+        min,
+        max,
+        step,
+        decimals,
+        onDragStart,
+        onDrag,
+        onDragEnd: (finalVal) => {
+          onDragEnd?.(finalVal);
+        },
+        onDragCancel: () => {
+          onDragCancel?.();
+        },
+        onChange,
+      },
+      e.pointerId,
+      e.currentTarget,
+    );
+    sessionRef.current = session;
 
     const onMove = (moveEv: PointerEvent) => {
-      const dx = moveEv.clientX - startX;
-      // Modifier keys: Shift = 5x faster, Alt = fine precision (0.1x)
-      const speedMultiplier = moveEv.shiftKey ? 5 : moveEv.altKey ? 0.1 : 1;
-      const deltaVal = dx * step * speedMultiplier;
-      const nextVal = clamp(startVal + deltaVal);
-      const quantized = Math.round(nextVal / step) * step;
-      const finalVal = clamp(Number(quantized.toFixed(decimals + 1)));
+      session.handleMove(moveEv.clientX, {
+        shiftKey: moveEv.shiftKey,
+        altKey: moveEv.altKey,
+      });
+    };
 
-      if (finalVal !== lastVal) {
-        lastVal = finalVal;
-        onChange(finalVal);
-      }
+    const cleanup = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onCancel);
+      window.removeEventListener('keydown', onKeyDown);
+      setIsDragging(false);
+      sessionRef.current = null;
     };
 
     const onUp = () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', onUp);
-      setIsDragging(false);
-      onDragEnd?.();
+      cleanup();
+      session.handleUp();
+    };
+
+    const onCancel = () => {
+      cleanup();
+      session.handleCancel();
+    };
+
+    const onKeyDown = (keyEv: KeyboardEvent) => {
+      if (keyEv.key === 'Escape') {
+        keyEv.preventDefault();
+        onCancel();
+      }
     };
 
     window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp, { once: true });
-    window.addEventListener('pointercancel', onUp, { once: true });
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onCancel);
+    window.addEventListener('keydown', onKeyDown);
   };
 
   const commitEdit = () => {
+    if (isCommittingRef.current) return;
+    isCommittingRef.current = true;
     setEditing(false);
-    const parsed = parseFloat(draft);
-    if (!Number.isNaN(parsed) && Number.isFinite(parsed)) {
-      onChange(clamp(Number(parsed.toFixed(decimals))));
-    } else {
+    const result = commitTypedScrubberInput(draft, value, {
+      min,
+      max,
+      decimals,
+      onChange,
+    });
+    if (!result.committed) {
       setDraft(String(Number(value.toFixed(decimals))));
     }
+    queueMicrotask(() => {
+      isCommittingRef.current = false;
+    });
   };
 
   const isModified =

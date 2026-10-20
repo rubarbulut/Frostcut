@@ -68,7 +68,8 @@ export function calculateFrameAccurateTime(
  * 3. Hızlı geri sarmada (-2x, -4x, -8x) kadans adımlarını GOP/kare bloklarına uyarlar.
  */
 export class GopAwareReverseEngine {
-  private lastSeekTime = 0;
+  private elementSeekTimes = new WeakMap<object, number>();
+  private keySeekTimes = new Map<string, number>();
 
   /**
    * RAF döngüsü içinde sonraki geriye zamanı hesaplar.
@@ -86,17 +87,38 @@ export class GopAwareReverseEngine {
   }
 
   /**
-   * Video elemanına yeni bir seek emri verilip verilmeyeceğini donanım dekoderini koruyarak belirler.
+   * Video elemanına yeni bir seek emri verilip verilmeyeceğini donanım dekoderini koruyarak belirler:
+   * 1. Sürmekte olan seek varsa (video.seeking === true) yeni seek BİNDİRİLMEZ (pending seek iptali).
+   * 2. Global tek throttle yerine kaynak/eleman bazlı takip yapılır; birbirinden bağımsız
+   *    kaynaklar (ör. çok kanallı video katmanları) birbirinin ilerlemesini engellemez.
    */
   shouldSeekVideoElement(
     targetSourceTime: number,
-    videoElementCurrentTime: number,
+    videoElementOrCurrentTime: HTMLMediaElement | { seeking?: boolean; currentTime?: number } | number,
     fps: number,
     rate: number,
+    sourceKey?: string,
   ): boolean {
+    let videoCurrentTime = 0;
+    let isSeeking = false;
+    let targetRef: object | null = null;
+
+    if (typeof videoElementOrCurrentTime === 'object' && videoElementOrCurrentTime !== null) {
+      targetRef = videoElementOrCurrentTime;
+      isSeeking = Boolean(videoElementOrCurrentTime.seeking);
+      videoCurrentTime = Number(videoElementOrCurrentTime.currentTime ?? 0);
+    } else if (typeof videoElementOrCurrentTime === 'number') {
+      videoCurrentTime = videoElementOrCurrentTime;
+    }
+
+    // 1. Sürmekte olan bir seek varsa yeni seek BİNDİRME (donanım dekoderini boğma)
+    if (isSeeking) {
+      return false;
+    }
+
     const safeFps = fps > 0 ? fps : 30;
     const frameInterval = 1 / safeFps;
-    const diff = Math.abs(videoElementCurrentTime - targetSourceTime);
+    const diff = Math.abs(videoCurrentTime - targetSourceTime);
 
     // Hıza göre dinamik aralık eşiği (-1x için yarım kare, -4x için daha geniş tampon)
     const threshold = Math.max(0.005, (frameInterval * Math.min(Math.abs(rate), 4)) / 2);
@@ -104,17 +126,31 @@ export class GopAwareReverseEngine {
     if (diff < threshold) return false;
 
     // Minimum throttle: 15ms'den sık aralıklarla donanım dekoderini boğma
+    // Global tek throttle yerine eleman veya kaynak bazlı takip
     const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
-    if (now - this.lastSeekTime < 15 && diff < frameInterval) {
+    let lastTime = 0;
+    if (targetRef) {
+      lastTime = this.elementSeekTimes.get(targetRef) ?? 0;
+    } else if (sourceKey) {
+      lastTime = this.keySeekTimes.get(sourceKey) ?? 0;
+    }
+
+    if (now - lastTime < 15 && diff < frameInterval) {
       return false;
     }
 
-    this.lastSeekTime = now;
+    if (targetRef) {
+      this.elementSeekTimes.set(targetRef, now);
+    } else if (sourceKey) {
+      this.keySeekTimes.set(sourceKey, now);
+    }
+
     return true;
   }
 
   reset() {
-    this.lastSeekTime = 0;
+    this.elementSeekTimes = new WeakMap<object, number>();
+    this.keySeekTimes.clear();
   }
 }
 

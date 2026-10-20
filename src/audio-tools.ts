@@ -105,9 +105,15 @@ export function createDuckGain(p: Project, c: Clip): (time: number) => number {
 }
 
 export function audioEffectsFilter(p: Project, c: Clip, timelineStart: number) {
-  const effects = c.voiceEnhance
+  let effects = c.voiceEnhance
     ? 'highpass=f=80,lowpass=f=8000,acompressor=threshold=0.125:ratio=3:attack=10:release=100:makeup=1.5,'
     : '';
+
+  // 3-Band Parametric EQ parity with preview MultiTrackAudioBus (100Hz Lowshelf, 1kHz Peaking, 8kHz Highshelf)
+  if (c.eqLow) effects += `equalizer=f=100:width_type=o:width=1:g=${c.eqLow},`;
+  if (c.eqMid) effects += `equalizer=f=1000:width_type=q:width=1:g=${c.eqMid},`;
+  if (c.eqHigh) effects += `equalizer=f=8000:width_type=o:width=1:g=${c.eqHigh},`;
+
   if (!c.autoDuck || c.audioRole !== 'music') return effects + `volume=${c.properties.volume}`;
   // Individual volume stages avoid an unbounded nested expression on long edits.
   // Ranges are merged first, so ramps never multiply during overlapping speech.

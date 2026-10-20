@@ -14,7 +14,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useEditor } from './store';
-import { isAudioClip, type Project, type Clip } from './model';
+import { isAudioClip, changeAspectRatio, timelineWords } from './model';
 import { presetKeyframes, clampMotion, type AnimatedProperty } from './motion';
 
 export interface SmartWorkflowGuideProps {
@@ -26,8 +26,9 @@ export function SmartWorkflowGuide({
   onTranscribeRequest,
   onSilenceCutRequest,
 }: SmartWorkflowGuideProps) {
-  const { project: p, commit } = useEditor();
-  const [collapsed, setCollapsed] = useState(false);
+  const p = useEditor((s) => s.project);
+  const commit = useEditor((s) => s.commit);
+  const [collapsed, setCollapsed] = useState(true);
   const [dismissed, setDismissed] = useState(false);
 
   if (dismissed || !p.clips.length) return null;
@@ -43,16 +44,14 @@ export function SmartWorkflowGuide({
   );
 
   const isNoSpeech = !!p.settings.noSpeech;
-  const isCaptionsActive = isNoSpeech || p.captions.enabled;
+  const isCaptionsActive = isNoSpeech || (p.captions.enabled && timelineWords(p).length > 0);
 
   const firstClip = [...p.clips].sort((a, b) => a.start - b.start)[0];
   const hasHookAnimation =
-    firstClip &&
-    firstClip.properties.animation &&
-    firstClip.properties.animation !== 'None';
+    firstClip && firstClip.properties.animation && firstClip.properties.animation !== 'None';
 
   // Has transcript or silence cuts
-  const hasTranscript = p.transcripts.length > 0;
+  const hasTranscript = timelineWords(p).length > 0;
 
   const handleToggleSpeech = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -63,15 +62,12 @@ export function SmartWorkflowGuide({
 
   // 1. Format to 9:16 & Safe Area
   const handleApplyFormat = () => {
-    const next = structuredClone(p);
-    next.settings.aspectRatio = '9:16';
-    next.settings.width = 1080;
-    next.settings.height = 1920;
+    const next = changeAspectRatio(p, '9:16');
     next.captions.safeArea = true;
     commit(next, 'Format: 9:16 Reels/TikTok with safe margins');
   };
 
-  // 2. Master Audio: -14 LUFS leveling, noise suppression & auto-ducking
+  // 2. Enable existing voice enhancement and music ducking controls.
   const handleApplyMasterAudio = () => {
     const next = structuredClone(p);
     for (const c of next.clips) {
@@ -84,7 +80,7 @@ export function SmartWorkflowGuide({
         c.properties.volume = Math.min(0.35, c.properties.volume || 0.3);
       }
     }
-    commit(next, 'Master audio: -14 LUFS speech leveling & auto-ducking');
+    commit(next, 'Enable voice enhancement and music ducking');
   };
 
   // 3. Captions
@@ -136,11 +132,7 @@ export function SmartWorkflowGuide({
   const handleApplyAll = () => {
     const next = structuredClone(p);
 
-    // 1. 9:16 Format
-    next.settings.aspectRatio = '9:16';
-    next.settings.width = 1080;
-    next.settings.height = 1920;
-    next.captions.safeArea = true;
+    // Keep the user's delivery format. Vertical formatting is an explicit separate action.
 
     // 2. Audio Leveling
     for (const c of next.clips) {
@@ -186,12 +178,9 @@ export function SmartWorkflowGuide({
     }
   };
 
-  const completedCount = [
-    is916Format,
-    isAudioMastered,
-    isCaptionsActive,
-    hasHookAnimation,
-  ].filter(Boolean).length;
+  const completedCount = [is916Format, isAudioMastered, isCaptionsActive, hasHookAnimation].filter(
+    Boolean,
+  ).length;
 
   return (
     <div className={`smart-workflow-bar ${collapsed ? 'is-collapsed' : ''}`}>
@@ -200,7 +189,7 @@ export function SmartWorkflowGuide({
           <Sparkles size={14} className="workflow-wand-icon" />
           <b className="workflow-title">Akıllı Kurgu Asistanı · İlk Adım Önerileri</b>
           <span className="workflow-progress-pill">
-            {completedCount}/5 Adım Hazır
+            {completedCount}/4 ayar etkin · sessizlik analizi ayrı
           </span>
           <button
             type="button"
@@ -221,10 +210,10 @@ export function SmartWorkflowGuide({
             type="button"
             className="workflow-master-btn"
             onClick={handleApplyAll}
-            title="Tüm profesyonel adımları (9:16, Ses Seviyesi, Altyazı, Hook) tek tıkla uygula"
+            title="Ses, altyazı ve giriş animasyonu ayarlarını uygula; görüntü oranını koru"
           >
             <Zap size={12} />
-            <span>Tümünü Tek Tıkla Uygula</span>
+            <span>Ses, altyazı ve animasyon uygula</span>
           </button>
 
           <button
@@ -259,13 +248,10 @@ export function SmartWorkflowGuide({
             </div>
             <b className="step-title">Sessiz Yerleri Kırp</b>
             <p className="step-desc">
-              Konuşma aralarındaki duraksamaları ve boşlukları keserek videoyu akıcı ve tempolu yapar.
+              Konuşma aralarındaki duraksamaları ve boşlukları keserek videoyu akıcı ve tempolu
+              yapar.
             </p>
-            <button
-              type="button"
-              className="step-action-btn"
-              onClick={onSilenceCutRequest}
-            >
+            <button type="button" className="step-action-btn" onClick={onSilenceCutRequest}>
               <span>Sessizliği Kırp</span>
               <ArrowRight size={11} />
             </button>
@@ -278,11 +264,12 @@ export function SmartWorkflowGuide({
                 <Volume2 size={13} />
               </span>
               <span className="step-num">2. Adım</span>
-              {isAudioMastered && <span className="step-done-badge">✓ Dengelendi</span>}
+              {isAudioMastered && <span className="step-done-badge">✓ Ses ayarı etkin</span>}
             </div>
             <b className="step-title">Arka Plan Sesini Kıs & Dengele</b>
             <p className="step-desc">
-              Konuşmayı -14 LUFS standardına yükseltir, arkadaki gürültüyü ve müzik varsa otomatik kısar.
+              Konuşma iyileştirme ve müzik kısma ayarlarını açar. Ses yüksekliği ölçümü yapılmaz;
+              sonucu dinleyerek kontrol et.
             </p>
             <button
               type="button"
@@ -303,7 +290,7 @@ export function SmartWorkflowGuide({
             </button>
           </div>
 
-          {/* Step 3: Viral Altyazı Ekle */}
+          {/* Step 3: Altyazı Ekle */}
           <div className={`workflow-step-card ${isCaptionsActive ? 'completed' : ''}`}>
             <div className="step-card-head">
               <span className="step-icon-badge captions">
@@ -311,20 +298,16 @@ export function SmartWorkflowGuide({
               </span>
               <span className="step-num">3. Adım</span>
               {isCaptionsActive && (
-                <span className="step-done-badge">
-                  {isNoSpeech ? '✓ Metinsiz Mod' : '✓ Aktif'}
-                </span>
+                <span className="step-done-badge">{isNoSpeech ? '✓ Metinsiz Mod' : '✓ Aktif'}</span>
               )}
             </div>
-            <b className="step-title">
-              {isNoSpeech ? 'Altyazı (Metinsiz Video)' : 'Viral Altyazı Ekle'}
-            </b>
+            <b className="step-title">{isNoSpeech ? 'Altyazı (Metinsiz Video)' : 'Altyazı Ekle'}</b>
             <p className="step-desc">
               {isNoSpeech
                 ? 'Videoda konuşma yok seçili. Deşifre atlandı ve metinsiz mod devrede.'
                 : hasTranscript
-                ? 'Kelimeler transkribe edildi. Dinamik altyazılar sahnede.'
-                : 'Kelimeleri deşifre edip TikTok/Reels tarzı parlayan renkli altyazılar ekler.'}
+                  ? 'Zaman çizelgesinde deşifre var. Altyazı görünümünü ve yazımını kontrol et.'
+                  : 'Kelimeleri deşifre edip TikTok/Reels tarzı parlayan renkli altyazılar ekler.'}
             </p>
             <button
               type="button"
@@ -358,7 +341,8 @@ export function SmartWorkflowGuide({
             </div>
             <b className="step-title">9:16 Dikey Formata Uyarla</b>
             <p className="step-desc">
-              TikTok ve Reels için 1080×1920 ölçeğine ayarlar ve butonların kapamaması için güvenli alanı açar.
+              TikTok ve Reels için 1080×1920 ölçeğine ayarlar ve butonların kapamaması için güvenli
+              alanı açar.
             </p>
             <button
               type="button"
@@ -386,11 +370,12 @@ export function SmartWorkflowGuide({
                 <Zap size={13} />
               </span>
               <span className="step-num">5. Adım</span>
-              {hasHookAnimation && <span className="step-done-badge">✓ Hook Hazır</span>}
+              {hasHookAnimation && <span className="step-done-badge">✓ Animasyon etkin</span>}
             </div>
             <b className="step-title">Girişe Hook Punch-In Ekle</b>
             <p className="step-desc">
-              İlk 3 saniyeye dikkat çeken 1.15x dinamik zoom ekleyerek izleyiciyi ilk saniyede yakalar.
+              İlk 3 saniyeye dikkat çeken 1.15x dinamik zoom ekleyerek izleyiciyi ilk saniyede
+              yakalar.
             </p>
             <button
               type="button"

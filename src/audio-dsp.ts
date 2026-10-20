@@ -225,3 +225,201 @@ export function applyBrickwallLimiter(
 
   return out;
 }
+
+export type SidechainDuckerConfig = {
+  thresholdDb?: number; // Voice threshold in dB RMS (default -24 dB)
+  duckingDb?: number; // Target attenuation in dB (default -12 dB)
+  attackMs?: number; // Attack transition duration in ms (default 20 ms)
+  releaseMs?: number; // Release recovery duration in ms (default 250 ms)
+  detectionWindowMs?: number; // RMS integration window in ms (< 5 ms latency, default 3 ms)
+  sampleRate?: number; // Audio sample rate in Hz (default 48000)
+};
+
+/**
+ * High-performance sidechain auto-ducking engine with < 5ms detection latency,
+ * 20ms attack and 250ms smooth exponential release for zero-click musical attenuation.
+ */
+export class SidechainDucker {
+  private thresholdLinear: number;
+  private duckingGainLinear: number;
+  private alphaAttack: number;
+  private alphaRelease: number;
+  private alphaVoiceRms: number;
+  private currentGain = 1.0;
+  private currentVoiceEnergy = 0.0;
+  private isDuckingActive = false;
+  readonly sampleRate: number;
+
+  constructor(readonly config: SidechainDuckerConfig = {}) {
+    const thresholdDb = config.thresholdDb ?? -24;
+    const duckingDb = config.duckingDb ?? -12;
+    const attackMs = config.attackMs ?? 20;
+    const releaseMs = config.releaseMs ?? 250;
+    const detectionWindowMs = config.detectionWindowMs ?? 3; // < 5ms latency guarantee
+    this.sampleRate = config.sampleRate ?? 48000;
+
+    this.thresholdLinear = Math.pow(10, thresholdDb / 20); // -24 dB -> ~0.0631
+    this.duckingGainLinear = Math.pow(10, duckingDb / 20); // -12 dB -> ~0.2512
+
+    // Leaky integrator for real-time RMS detection: 3ms window ensures < 5ms latency
+    this.alphaVoiceRms = Math.exp(-2.2 / ((this.sampleRate * detectionWindowMs) / 1000));
+
+    // Attack smoothing (20ms to 90% target attenuation)
+    this.alphaAttack = Math.exp(-2.2 / ((this.sampleRate * attackMs) / 1000));
+
+    // Release smoothing (250ms smooth curve to 90% recovery)
+    this.alphaRelease = Math.exp(-2.2 / ((this.sampleRate * releaseMs) / 1000));
+  }
+
+  /**
+   * Processes a single music sample and voice sidechain sample in real time.
+   */
+  processSample(musicSample: number, voiceSample: number): number {
+    const v = voiceSample;
+    // Track RMS energy over the ultra-low-latency 3ms window
+    this.currentVoiceEnergy = this.alphaVoiceRms * this.currentVoiceEnergy + (1 - this.alphaVoiceRms) * (v * v);
+    const rms = Math.sqrt(Math.max(0, this.currentVoiceEnergy));
+
+    // Evaluate sidechain detection
+    const voiceTriggered = rms > this.thresholdLinear;
+    this.isDuckingActive = voiceTriggered;
+
+    // Target gain: -12 dB attenuation when voice detected, 0 dB (1.0) when voice inactive
+    const targetGain = voiceTriggered ? this.duckingGainLinear : 1.0;
+
+    // Smooth gain transition (20ms attack when ducking, 250ms release when returning)
+    const alpha = targetGain < this.currentGain ? this.alphaAttack : this.alphaRelease;
+    this.currentGain = alpha * this.currentGain + (1 - alpha) * targetGain;
+
+    return musicSample * this.currentGain;
+  }
+
+  /**
+   * Processes multichannel or stereo PCM buffers with clickless sidechain attenuation.
+   */
+  processBuffer(music: Float32Array, voice: Float32Array): Float32Array {
+    const len = Math.min(music.length, voice.length);
+    const output = new Float32Array(music.length);
+
+    for (let i = 0; i < len; i++) {
+      output[i] = this.processSample(music[i], voice[i]);
+    }
+
+    // If music is longer than voice, continue with voice=0
+    for (let i = len; i < music.length; i++) {
+      output[i] = this.processSample(music[i], 0);
+    }
+
+    return output;
+  }
+
+  getGainLinear(): number {
+    return this.currentGain;
+  }
+
+  getGainDb(): number {
+    return 20 * Math.log10(Math.max(1e-6, this.currentGain));
+  }
+
+  getVoiceRmsDb(): number {
+    const rms = Math.sqrt(Math.max(0, this.currentVoiceEnergy));
+    return 20 * Math.log10(Math.max(1e-6, rms));
+  }
+
+  isDucking(): boolean {
+    return this.isDuckingActive;
+  }
+
+  reset() {
+    this.currentGain = 1.0;
+    this.currentVoiceEnergy = 0.0;
+    this.isDuckingActive = false;
+  }
+}
+
+export type ThreeBandEQConfig = {
+  lowGainDb?: number; // Low Shelf gain at 100 Hz (-12 to +12 dB)
+  midGainDb?: number; // Peaking gain at 1000 Hz / voice presence (-12 to +12 dB)
+  highGainDb?: number; // High Shelf gain at 8000 Hz / air (-12 to +12 dB)
+  lowFreq?: number; // default 100 Hz
+  midFreq?: number; // default 1000 Hz
+  highFreq?: number; // default 8000 Hz
+  sampleRate?: number; // default 48000
+};
+
+/**
+ * 3-Band Parametric EQ (Low Shelf @ 100Hz, Peaking @ 1kHz, High Shelf @ 8kHz)
+ * for pristine tone shaping and broadcast-grade dialogue clarity.
+ */
+export class ThreeBandEQ {
+  private lowFilter!: BiquadFilter;
+  private midFilter!: BiquadFilter;
+  private highFilter!: BiquadFilter;
+  private sampleRate: number;
+  private lowGainDb: number;
+  private midGainDb: number;
+  private highGainDb: number;
+  private lowFreq: number;
+  private midFreq: number;
+  private highFreq: number;
+
+  constructor(config: ThreeBandEQConfig = {}, sampleRate = 48000) {
+    this.sampleRate = config.sampleRate ?? sampleRate;
+    this.lowGainDb = config.lowGainDb ?? 0;
+    this.midGainDb = config.midGainDb ?? 0;
+    this.highGainDb = config.highGainDb ?? 0;
+    this.lowFreq = config.lowFreq ?? 100;
+    this.midFreq = config.midFreq ?? 1000;
+    this.highFreq = config.highFreq ?? 8000;
+
+    this.rebuildFilters();
+  }
+
+  private rebuildFilters() {
+    this.lowFilter = new BiquadFilter(
+      computeBiquadCoefficients('lowshelf', this.lowFreq, this.sampleRate, 0.707, this.lowGainDb),
+    );
+    this.midFilter = new BiquadFilter(
+      computeBiquadCoefficients('peaking', this.midFreq, this.sampleRate, 1.0, this.midGainDb),
+    );
+    this.highFilter = new BiquadFilter(
+      computeBiquadCoefficients('highshelf', this.highFreq, this.sampleRate, 0.707, this.highGainDb),
+    );
+  }
+
+  setGains(lowGainDb: number, midGainDb: number, highGainDb: number) {
+    this.lowGainDb = Math.max(-24, Math.min(24, lowGainDb));
+    this.midGainDb = Math.max(-24, Math.min(24, midGainDb));
+    this.highGainDb = Math.max(-24, Math.min(24, highGainDb));
+    this.rebuildFilters();
+  }
+
+  processSample(sample: number): number {
+    return this.highFilter.processSample(
+      this.midFilter.processSample(
+        this.lowFilter.processSample(sample),
+      ),
+    );
+  }
+
+  processBuffer(buffer: Float32Array): Float32Array {
+    const afterLow = this.lowFilter.processBuffer(buffer);
+    const afterMid = this.midFilter.processBuffer(afterLow);
+    return this.highFilter.processBuffer(afterMid);
+  }
+
+  getGains() {
+    return {
+      low: this.lowGainDb,
+      mid: this.midGainDb,
+      high: this.highGainDb,
+    };
+  }
+
+  reset() {
+    this.lowFilter.reset();
+    this.midFilter.reset();
+    this.highFilter.reset();
+  }
+}
+

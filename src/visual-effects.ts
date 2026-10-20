@@ -45,12 +45,21 @@ export type CornerPinEffect = {
   bottomLeft: { x: number; y: number };
 };
 
+export type LutEffect = {
+  enabled: boolean;
+  name: string;
+  intensity: number; // 0 to 100
+  cubeData?: string;
+  lutSize?: number;
+};
+
 export type VisualEffects = {
   chroma?: ChromaKey;
   mask?: ClipMask;
   grade?: ColorGradeEffect;
   lens?: LensEffect;
   cornerPin?: CornerPinEffect;
+  lut?: LutEffect;
 };
 
 export const defaultChroma = (): ChromaKey => ({
@@ -105,13 +114,20 @@ export const defaultCornerPin = (): CornerPinEffect => ({
   bottomLeft: { x: 0, y: 100 },
 });
 
+export const defaultLut = (): LutEffect => ({
+  enabled: true,
+  name: 'Teal & Orange',
+  intensity: 100,
+});
+
 export const hasVisualEffects = (effects?: VisualEffects) =>
   !!(
     effects?.chroma?.enabled ||
     effects?.mask?.enabled ||
     effects?.grade?.enabled ||
     effects?.lens?.enabled ||
-    effects?.cornerPin?.enabled
+    effects?.cornerPin?.enabled ||
+    effects?.lut?.enabled
   );
 
 export function validVisualEffects(value: unknown): value is VisualEffects {
@@ -119,7 +135,7 @@ export function validVisualEffects(value: unknown): value is VisualEffects {
   const effects = value as VisualEffects;
   if (
     Object.keys(effects).some(
-      (key) => !['chroma', 'mask', 'grade', 'lens', 'cornerPin'].includes(key),
+      (key) => !['chroma', 'mask', 'grade', 'lens', 'cornerPin', 'lut'].includes(key),
     )
   )
     return false;
@@ -200,6 +216,17 @@ export function validVisualEffects(value: unknown): value is VisualEffects {
       ![cp.topLeft, cp.topRight, cp.bottomRight, cp.bottomLeft].every(
         (p) => p && number(p.x, -50, 150) && number(p.y, -50, 150),
       )
+    )
+      return false;
+  }
+
+  if (effects.lut !== undefined) {
+    const lut = effects.lut;
+    if (
+      !lut ||
+      typeof lut.enabled !== 'boolean' ||
+      typeof lut.name !== 'string' ||
+      !number(lut.intensity, 0, 100)
     )
       return false;
   }

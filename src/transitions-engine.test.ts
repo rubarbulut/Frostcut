@@ -43,5 +43,68 @@ describe('video transition engine', () => {
     expect(TRANSITION_SHADERS_GLSL).toContain('transitionWhipPan');
     expect(TRANSITION_SHADERS_GLSL).toContain('transitionCrossZoom');
     expect(TRANSITION_SHADERS_GLSL).toContain('transitionGlitchSplit');
+    expect(TRANSITION_SHADERS_GLSL).toContain('transitionDirectionalWipe');
+  });
+
+  it('detects abutting and overlapping project transitions correctly', async () => {
+    const { findProjectTransitions, TransitionBlender } = await import('./visual-renderer');
+    const { createProject, defaultProps } = await import('./model');
+
+    const p = createProject();
+    p.clips = [
+      {
+        id: 'c1',
+        mediaId: 'm1',
+        trackId: 'V1',
+        start: 0,
+        sourceStart: 0,
+        sourceEnd: 5,
+        properties: defaultProps,
+      },
+      {
+        id: 'c2',
+        mediaId: 'm2',
+        trackId: 'V1',
+        start: 5,
+        sourceStart: 0,
+        sourceEnd: 5,
+        properties: defaultProps,
+        transition: { type: 'whip-pan', duration: 0.5, direction: 'right' },
+      },
+    ];
+
+    const transitions = findProjectTransitions(p);
+    expect(transitions).toHaveLength(1);
+    expect(transitions[0].clipFrom.id).toBe('c1');
+    expect(transitions[0].clipTo.id).toBe('c2');
+    expect(transitions[0].start).toBe(5);
+    expect(transitions[0].end).toBe(5.5);
+    expect(transitions[0].transition.type).toBe('whip-pan');
+
+    // Test TransitionBlender instantiation and draw fallback
+    const mockCtx = {
+      clearRect: () => {},
+      drawImage: () => {},
+      globalAlpha: 1,
+    };
+    const mockCanvas = {
+      width: 100,
+      height: 100,
+      getContext: (kind: string) => (kind === '2d' ? mockCtx : null),
+    } as unknown as HTMLCanvasElement;
+
+    const blender = new TransitionBlender(mockCanvas);
+    expect(blender.canvas).toBeDefined();
+
+    const c1 = mockCanvas;
+    const c2 = mockCanvas;
+
+    const res = blender.draw(c1, c2, 100, 100, 0.5, { type: 'whip-pan', duration: 0.5 });
+    expect(res).toBe(blender.canvas);
+    expect(res.width).toBe(100);
+    expect(res.height).toBe(100);
+
+    blender.dispose();
   });
 });
+

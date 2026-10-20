@@ -1,15 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import {
-  SlidersHorizontal,
-  Captions,
-  Wand2,
-  Volume2,
-  Sparkles,
-  Layers,
-} from 'lucide-react';
+import { SlidersHorizontal, Captions, Wand2, Volume2, Sparkles, Layers } from 'lucide-react';
 import { useEditor } from '../store';
-import { isLocked, isAudioClip, type Clip } from '../model';
+import { isLocked, isAudioClip, timelineWords, type Clip } from '../model';
 import { AEClipHeader } from './AEClipHeader';
 import { AETransformControls } from './AETransformControls';
 import { AETimeControls } from './AETimeControls';
@@ -45,6 +38,7 @@ export function AEInspector() {
 
   return (
     <aside className="properties-panel ae-inspector-panel">
+      <div className="studio-panel-title"><span>Properties</span><small>{clip ? 'Selected layer' : 'Composition'}</small></div>
       {/* Workspace Panel Tab Bar */}
       <div className="ae-panel-tabs">
         <button
@@ -66,7 +60,9 @@ export function AEInspector() {
         >
           <Captions size={13} />
           <span>Captions</span>
-          {p.captions.enabled && <span className="ae-tab-dot active" />}
+          {p.captions.enabled && timelineWords(p).length > 0 && (
+            <span className="ae-tab-dot active" />
+          )}
         </button>
 
         <button
@@ -106,7 +102,7 @@ export function AEInspector() {
               </fieldset>
             </div>
           ) : (
-            <AECompositionInspector project={p} />
+            <AECompositionInspector key={`${p.id}:${p.activeSequenceId ?? ''}`} project={p} />
           )
         ) : tab === 'captions' ? (
           <AECaptionsInspector />
@@ -127,8 +123,8 @@ export function AEInspector() {
                   <Volume2 size={24} className="guide-icon" />
                   <b>Audio Mixer & Soundstage</b>
                   <p>
-                    Select any video or audio clip on the timeline to calibrate its volume,
-                    fades, auto-ducking, or run beat detection.
+                    Select any video or audio clip on the timeline to calibrate its volume, fades,
+                    auto-ducking, or run beat detection.
                   </p>
                 </div>
               </div>
