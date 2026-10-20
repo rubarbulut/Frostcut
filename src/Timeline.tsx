@@ -540,7 +540,10 @@ export default function Timeline() {
                   p.clips.find(
                     (c) => !isAudioClip(p, c) && playhead >= c.start && playhead < clipEnd(c),
                   ) ??
-                  p.clips.find((c) => !isAudioClip(p, c));
+                  p.clips.find((c) => !isAudioClip(p, c)) ??
+                  p.clips.find((c) => selected.includes(c.id)) ??
+                  p.clips.find((c) => playhead >= c.start && playhead < clipEnd(c)) ??
+                  p.clips[0];
                 if (c)
                   useEditor
                     .getState()

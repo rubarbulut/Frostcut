@@ -275,6 +275,7 @@ export default function TranscriptionSetup({
                 settings: {
                   ...p.settings,
                   language,
+                  noSpeech: false,
                   transcriptionQuality: quality,
                   transcriptionDevice: device,
                 },

@@ -84,7 +84,10 @@ export function TranscriptPanel({
     const clip =
       p.clips.find((c) => !isAudioClip(p, c) && selected.includes(c.id)) ??
       p.clips.find((c) => !isAudioClip(p, c) && playhead >= c.start && playhead < clipEnd(c)) ??
-      p.clips.find((c) => !isAudioClip(p, c));
+      p.clips.find((c) => !isAudioClip(p, c)) ??
+      p.clips.find((c) => selected.includes(c.id)) ??
+      p.clips.find((c) => playhead >= c.start && playhead < clipEnd(c)) ??
+      p.clips[0];
     if (clip) selectCaption({ clipId: clip.id, wordIds: [], start: playhead });
   }
   function removeFromVideo() {

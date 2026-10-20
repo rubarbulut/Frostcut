@@ -556,8 +556,9 @@ export default function App() {
         }
 
         const isNoSpeech = opts.noSpeech ?? next.settings.noSpeech ?? false;
+        // An explicit Transcribe action must not inherit Auto Cut's no-speech switch.
         const needTranscript =
-          !isNoSpeech && (!auto || (!existing && opts.goal !== 'Remove silences'));
+          !auto || (!isNoSpeech && !existing && opts.goal !== 'Remove silences');
         setJob((j) => (j ? { ...j, step: needTranscript ? 1 : 0 } : j));
         const analyzed = await analyzeSource(
           media,

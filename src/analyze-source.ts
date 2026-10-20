@@ -34,17 +34,21 @@ export async function analyzeSource(
   if (!needTranscript && cached && !ranges) return { silences: cached, transcript: undefined };
   const windows = analysisWindows(asset.duration, 90, ranges),
     energy = new Float32Array(Math.ceil(asset.duration / 0.02));
+  if (!windows.length) throw new Error('Choose a clip with a valid audio range to transcribe.');
   let transcript: Transcript | undefined = initialTranscript
     ? {
         ...initialTranscript,
-        words: ranges?.length
-          ? initialTranscript.words.filter(
-              (w) => !ranges.some((r) => w.end > r.start && w.start < r.end),
-            )
-          : initialTranscript.words,
+        words: !needTranscript
+          ? initialTranscript.words
+          : ranges?.length
+            ? initialTranscript.words.filter(
+                (w) => !ranges.some((r) => w.end > r.start && w.start < r.end),
+              )
+            : [],
       }
     : undefined,
-    index = 0;
+    index = 0,
+    recognizedWords = 0;
   const session = needTranscript
     ? createTranscriber(
         asset.id,
@@ -73,6 +77,7 @@ export async function analyzeSource(
           ),
         { start: window.start, duration: window.duration },
       );
+      if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
       const rms = rmsEnvelope(audio);
       const from = Math.round((window.coreStart - window.start) / 0.02),
         count = Math.ceil((window.coreEnd - window.coreStart) / 0.02);
@@ -80,9 +85,12 @@ export async function analyzeSource(
       // Quiet windows contain no useful ASR input and often provoke hallucinated subtitles.
       if (session && rms.some((value) => value > 0.003)) {
         const part = await session.run(audio);
+        if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
+        const merged = mergeWindowWords(transcript?.words ?? [], part.words, window);
+        recognizedWords += merged.length - (transcript?.words.length ?? 0);
         transcript = {
           ...part,
-          words: mergeWindowWords(transcript?.words ?? [], part.words, window),
+          words: merged,
         };
       }
       onProgress(
@@ -91,9 +99,9 @@ export async function analyzeSource(
       );
       onDiscovery?.(transcript, window.coreEnd);
     }
-    if (needTranscript && !transcript?.words.length && (!ranges || ranges.length === 0))
+    if (needTranscript && recognizedWords === 0)
       throw new Error(
-        'No speech was detected. Try selecting the spoken language or importing an SRT transcript.',
+        'No speech was recognized in the selected audio. Your existing captions were kept. Check the spoken language and audio, try Detailed or CPU mode, or import an SRT transcript.',
       );
     for (const id of envelopes.keys()) if (!mediaFiles.has(id)) envelopes.delete(id);
     envelopes.set(asset.id, { file, energy });

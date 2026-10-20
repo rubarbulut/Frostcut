@@ -593,7 +593,12 @@ export type TimelineWord = Word & {
 };
 export function timelineWords(p: Project): TimelineWord[] {
   return sortedClips(p)
-    .filter((c) => !isAudioClip(p, c) && !p.tracks.find((t) => t.id === c.trackId)?.hidden)
+    .filter((c) =>
+      !p.tracks.find((t) => t.id === c.trackId)?.hidden &&
+      (!isAudioClip(p, c) ||
+        p.media.find((m) => m.id === c.mediaId)?.type.startsWith('audio/') ||
+        !!c.captionWords?.length),
+    )
     .flatMap((c) =>
       (c.captionWords ?? p.transcripts.find((t) => t.mediaId === c.mediaId)?.words ?? [])
         .filter((w) => w.end > c.sourceStart && w.start < c.sourceEnd)
