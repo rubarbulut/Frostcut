@@ -38,6 +38,7 @@ export function AEInspector() {
 
   return (
     <aside className="properties-panel ae-inspector-panel">
+      <div className="studio-panel-title"><span>Properties</span><small>{clip ? 'Selected layer' : 'Composition'}</small></div>
       {/* Workspace Panel Tab Bar */}
       <div className="ae-panel-tabs">
         <button

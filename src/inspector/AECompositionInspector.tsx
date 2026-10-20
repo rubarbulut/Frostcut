@@ -237,7 +237,7 @@ export function AECompositionInspector({ project: p }: { project: Project }) {
         <AEGroup
           title="İlk Adım Önerileri & İş Akışı"
           icon={<Sparkles size={13} />}
-          defaultOpen={true}
+          defaultOpen={false}
           badge={`${completedSteps}/4 ayar etkin`}
         >
           <div className="ae-comp-body">

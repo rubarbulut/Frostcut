@@ -95,6 +95,9 @@ import { MediaImporterModal } from './importer/MediaImporterModal';
 import './importer/importer.css';
 import './editor-gothic.css';
 import './workspace-clarity.css';
+import './studio-workspace.css';
+import { StudioDock } from './StudioDock';
+import { StudioMenu } from './StudioMenu';
 import { frameAspectRatio } from './aspect-fill';
 import { SequencePicker } from './SequencePicker';
 import { ExportDestination } from './ExportDestination';
@@ -160,7 +163,7 @@ export default function App() {
     [importerOpen, setImporterOpen] = useState(false),
     [creatorOpen, setCreatorOpen] = useState(false),
     [creatorTab, setCreatorTab] = useState('Reframe'),
-    [inspectorOpen, setInspectorOpen] = useState(false),
+    [inspectorOpen, setInspectorOpen] = useState(true),
     [resume, setResume] = useState<Project>(),
     [toast, setToast] = useState(''),
     [projectName, setProjectName] = useState('My first cut'),
@@ -314,7 +317,7 @@ export default function App() {
           );
           load(addMedia(project, asset));
           setScreen('editor');
-          setInspectorOpen(false);
+          setInspectorOpen(true);
         } else {
           commit(addMedia(useEditor.getState().project, asset), 'Import footage');
         }
@@ -394,7 +397,7 @@ export default function App() {
     setScreen('editor');
     setModal(null);
     setPanel('media');
-    setInspectorOpen(false);
+    setInspectorOpen(true);
   }
   async function openProject(file: File) {
     try {
@@ -805,7 +808,7 @@ export default function App() {
         />
       ) : (
         <main
-          className={`editor workspace-clarity ${panel === 'postkit' ? 'publishing-workspace' : ''} ${!p.clips.length ? 'empty-workspace' : ''} ${inspectorOpen ? 'inspector-open' : 'inspector-closed'} ${drop ? 'drag-over' : ''}`}
+          className={`editor workspace-clarity studio-workspace ${panel === 'postkit' ? 'publishing-workspace' : ''} ${!p.clips.length ? 'empty-workspace' : ''} ${inspectorOpen ? 'inspector-open' : 'inspector-closed'} ${drop ? 'drag-over' : ''}`}
           onDragOver={(e) => {
             e.preventDefault();
             setDrop(true);
@@ -821,6 +824,16 @@ export default function App() {
             if (f) void importFile(f);
           }}
         >
+          <StudioMenu
+            onNew={() => { setPlaying(false); setModal('project'); }}
+            onOpen={() => projectInput.current?.click()}
+            onImport={() => importClick()}
+            onSave={saveCurrentProject}
+            onUndo={undo} onRedo={redo}
+            onShortcuts={() => setModal('shortcuts')}
+            onInspectorChange={setInspectorOpen}
+            inspectorOpen={inspectorOpen} canUndo={!!past.length} canRedo={!!future.length} busy={!!job}
+          />
           <header className="editor-header">
             {/* Left: Brand + Project Title Pill + Format Badge */}
             <div className="header-left-group">
@@ -1039,9 +1052,9 @@ export default function App() {
               Inspector
             </button>
           </nav>
-          <SequencePicker />
-          <div className="editor-workspace">
+          <StudioDock inspectorOpen={inspectorOpen} timeline={<><SequencePicker /><Timeline /></>}>
             <aside className="left-panel">
+              <div className="studio-panel-title"><span>Project</span><small>Files & tools</small></div>
               <div className="panel-tabs" aria-label="Editing tools">
                 <button
                   className={panel === 'media' ? 'active' : ''}
@@ -1124,6 +1137,7 @@ export default function App() {
               )}
             </aside>
             <div className="center-panel">
+              <div className="studio-panel-title"><span><i className="studio-comp-label" />Composition</span><b>{p.sequences?.find((sequence) => sequence.id === p.activeSequenceId)?.name ?? p.name}</b></div>
               <div className="preview-viewport-bar">
                 <div className="viewport-left-meta">
                   <span className="sequence-indicator-dot" />
@@ -1171,8 +1185,7 @@ export default function App() {
               )}
             </div>
             <PropertiesPanel />
-          </div>
-          <Timeline />
+          </StudioDock>
           <section className="mobile-flow">
             <div className="panel-tabs">
               {['Clips', 'Format', 'Transcript', 'Style'].map((t) => (

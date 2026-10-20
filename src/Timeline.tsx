@@ -39,6 +39,7 @@ import {
   timecode,
   isAudioClip,
 } from './model';
+import { StudioTrackLabel } from './StudioTrackLabel';
 export function deleteSelected(ripple = false) {
   const adjustment = useEditor.getState().adjustmentSelection;
   if (adjustment && !ripple) { removeAdjustment(adjustment); return; }
@@ -466,8 +467,9 @@ export default function Timeline() {
           </div>
           <AdjustmentLabels />
           {p.tracks.map((t) => (
-            <div className="track-label" key={t.id} style={{ height: t.height }}>
+            <div className="track-label" data-track-kind={t.kind} key={t.id} style={{ height: t.height }}>
               <b>{t.name}</b>
+              <StudioTrackLabel project={p} trackId={t.id} />
               <button
                 className="icon tiny"
                 aria-label={`${t.locked ? 'Unlock' : 'Lock'} ${t.name}`}

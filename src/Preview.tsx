@@ -127,8 +127,11 @@ function VideoLayer({
     return () => {
       if (v) {
         v.pause();
-        v.removeAttribute('src');
-        v.load();
+        // Strict Mode replays cleanup while the same video is still mounted.
+        if (!v.isConnected) {
+          v.removeAttribute('src');
+          v.load();
+        }
       }
     };
   }, []);
